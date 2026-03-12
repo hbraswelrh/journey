@@ -92,10 +92,34 @@ const (
 	BrewInstallPodman   = "brew install podman"
 )
 
+// GemaraReleasesAPI is the GitHub API endpoint for listing
+// releases of the Gemara schema repository.
+const GemaraReleasesAPI = "https://api.github.com/repos/gemaraproj/gemara/releases"
+
+// SchemaStatusStable is the CUE status attribute value for
+// stable schemas.
+const SchemaStatusStable = "Stable"
+
+// SchemaStatusExperimental is the CUE status attribute value
+// for experimental schemas.
+const SchemaStatusExperimental = "Experimental"
+
+// CoreStableSchemas is the list of schema names that must be
+// marked Stable for a release to qualify as the "Stable"
+// version.
+var CoreStableSchemas = []string{
+	"base",
+	"metadata",
+	"mapping_inline",
+}
+
 // CacheDir is the subdirectory name under the user's config
 // directory where Pac-Man stores cached data (lexicon, schema
 // docs, version info).
 const CacheDir = "pacman"
+
+// ReleaseCacheFile is the filename for cached release data.
+const ReleaseCacheFile = "releases.json"
 
 // SessionHealthCheckInterval is the interval in seconds between
 // MCP server health checks during an active session.

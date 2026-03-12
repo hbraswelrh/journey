@@ -32,6 +32,13 @@ type SetupConfig struct {
 	Installer *mcp.Installer
 	// ConfigPath is the path to opencode.json.
 	ConfigPath string
+	// VersionFetcher fetches releases from upstream. When
+	// set, RunSetup will run version selection after MCP
+	// setup completes.
+	VersionFetcher ReleaseFetcherFn
+	// VersionCachePath is the path to the local release
+	// cache file.
+	VersionCachePath string
 }
 
 // SetupResult holds the outcome of the setup flow.
@@ -53,7 +60,40 @@ type SetupResult struct {
 //     session with MCP connected.
 //  4. If declined, configure the session in fallback mode
 //     and list degraded capabilities.
+//  5. If VersionFetcher is set, run schema version
+//     selection.
 func RunSetup(
+	ctx context.Context,
+	cfg *SetupConfig,
+	out io.Writer,
+) (*SetupResult, error) {
+	result, err := runMCPSetup(ctx, cfg, out)
+	if err != nil {
+		return nil, err
+	}
+
+	// Run version selection if configured.
+	if cfg.VersionFetcher != nil {
+		vCfg := &VersionPromptConfig{
+			Prompter:  cfg.Prompter,
+			Fetcher:   cfg.VersionFetcher,
+			CachePath: cfg.VersionCachePath,
+			Session:   result.Session,
+		}
+		if err := RunVersionSelection(
+			ctx, vCfg, out,
+		); err != nil {
+			return nil, fmt.Errorf(
+				"version selection: %w", err,
+			)
+		}
+	}
+
+	return result, nil
+}
+
+// runMCPSetup handles MCP detection and installation.
+func runMCPSetup(
 	ctx context.Context,
 	cfg *SetupConfig,
 	out io.Writer,
