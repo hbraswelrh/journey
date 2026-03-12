@@ -204,9 +204,41 @@ make build
 ./pacman
 ```
 
-On first launch, Pac-Man will offer to install the Gemara MCP
-server, then prompt for schema version selection (Stable or
-Latest), followed by role and activity discovery.
+### Recommended: Use OpenCode
+
+[OpenCode](https://opencode.ai) is the preferred AI development
+harness for Pac-Man. It guides you through the entire setup
+process regardless of your role:
+
+```bash
+# Install OpenCode
+brew install anomalyco/tap/opencode
+
+# Navigate to the project and launch
+cd pacman
+opencode
+```
+
+OpenCode will read the project's `AGENTS.md` and guide you
+through MCP server setup, schema version selection, and role
+discovery.
+
+### First Launch
+
+On first launch, Pac-Man will:
+
+1. **Detect or install the Gemara MCP server** — If not found,
+   the system offers to clone the gemara-mcp repository (via
+   SSH or HTTPS), build from source at the latest release
+   (pinned by SHA256 digest), and configure `opencode.json`
+   with the built binary path. Podman is available as an
+   alternative.
+2. **Prompt for schema version selection** — Choose between
+   Stable (core schemas marked `@status(Stable)`) or Latest
+   (most recent tagged release).
+3. **Role and activity discovery** — Identify your role and
+   describe your daily activities to receive a tailored
+   learning path through the Gemara tutorials.
 
 ## Project Structure
 
