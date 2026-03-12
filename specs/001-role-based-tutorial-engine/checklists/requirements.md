@@ -60,3 +60,17 @@
   it.
 - Constitution updated to v1.3.0 with OpenCode in Technology &
   Integration Constraints and Agent and Automation Awareness.
+- FR-035 added: Homebrew as preferred installation method for
+  CUE, Gitleaks, and OpenCode with alternative methods
+  documented. Constitution updated with Tool Installation
+  subsection in Technology & Integration Constraints.
+- FR-027 rewritten: gemara-mcp installation changed from
+  manual guidance to automated pipeline (resolve latest
+  release, retrieve SHA256 commit digest, clone via SSH/HTTPS
+  at pinned digest, `make build`, configure `opencode.json`
+  with built binary path). SHA256 digest pinning prevents tag
+  substitution attacks and ensures reproducible builds. US1
+  acceptance scenarios 2-3 updated. Constitution MCP
+  Integration bullet updated. `internal/mcp/config.go` added
+  to plan for opencode.json management. Tasks renumbered
+  (T001-T054).

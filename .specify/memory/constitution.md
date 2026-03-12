@@ -303,7 +303,16 @@ conflicts with this constitution MUST be corrected to match.
 - **MCP Integration**: Pac-Man MUST integrate with the Gemara
   MCP server. MCP tool definitions MUST follow the MCP
   protocol specification. All MCP-exposed capabilities MUST
-  also be available via CLI for offline and CI use.
+  also be available via CLI for offline and CI use. MCP server
+  installation MUST be automated: the system resolves the
+  latest gemara-mcp release, retrieves the SHA256 commit
+  digest for that release, clones the repository (via SSH or
+  HTTPS per user preference), checks out the pinned commit by
+  digest (not by mutable tag), runs `make build`, and
+  configures the built binary path in the OpenCode MCP
+  configuration (`opencode.json`) as a local MCP server entry.
+  SHA256 digest pinning MUST be used to prevent tag
+  substitution attacks and ensure reproducible builds.
 - **Document Formats**: Input and output documents MUST support
   both YAML and JSON. YAML MUST be the default human-readable
   format; JSON MUST be supported for programmatic consumption.
@@ -316,6 +325,21 @@ conflicts with this constitution MUST be corrected to match.
   `make schema-check`). Contributors MUST NOT need to
   memorize tool-specific flags — the Makefile encapsulates
   them.
+- **Tool Installation**: Homebrew MUST be documented as the
+  preferred installation method for required and recommended
+  tools on macOS and Linux. Specifically:
+  - **CUE**: `brew install cue-lang/tap/cue` (required for
+    schema validation via local `cue vet` fallback).
+  - **Gitleaks**: `brew install gitleaks` (required for
+    pre-commit secret scanning).
+  - **OpenCode**: `brew install anomalyco/tap/opencode`
+    (recommended AI development harness).
+  Alternative installation methods (binary releases, install
+  scripts, package managers) MUST also be documented for each
+  tool. Homebrew is preferred because it provides a consistent
+  installation and upgrade experience across both supported
+  platforms and simplifies onboarding for contributors who may
+  be unfamiliar with manual binary installation.
 - **Dependencies**: Third-party dependencies beyond the CUE SDK,
   Gemara, and standard library MUST be justified before
   addition. The dependency MUST be actively maintained and

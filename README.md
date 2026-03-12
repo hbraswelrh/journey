@@ -162,7 +162,26 @@ schemas are currently Experimental.
 - [Gitleaks](https://github.com/gitleaks/gitleaks) (for secret
   scanning; installation guidance is provided on first use)
 
-Optional:
+### Recommended Installation via Homebrew
+
+Homebrew is the preferred installation method for required and
+recommended tools on macOS and Linux:
+
+```bash
+# CUE (required for schema validation)
+brew install cue-lang/tap/cue
+
+# Gitleaks (required for pre-commit secret scanning)
+brew install gitleaks
+
+# OpenCode (recommended AI development harness)
+brew install anomalyco/tap/opencode
+```
+
+Alternative installation methods (binary releases, install
+scripts) are documented in each tool's upstream repository.
+
+### Optional
 
 - [Gemara MCP server](https://github.com/gemaraproj/gemara-mcp)
   (for enhanced lexicon, validation, and schema documentation;
@@ -190,12 +209,27 @@ Latest), followed by role and activity discovery.
 
 ```
 pacman/
-  main.go                  # Application entry point
+  cmd/pacman/
+    main.go                # Application entry point
+  internal/
+    consts/                # Centralized constants (no magic strings)
+    mcp/                   # MCP server detection, installation,
+                           #   client, version compatibility,
+                           #   OpenCode config management
+    fallback/              # Local fallback (bundled lexicon,
+                           #   local CUE validation, cached
+                           #   schema docs)
+    session/               # Session state management
+    cli/                   # CLI commands and setup flows
   go.mod                   # Go module definition
+  Makefile                 # Single entry point for build/test/lint
   specs/                   # Feature specifications
     001-role-based-tutorial-engine/
       spec.md              # Role-based tutorial engine spec
+      plan.md              # Implementation plan (US1)
+      tasks.md             # Task breakdown (US1)
       checklists/          # Quality validation checklists
+  docs/adrs/               # Architecture Decision Records
   .specify/
     memory/
       constitution.md      # Project constitution (authoritative)

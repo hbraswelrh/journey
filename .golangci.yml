@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: Apache-2.0
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck
+    - goimports
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gosimple
+    - misspell
+    - revive
+    - gocritic
+
+linters-settings:
+  goimports:
+    local-prefixes: github.com/hbraswelrh/pacman
+  revive:
+    rules:
+      - name: blank-imports
+      - name: exported
+      - name: unexported-return
+      - name: var-naming
+      - name: error-return
+      - name: error-naming
+      - name: increment-decrement
+  gocritic:
+    enabled-checks:
+      - appendAssign
+      - dupArg
+      - dupCase
+      - dupSubExpr
+      - flagName
+      - sloppyLen
+  misspell:
+    locale: US
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck

@@ -31,12 +31,20 @@ operations:
   Gemara CUE module, providing contextual reference material
   during guided authoring and learning paths.
 
-The user may install the MCP server via a pre-built binary or
-Docker. If the user declines installation, Pac-Man MUST continue
-to function using local CUE tooling for validation and bundled
-lexicon data, but the system MUST inform the user which enhanced
-capabilities are unavailable without the MCP server and offer
-installation again at any point during the session.
+The system automates MCP server installation by resolving the
+latest release of the gemara-mcp repository, verifying the
+commit's SHA256 digest, cloning at that pinned commit (via SSH
+or HTTPS based on user preference), running `make build`, and
+configuring the built binary path in the OpenCode MCP
+configuration (`opencode.json`). Pinning to a SHA256 digest
+rather than a mutable tag prevents tag substitution attacks
+and guarantees reproducible builds. The user may also install
+via Docker as an alternative. If the user declines
+installation, Pac-Man MUST continue to function using local CUE
+tooling for validation and bundled lexicon data, but the system
+MUST inform the user which enhanced capabilities are unavailable
+without the MCP server and offer installation again at any point
+during the session.
 
 **Why this priority**: The MCP server provides the upstream
 lexicon, live schema validation, and schema documentation that
@@ -49,10 +57,11 @@ have a functional tool but with degraded capabilities.
 
 **Independent Test**: Can be fully tested by launching Pac-Man
 with the MCP server not installed, verifying the installation
-prompt appears, completing installation via binary or Docker,
-and confirming that the three MCP tools respond correctly. Also
-testable by declining installation and verifying that all
-features still function with local fallbacks.
+prompt appears, completing automated installation (clone, build,
+configure), and confirming that the three MCP tools respond
+correctly via OpenCode's MCP client. Also testable by declining
+installation and verifying that all features still function
+with local fallbacks.
 
 **Acceptance Scenarios**:
 
@@ -62,18 +71,27 @@ features still function with local fallbacks.
    Gemara MCP server with a brief explanation of the three tools
    it provides and how they enhance the Pac-Man experience.
 
-2. **Given** a user chooses to install the MCP server via binary,
-   **When** the system guides them through installation, **Then**
-   it provides platform-appropriate instructions (Linux or
-   macOS), verifies the binary is accessible, configures the MCP
-   client connection, and confirms the server responds to a
-   health check.
+2. **Given** a user chooses to install the MCP server from
+   source, **When** the system begins automated installation,
+   **Then** it asks the user whether to clone via SSH
+   (`git@github.com:gemaraproj/gemara-mcp.git`) or HTTPS
+   (`https://github.com/gemaraproj/gemara-mcp.git`), resolves
+   the latest release from the upstream repository, retrieves
+   the SHA256 commit digest for that release, clones the
+   repository and checks out the pinned commit by digest,
+   runs `make build` to produce the binary, verifies the
+   binary is accessible, writes or updates the OpenCode MCP
+   configuration (`opencode.json`) with the built binary path
+   as a local MCP server entry, and confirms the server
+   responds to a health check.
 
-3. **Given** a user chooses to install the MCP server via Docker,
-   **When** the system guides them through installation, **Then**
-   it provides the Docker run configuration, verifies the
-   container starts, and confirms the server responds to a
-   health check.
+3. **Given** a user chooses to install the MCP server via Docker
+   as an alternative to building from source, **When** the
+   system guides them through installation, **Then** it provides
+   the Docker run configuration, verifies the container starts,
+   and confirms the server responds to a health check. The
+   system also configures `opencode.json` with the appropriate
+   Docker-based MCP server entry.
 
 4. **Given** a user declines MCP server installation, **When**
    they proceed to use Pac-Man, **Then** the system informs them
@@ -715,10 +733,26 @@ schema.
   `validate_gemara_artifact`, `get_schema_docs`) and how each
   enhances the Pac-Man experience.
 - **FR-027**: System MUST support two MCP server installation
-  methods: pre-built binary and Docker. Installation guidance
-  MUST be platform-appropriate (Linux or macOS) and MUST
-  include verification that the server is running and
-  responsive.
+  methods: automated build from source and Docker.
+  - **Build from source** (preferred): The system MUST ask the
+    user whether to clone via SSH or HTTPS, resolve the latest
+    release from the upstream gemara-mcp repository, retrieve
+    the SHA256 commit digest for that release, clone the
+    repository, and check out the pinned commit by digest
+    (not by tag). Pinning to a SHA256 digest rather than a
+    mutable tag MUST be used to prevent tag substitution
+    attacks and ensure reproducible builds. The system MUST
+    then run `make build` to produce the binary, verify the
+    binary is accessible, and write or update the OpenCode
+    MCP configuration file (`opencode.json`) with a local MCP
+    server entry whose `command` references the built binary
+    path, ensuring the MCP server is available in subsequent
+    OpenCode sessions.
+  - **Docker**: The system MUST provide Docker run
+    configuration, verify the container starts, and configure
+    `opencode.json` with the appropriate MCP server entry.
+  Both methods MUST include verification that the server is
+  running and responds to a health check.
 - **FR-028**: When the Gemara MCP server is installed and
   running, the system MUST use it as the preferred source for
   lexicon data (`get_lexicon`), schema documentation
@@ -779,6 +813,23 @@ schema.
   through role identification (US3), schema version selection
   (US2), and MCP server setup (US1) without requiring prior
   knowledge of the project structure or tooling.
+- **FR-035**: The system MUST guide users through installation
+  of required and recommended tools as part of the onboarding
+  flow. Homebrew MUST be presented as the preferred
+  installation method on macOS and Linux for the following
+  tools:
+  - **CUE**: `brew install cue-lang/tap/cue` (required for
+    local schema validation when the Gemara MCP server is
+    unavailable).
+  - **Gitleaks**: `brew install gitleaks` (required for
+    pre-commit secret scanning per the project constitution).
+  - **OpenCode**: `brew install anomalyco/tap/opencode`
+    (recommended AI development harness per FR-033).
+  For each tool, the system MUST also document alternative
+  installation methods (binary releases, install scripts,
+  platform package managers) for users who do not use
+  Homebrew. The system MUST verify that each required tool
+  is accessible after installation before proceeding.
 
 ### Key Entities
 
@@ -870,7 +921,10 @@ schema.
   probing. New predefined roles and keywords can be added
   through configuration data without code changes (FR-025).
 - Users have `cue` installed locally for schema validation, as
-  documented in the Gemara project prerequisites.
+  documented in the Gemara project prerequisites. Homebrew is
+  the preferred installation method
+  (`brew install cue-lang/tap/cue`); alternative methods are
+  also documented.
 - The Gemara schema version is available from
   `cue.mod/module.cue` in the Gemara repository and can be
   read programmatically. Tagged releases in the upstream

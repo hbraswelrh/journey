@@ -82,12 +82,15 @@ internal/
 │   │                        #   check, tool invocation
 │   ├── client_test.go       # Positive/negative MCP client
 │   │                        #   tests
+│   ├── config.go            # Read/write OpenCode MCP config
+│   │                        #   (opencode.json)
+│   ├── config_test.go       # Config read/write tests
 │   ├── detect.go            # Auto-detection: is MCP server
 │   │                        #   installed and running?
 │   ├── detect_test.go       # Detection tests (binary found,
 │   │                        #   Docker running, neither)
-│   ├── install.go           # Installation guidance: binary
-│   │                        #   and Docker flows
+│   ├── install.go           # Automated installation: clone,
+│   │                        #   build, configure
 │   ├── install_test.go      # Installation flow tests
 │   ├── version.go           # Version compatibility checks
 │   │                        #   (gemara-mcp vs schema version)
@@ -157,20 +160,36 @@ into `internal/`.
 - Tests: MCP server found via binary, found via Docker, not
   found, found but unresponsive, disconnects mid-session.
 
-### Phase 3: MCP Installation Guidance (FR-026, FR-027)
+### Phase 3: MCP Automated Installation (FR-026, FR-027)
 
-- `internal/mcp/install.go`: Provide platform-appropriate
-  installation instructions for binary (Linux/macOS) and
-  Docker. Guide the user through installation steps. After
-  installation, verify the server is accessible and responds
-  to a health check.
+- `internal/mcp/install.go`: Automate the full gemara-mcp
+  installation pipeline:
+  1. Ask user for clone method preference (SSH or HTTPS).
+  2. Query the upstream gemara-mcp repository for the latest
+     release.
+  3. Retrieve the SHA256 commit digest for that release.
+  4. Clone the repository and check out the pinned commit by
+     digest (not by mutable tag) using the user's preferred
+     clone method.
+  5. Run `make build` in the cloned directory to produce the
+     binary.
+  6. Write or update `opencode.json` with a local MCP server
+     entry whose `command` references the built binary path.
+  7. Verify the server responds to a health check.
+  SHA256 digest pinning prevents tag substitution attacks and
+  ensures reproducible builds. Docker remains available as an
+  alternative method.
+- `internal/mcp/config.go`: Read and write the OpenCode MCP
+  configuration (`opencode.json`). Ensure the gemara-mcp
+  entry exists with the correct binary path and is enabled.
 - `internal/cli/setup.go`: First-launch prompt that explains
-  the three MCP tools, offers installation, and handles
-  accept/decline flow. If declined, inform user of degraded
-  capabilities.
-- Tests: User accepts binary install, user accepts Docker
-  install, user declines, re-offer on subsequent capability
-  request.
+  the three MCP tools, offers automated installation
+  (source build or Docker) or decline. If declined, inform
+  user of degraded capabilities.
+- Tests: User accepts source build via SSH, user accepts
+  source build via HTTPS, user accepts Docker, user declines,
+  re-offer on subsequent capability request, opencode.json
+  is correctly written with binary path.
 
 ### Phase 4: Local Fallback (FR-029)
 
