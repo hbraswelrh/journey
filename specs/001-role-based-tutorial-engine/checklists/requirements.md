@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-03-12
-**Updated**: 2026-03-12 (post gemara-mcp integration amendment)
+**Updated**: 2026-03-12 (post OpenCode harness integration amendment)
 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality
@@ -32,8 +32,8 @@
 
 ## Notes
 
-- All 16/16 items passed (fourth iteration after gemara-mcp
-  integration amendment).
+- All 16/16 items passed (fifth iteration after OpenCode
+  harness integration amendment).
 - New US1 (Gemara MCP Server Setup) added as P1 with 6
   acceptance scenarios. All subsequent stories reprioritized
   (P2-P6).
@@ -49,3 +49,14 @@
   minutes, SC-014 MCP-preferred sourcing with fallback).
 - Cross-references updated throughout (US numbering, US
   back-references in FR-024, FR-030, and narrative text).
+- 2 new functional requirements added (FR-033, FR-034):
+  OpenCode as preferred AI development harness and guided
+  onboarding interface, OpenCode-specific project configuration
+  for role-based flows.
+- US1 narrative updated to reference OpenCode as the interface
+  through which users launch Pac-Man.
+- New assumption added: users interact with Pac-Man through
+  OpenCode, with CLI fallback for users who choose not to use
+  it.
+- Constitution updated to v1.3.0 with OpenCode in Technology &
+  Integration Constraints and Agent and Automation Awareness.

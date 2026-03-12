@@ -9,12 +9,17 @@
 
 ### User Story 1 - Gemara MCP Server Setup (Priority: P1)
 
-When the user first launches Pac-Man, the system offers the
-option to install and configure the Gemara MCP server
+When the user first launches Pac-Man through
+[OpenCode](https://opencode.ai) — the preferred AI development
+harness for this project — the system offers the option to
+install and configure the Gemara MCP server
 ([github.com/gemaraproj/gemara-mcp](https://github.com/gemaraproj/gemara-mcp))
-as an enhanced authoring and learning companion. The MCP server
-provides direct access to three tools that augment Pac-Man's
-capabilities throughout all subsequent operations:
+as an enhanced authoring and learning companion. OpenCode guides
+the user through the entire setup process regardless of their
+role, ensuring they have the tools they need before proceeding.
+The MCP server provides direct access to three tools that
+augment Pac-Man's capabilities throughout all subsequent
+operations:
 
 - **get_lexicon**: Retrieve the upstream Gemara lexicon entries,
   ensuring all terminology used by Pac-Man and the user's
@@ -754,6 +759,26 @@ schema.
   MUST warn the user that compatibility cannot be verified and
   recommend updating to a gemara-mcp version that exposes this
   information.
+- **FR-033**: The system MUST use
+  [OpenCode](https://opencode.ai) as the preferred AI
+  development harness for guiding users through all Pac-Man
+  workflows. OpenCode MUST serve as the single entry point
+  through which users — regardless of their role — discover
+  what tools they need (CUE, Gemara MCP server, Go toolchain),
+  how to install them, and how to begin their role-appropriate
+  learning path. OpenCode's MCP server support MUST be used to
+  connect to the Gemara MCP server when available, enabling
+  direct access to `get_lexicon`, `validate_gemara_artifact`,
+  and `get_schema_docs` within the guided session.
+- **FR-034**: The system MUST provide OpenCode-specific
+  configuration (project rules, custom commands, and an
+  `AGENTS.md` file) that encodes role-based onboarding flows,
+  schema validation procedures, and Gemara authoring patterns.
+  These configurations MUST ensure that any user launching
+  OpenCode in the Pac-Man repository is immediately guided
+  through role identification (US3), schema version selection
+  (US2), and MCP server setup (US1) without requiring prior
+  knowledge of the project structure or tooling.
 
 ### Key Entities
 
@@ -821,6 +846,16 @@ schema.
 
 ### Assumptions
 
+- Users interact with Pac-Man through OpenCode
+  (`https://opencode.ai`), which serves as the AI development
+  harness and guided onboarding interface. OpenCode is open
+  source, runs on Linux and macOS, and supports MCP server
+  connections for integrating the Gemara MCP server directly
+  into the guided workflow. Users who choose not to use
+  OpenCode can still interact with Pac-Man's CLI directly,
+  but the guided onboarding experience (role discovery, tool
+  installation guidance, learning path navigation) is designed
+  for and optimized around OpenCode sessions.
 - The Gemara tutorials directory structure and file naming
   conventions will remain stable across minor versions. If
   the directory structure changes materially, content block

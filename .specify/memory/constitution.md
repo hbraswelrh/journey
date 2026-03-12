@@ -1,7 +1,7 @@
 <!--
   === Sync Impact Report ===
-  Version change: 1.1.0 → 1.2.0 (MINOR — 3 new principles,
-    2 new sections, existing sections expanded)
+  Version change: 1.2.0 → 1.3.0 (MINOR — new subsection,
+    existing section expanded)
   Modified principles:
     - I. Schema Conformance — unchanged
     - II. Gemara Layer Fidelity — unchanged
@@ -9,18 +9,17 @@
     - IV. Tutorial-First Design — unchanged
     - V. Incremental Delivery — unchanged
     - VI. Decision Documentation — unchanged
-  Added principles:
-    - VII. Centralized Constants
-    - VIII. Composability
-    - IX. Convention Over Configuration
-  Added sections:
-    - Repository Standard Files
-    - Coding Standards (Go subsection, agent lint awareness)
+    - VII. Centralized Constants — unchanged
+    - VIII. Composability — unchanged
+    - IX. Convention Over Configuration — unchanged
+  Added principles: none
+  Added sections: none
   Modified sections:
-    - Technology & Integration Constraints: added Makefile
-      requirement
-    - Development Workflow: added atomic PR rule; strengthened
-      PR description to require single-concern scope
+    - Technology & Integration Constraints: added OpenCode as
+      preferred AI development harness
+    - Coding Standards > Agent and Automation Awareness:
+      updated to reference OpenCode as the preferred agent
+      harness
   Removed sections: none
   Templates requiring updates:
     - .specify/templates/plan-template.md        ✅ no updates needed
@@ -324,6 +323,39 @@ conflicts with this constitution MUST be corrected to match.
   upstream dependencies MUST NOT be created. If an upstream
   fix is needed, the fix MUST be contributed back to the
   upstream project.
+- **AI Development Harness**:
+  [OpenCode](https://opencode.ai) is the preferred AI coding
+  agent for all Pac-Man development and user-facing guided
+  workflows. OpenCode serves as the single entry point through
+  which contributors and users — regardless of role — discover
+  what tools they need, how to install them, and how to get
+  started with the Pac-Man project. Specifically:
+  - OpenCode MUST be the recommended harness in all onboarding
+    documentation (`README.md`, `CONTRIBUTING.md`, tutorials).
+    Contributors SHOULD use OpenCode for code generation, code
+    review, and interactive development sessions.
+  - OpenCode MUST be configured with project-specific rules
+    (via `.opencode/rules/` or `AGENTS.md`) that encode this
+    constitution's principles, coding standards, and workflow
+    requirements so that AI-assisted development automatically
+    conforms to project governance.
+  - OpenCode's MCP server support MUST be used to connect to
+    the Gemara MCP server (`gemara-mcp`) when available,
+    enabling AI-assisted sessions to access `get_lexicon`,
+    `validate_gemara_artifact`, and `get_schema_docs` tools
+    directly within the development workflow.
+  - For end users interacting with Pac-Man's role-based
+    tutorial engine, OpenCode MUST guide them through the
+    complete onboarding flow: role identification, activity
+    probing, schema version selection, tool installation
+    (including CUE and the Gemara MCP server), and learning
+    path navigation — tailored to the user's stated role and
+    activities.
+  - OpenCode is open source and runs on Linux and macOS,
+    consistent with the project's supported platforms. It
+    MUST be installable via the methods documented at
+    `https://opencode.ai/docs` (install script, npm, Homebrew,
+    or binary release).
 - **License**: Apache License 2.0. All contributed code MUST be
   compatible with this license.
 
@@ -376,7 +408,8 @@ conflicts with this constitution MUST be corrected to match.
 
 Code agents (AI assistants, MCP tools, automated generators)
 are subject to the same standards as human contributors.
-Additionally:
+OpenCode is the preferred AI coding agent for this project
+(see Technology & Integration Constraints). Additionally:
 
 - Before generating or modifying code, agents MUST read the
   repository's lint and formatter configuration files
@@ -388,6 +421,15 @@ Additionally:
 - If no lint configuration is present for a given file type,
   agents MUST follow the language-specific defaults defined
   in this constitution.
+- OpenCode sessions MUST be initialized with `/init` to
+  generate an `AGENTS.md` file that encodes project-specific
+  context. This file MUST be committed to version control
+  and kept current as the project evolves.
+- OpenCode's rules and custom commands SHOULD be used to
+  codify recurring development patterns (e.g., schema
+  validation checks, Gemara artifact scaffolding) so that
+  all contributors — human and AI — follow consistent
+  procedures.
 
 ## Development Workflow
 
@@ -486,4 +528,4 @@ subordinate document MUST be amended to conform.
   governs process and non-negotiable constraints; guidance
   documents govern recommended patterns.
 
-**Version**: 1.2.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-03-12
+**Version**: 1.3.0 | **Ratified**: 2026-03-12 | **Last Amended**: 2026-03-12
