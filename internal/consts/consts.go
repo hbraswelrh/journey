@@ -24,13 +24,13 @@ const GemaraMCPCloneHTTPS = "https://github.com/gemaraproj/gemara-mcp.git"
 // server when built from source.
 const MCPBinaryName = "gemara-mcp"
 
-// MCPDockerContainer is the expected Docker container name for
+// MCPPodmanContainer is the expected Podman container name for
 // the Gemara MCP server.
-const MCPDockerContainer = "gemara-mcp"
+const MCPPodmanContainer = "gemara-mcp"
 
-// MCPDockerImage is the Docker image reference for the Gemara
-// MCP server.
-const MCPDockerImage = "ghcr.io/gemaraproj/gemara-mcp:latest"
+// MCPPodmanImage is the container image reference for the
+// Gemara MCP server.
+const MCPPodmanImage = "ghcr.io/gemaraproj/gemara-mcp:latest"
 
 // OpenCodeConfigFile is the OpenCode configuration file where
 // MCP server entries are registered.
@@ -89,6 +89,7 @@ const (
 	BrewInstallCUE      = "brew install cue-lang/tap/cue"
 	BrewInstallGitleaks = "brew install gitleaks"
 	BrewInstallOpenCode = "brew install anomalyco/tap/opencode"
+	BrewInstallPodman   = "brew install podman"
 )
 
 // CacheDir is the subdirectory name under the user's config

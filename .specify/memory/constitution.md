@@ -334,6 +334,8 @@ conflicts with this constitution MUST be corrected to match.
     pre-commit secret scanning).
   - **OpenCode**: `brew install anomalyco/tap/opencode`
     (recommended AI development harness).
+  - **Podman**: `brew install podman` (required if using the
+    Podman-based MCP server installation method).
   Alternative installation methods (binary releases, install
   scripts, package managers) MUST also be documented for each
   tool. Homebrew is preferred because it provides a consistent

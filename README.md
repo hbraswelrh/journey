@@ -176,6 +176,9 @@ brew install gitleaks
 
 # OpenCode (recommended AI development harness)
 brew install anomalyco/tap/opencode
+
+# Podman (for container-based MCP server installation)
+brew install podman
 ```
 
 Alternative installation methods (binary releases, install
@@ -185,7 +188,7 @@ scripts) are documented in each tool's upstream repository.
 
 - [Gemara MCP server](https://github.com/gemaraproj/gemara-mcp)
   (for enhanced lexicon, validation, and schema documentation;
-  installable via binary or Docker during first launch)
+  installable from source or via Podman during first launch)
 
 ## Getting Started
 

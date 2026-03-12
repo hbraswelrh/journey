@@ -10,7 +10,7 @@
 User Story 1 (Gemara MCP Server Setup) is the highest-priority
 deliverable. When a user launches Pac-Man through OpenCode, the
 system detects whether the Gemara MCP server is installed,
-offers installation via binary or Docker if it is not, and
+offers installation from source or via Podman if it is not, and
 configures the MCP client connection. If the user declines, the
 system falls back to local CUE tooling and bundled lexicon data.
 The MCP server provides three tools (`get_lexicon`,
@@ -88,7 +88,7 @@ internal/
 │   ├── detect.go            # Auto-detection: is MCP server
 │   │                        #   installed and running?
 │   ├── detect_test.go       # Detection tests (binary found,
-│   │                        #   Docker running, neither)
+│   │                        #   Podman running, neither)
 │   ├── install.go           # Automated installation: clone,
 │   │                        #   build, configure
 │   ├── install_test.go      # Installation flow tests
@@ -149,15 +149,15 @@ into `internal/`.
 ### Phase 2: MCP Detection and Client (FR-030, FR-028)
 
 - `internal/mcp/detect.go`: Detect whether gemara-mcp binary
-  is in PATH or a Docker container named `gemara-mcp` is
-  running. Return detection result with method (binary/Docker/
+  is in PATH or a Podman container named `gemara-mcp` is
+  running. Return detection result with method (binary/Podman/
   not found).
 - `internal/mcp/client.go`: MCP client that connects to the
   detected server, performs health checks, and invokes the
   three tools (`get_lexicon`, `validate_gemara_artifact`,
   `get_schema_docs`). Must handle connection timeouts and
   mid-session disconnection gracefully.
-- Tests: MCP server found via binary, found via Docker, not
+- Tests: MCP server found via binary, found via Podman, not
   found, found but unresponsive, disconnects mid-session.
 
 ### Phase 3: MCP Automated Installation (FR-026, FR-027)
@@ -177,17 +177,17 @@ into `internal/`.
      entry whose `command` references the built binary path.
   7. Verify the server responds to a health check.
   SHA256 digest pinning prevents tag substitution attacks and
-  ensures reproducible builds. Docker remains available as an
+  ensures reproducible builds. Podman remains available as an
   alternative method.
 - `internal/mcp/config.go`: Read and write the OpenCode MCP
   configuration (`opencode.json`). Ensure the gemara-mcp
   entry exists with the correct binary path and is enabled.
 - `internal/cli/setup.go`: First-launch prompt that explains
   the three MCP tools, offers automated installation
-  (source build or Docker) or decline. If declined, inform
+  (source build or Podman) or decline. If declined, inform
   user of degraded capabilities.
 - Tests: User accepts source build via SSH, user accepts
-  source build via HTTPS, user accepts Docker, user declines,
+  source build via HTTPS, user accepts Podman, user declines,
   re-offer on subsequent capability request, opencode.json
   is correctly written with binary path.
 

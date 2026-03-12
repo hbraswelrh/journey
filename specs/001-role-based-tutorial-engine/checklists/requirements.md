@@ -38,7 +38,7 @@
   acceptance scenarios. All subsequent stories reprioritized
   (P2-P6).
 - 5 new functional requirements added (FR-026 through FR-030):
-  MCP installation prompt, binary/Docker installation methods,
+  MCP installation prompt, binary/Podman installation methods,
   MCP-preferred data sourcing, local fallback behavior, and
   auto-detection of existing installations.
 - FR-010 (validation) and FR-011 (lexicon) updated to reference

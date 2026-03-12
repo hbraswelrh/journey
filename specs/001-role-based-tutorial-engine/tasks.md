@@ -57,10 +57,10 @@ errors. Project structure matches plan.
   `internal/mcp/detect_test.go`: MCP binary found in PATH
   returns `(detected, method=binary)`
 - [ ] T009 [P] [US1] Write test
-  `internal/mcp/detect_test.go`: Docker container
-  `gemara-mcp` running returns `(detected, method=docker)`
+  `internal/mcp/detect_test.go`: Podman container
+  `gemara-mcp` running returns `(detected, method=podman)`
 - [ ] T010 [P] [US1] Write test
-  `internal/mcp/detect_test.go`: Neither binary nor Docker
+  `internal/mcp/detect_test.go`: Neither binary nor Podman
   found returns `(not detected)`
 - [ ] T011 [P] [US1] Write test
   `internal/mcp/client_test.go`: Health check succeeds when
@@ -76,7 +76,7 @@ errors. Project structure matches plan.
 
 - [ ] T014 [US1] Implement `internal/mcp/detect.go`:
   `Detect() (DetectionResult, error)` — check PATH for
-  `gemara-mcp` binary, check Docker for running container,
+  `gemara-mcp` binary, check Podman for running container,
   return detection result with installation method
 - [ ] T015 [US1] Implement `internal/mcp/client.go`:
   `NewClient(config) (*Client, error)` — MCP client with
@@ -86,7 +86,7 @@ errors. Project structure matches plan.
   disconnection
 
 **Checkpoint**: `make test` passes for `internal/mcp/`. MCP
-detection correctly identifies binary, Docker, and not-found
+detection correctly identifies binary, Podman, and not-found
 states.
 
 ---
@@ -112,8 +112,8 @@ configure) when not detected
   `internal/mcp/install_test.go`: `make build` produces
   expected binary in cloned directory
 - [ ] T020 [P] [US1] Write test
-  `internal/mcp/install_test.go`: Docker installation
-  generates correct Docker run configuration
+  `internal/mcp/install_test.go`: Podman installation
+  generates correct Podman run configuration
 - [ ] T021 [P] [US1] Write test
   `internal/mcp/install_test.go`: Post-installation
   verification confirms server responds to health check
@@ -146,7 +146,7 @@ configure) when not detected
   error)` — clone repo via SSH or HTTPS, check out the
   pinned commit by SHA256 digest (not mutable tag), run
   `make build`, return path to built binary.
-  `InstallDocker() error` — Docker alternative.
+  `InstallPodman() error` — Podman alternative.
 - [ ] T028 [US1] Implement `internal/mcp/config.go`:
   `ReadOpenCodeConfig(path) (*OpenCodeConfig, error)` and
   `WriteOpenCodeConfig(path, config) error` — read/write
@@ -159,13 +159,13 @@ configure) when not detected
   verify required tools (CUE, Gitleaks) are installed
   with Homebrew as the preferred installation method
   (FR-035), explain MCP tools, offer automated source
-  build (SSH/HTTPS) or Docker or decline for gemara-mcp,
+  build (SSH/HTTPS) or Podman or decline for gemara-mcp,
   execute chosen installation method, configure
   `opencode.json`, record user choices in session state
 
 **Checkpoint**: Full automated installation flow testable
 end-to-end. User can accept source build (SSH or HTTPS) or
-Docker or decline, with `opencode.json` correctly configured.
+Podman or decline, with `opencode.json` correctly configured.
 
 ---
 

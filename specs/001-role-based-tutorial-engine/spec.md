@@ -39,7 +39,7 @@ configuring the built binary path in the OpenCode MCP
 configuration (`opencode.json`). Pinning to a SHA256 digest
 rather than a mutable tag prevents tag substitution attacks
 and guarantees reproducible builds. The user may also install
-via Docker as an alternative. If the user declines
+via Podman as an alternative. If the user declines
 installation, Pac-Man MUST continue to function using local CUE
 tooling for validation and bundled lexicon data, but the system
 MUST inform the user which enhanced capabilities are unavailable
@@ -85,13 +85,14 @@ with local fallbacks.
    as a local MCP server entry, and confirms the server
    responds to a health check.
 
-3. **Given** a user chooses to install the MCP server via Docker
+3. **Given** a user chooses to install the MCP server via Podman
    as an alternative to building from source, **When** the
-   system guides them through installation, **Then** it provides
-   the Docker run configuration, verifies the container starts,
-   and confirms the server responds to a health check. The
-   system also configures `opencode.json` with the appropriate
-   Docker-based MCP server entry.
+   system guides them through installation, **Then** it verifies
+   Podman is installed (offering `brew install podman` if not),
+   provides the Podman run configuration, verifies the container
+   starts, and confirms the server responds to a health check.
+   The system also configures `opencode.json` with the
+   appropriate Podman-based MCP server entry.
 
 4. **Given** a user declines MCP server installation, **When**
    they proceed to use Pac-Man, **Then** the system informs them
@@ -554,7 +555,7 @@ schema.
   releases were found.
 
 - What happens when the Gemara MCP server was installed but
-  becomes unavailable mid-session (e.g., Docker container
+  becomes unavailable mid-session (e.g., Podman container
   stops, binary crashes)? The system MUST detect the
   disconnection, notify the user, automatically fall back to
   local equivalents (bundled lexicon, local CUE validation,
@@ -733,7 +734,7 @@ schema.
   `validate_gemara_artifact`, `get_schema_docs`) and how each
   enhances the Pac-Man experience.
 - **FR-027**: System MUST support two MCP server installation
-  methods: automated build from source and Docker.
+  methods: automated build from source and Podman.
   - **Build from source** (preferred): The system MUST ask the
     user whether to clone via SSH or HTTPS, resolve the latest
     release from the upstream gemara-mcp repository, retrieve
@@ -748,9 +749,11 @@ schema.
     server entry whose `command` references the built binary
     path, ensuring the MCP server is available in subsequent
     OpenCode sessions.
-  - **Docker**: The system MUST provide Docker run
-    configuration, verify the container starts, and configure
-    `opencode.json` with the appropriate MCP server entry.
+  - **Podman**: The system MUST verify Podman is installed
+    (offering `brew install podman` if not), provide Podman
+    run configuration, verify the container starts, and
+    configure `opencode.json` with the appropriate MCP server
+    entry.
   Both methods MUST include verification that the server is
   running and responds to a health check.
 - **FR-028**: When the Gemara MCP server is installed and
@@ -825,6 +828,8 @@ schema.
     pre-commit secret scanning per the project constitution).
   - **OpenCode**: `brew install anomalyco/tap/opencode`
     (recommended AI development harness per FR-033).
+  - **Podman**: `brew install podman` (required if using the
+    Podman-based MCP server installation method per FR-027).
   For each tool, the system MUST also document alternative
   installation methods (binary releases, install scripts,
   platform package managers) for users who do not use
@@ -888,7 +893,7 @@ schema.
 
 - **MCP Server Connection**: The Gemara MCP server instance
   used by the current session. Attributes: installation method
-  (binary or Docker), connection status (running, stopped, not
+  (binary or Podman), connection status (running, stopped, not
   installed), server version, Gemara schema version the server
   was built against, compatibility status with the user's
   selected schema version (compatible, mismatched, unknown),
@@ -1006,7 +1011,7 @@ schema.
 - **SC-013**: Users who install the Gemara MCP server can
   complete the installation and verify server connectivity
   within 5 minutes, with no more than 3 steps for either the
-  binary or Docker installation method.
+  binary or Podman installation method.
 
 - **SC-014**: When the MCP server is available, all lexicon
   lookups, schema documentation requests, and artifact
