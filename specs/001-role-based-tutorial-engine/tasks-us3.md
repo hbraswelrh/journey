@@ -12,51 +12,51 @@ FR-025)
 
 ### Tests
 
-- [ ] T201 [P] [US3] Write test
+- [x] T201 [P] [US3] Write test
   `internal/roles/roles_test.go`: PredefinedRoles returns
   the required minimum list (Security Engineer, Compliance
   Officer, CISO/Security Leader, Developer, Platform
   Engineer, Policy Author, Auditor)
-- [ ] T202 [P] [US3] Write test
+- [x] T202 [P] [US3] Write test
   `internal/roles/roles_test.go`: Role struct contains
   required fields (name, description, default keywords,
   default layer mappings, source)
-- [ ] T203 [P] [US3] Write test
+- [x] T203 [P] [US3] Write test
   `internal/roles/activities_test.go`: ExtractKeywords
   extracts known domain terms from free-text description
   (e.g., "CI/CD pipeline management" yields "CI/CD")
-- [ ] T204 [P] [US3] Write test
+- [x] T204 [P] [US3] Write test
   `internal/roles/activities_test.go`: ExtractKeywords
   returns empty slice for text with no recognizable
   domain keywords
-- [ ] T205 [P] [US3] Write test
+- [x] T205 [P] [US3] Write test
   `internal/roles/activities_test.go`: KeywordMapping maps
   Layer 1 keywords (EU CRA, NIST, best practices,
   machine-readable format) correctly
-- [ ] T206 [P] [US3] Write test
+- [x] T206 [P] [US3] Write test
   `internal/roles/activities_test.go`: KeywordMapping maps
   Layer 2 keywords (SDLC, threat modeling, CI/CD, OSPS
   Baseline, FINOS CCC) correctly
-- [ ] T207 [P] [US3] Write test
+- [x] T207 [P] [US3] Write test
   `internal/roles/activities_test.go`: KeywordMapping maps
   Layer 3 keywords (create policy, timeline for adherence,
   risk appetite, audit interviews) correctly
-- [ ] T208 [P] [US3] Write test
+- [x] T208 [P] [US3] Write test
   `internal/roles/activities_test.go`: Ambiguous keywords
   spanning Layers 1 and 3 (evidence collection) are
   identified by ClarificationNeeded
 
 ### Implementation
 
-- [ ] T209 [US3] Add predefined role constants and
+- [x] T209 [US3] Add predefined role constants and
   keyword-to-layer mapping to `internal/consts/consts.go`:
   role names, descriptions, default keywords per role,
   default layer mappings per role, domain keyword vocabulary
   with layer associations
-- [ ] T210 [US3] Implement `internal/roles/roles.go`:
+- [x] T210 [US3] Implement `internal/roles/roles.go`:
   `Role` struct, `ActivityProfile` struct,
   `KeywordMapping` type, `PredefinedRoles() []Role` function
-- [ ] T211 [US3] Implement `internal/roles/activities.go`:
+- [x] T211 [US3] Implement `internal/roles/activities.go`:
   `ExtractKeywords(description string) []string`,
   `ClarificationNeeded(keywords []string) []string`,
   `ResolveLayerMappings(role *Role, keywords []string)
@@ -71,29 +71,29 @@ defined. ExtractKeywords identifies domain terms from free-text.
 
 ### Tests
 
-- [ ] T212 [P] [US3] Write test
+- [x] T212 [P] [US3] Write test
   `internal/tutorials/loader_test.go`: LoadTutorials from
   valid directory returns structured tutorial index with
   titles, layers, and section headings
-- [ ] T213 [P] [US3] Write test
+- [x] T213 [P] [US3] Write test
   `internal/tutorials/loader_test.go`: LoadTutorials from
   empty directory returns empty list with no error
-- [ ] T214 [P] [US3] Write test
+- [x] T214 [P] [US3] Write test
   `internal/tutorials/loader_test.go`: LoadTutorials from
   nonexistent directory returns informative error with
   expected path and resolution guidance
-- [ ] T215 [P] [US3] Write test
+- [x] T215 [P] [US3] Write test
   `internal/tutorials/loader_test.go`: LoadTutorials detects
   tutorials referencing schemas unavailable in the selected
   version and flags them
 
 ### Implementation
 
-- [ ] T216 [US3] Create test fixtures in `testdata/tutorials/`:
+- [x] T216 [US3] Create test fixtures in `testdata/tutorials/`:
   sample tutorial files with front matter (title, layer,
   schema version), valid structure, and an empty directory
   variant
-- [ ] T217 [US3] Implement `internal/tutorials/loader.go`:
+- [x] T217 [US3] Implement `internal/tutorials/loader.go`:
   `Tutorial` struct (title, file path, layer, sections,
   schema version references).
   `LoadTutorials(dir string) ([]Tutorial, error)` — scan
@@ -114,40 +114,40 @@ FR-023)
 
 ### Tests
 
-- [ ] T218 [P] [US3] Write test
+- [x] T218 [P] [US3] Write test
   `internal/roles/roles_test.go`: MatchRole with exact
   predefined name returns the role with high confidence
-- [ ] T219 [P] [US3] Write test
+- [x] T219 [P] [US3] Write test
   `internal/roles/roles_test.go`: MatchRole with partial
   match ("Product Security Engineer" contains "Security
   Engineer") returns partial match result — does NOT assume
   the generic role
-- [ ] T220 [P] [US3] Write test
+- [x] T220 [P] [US3] Write test
   `internal/roles/roles_test.go`: MatchRole with completely
   unknown title returns no match
-- [ ] T221 [P] [US3] Write test
+- [x] T221 [P] [US3] Write test
   `internal/cli/role_prompt_test.go`: Selecting a predefined
   role from the list proceeds to activity probing with that
   role
-- [ ] T222 [P] [US3] Write test
+- [x] T222 [P] [US3] Write test
   `internal/cli/role_prompt_test.go`: Selecting "My role
   isn't listed" accepts free-text input and shows partial
   matches for confirmation
-- [ ] T223 [P] [US3] Write test
+- [x] T223 [P] [US3] Write test
   `internal/cli/role_prompt_test.go`: Entering a custom role
   with no partial match proceeds to activity probing with
   extracted keywords only
 
 ### Implementation
 
-- [ ] T224 [US3] Implement `internal/roles/roles.go`:
+- [x] T224 [US3] Implement `internal/roles/roles.go`:
   `MatchRole(input string) (*Role, MatchResult)` — extract
   keywords from free-text role input, compare against
   predefined role names and keywords, return match type
   (exact, partial, none) with confidence.
   `MatchResult` struct: matched role (if any), match type,
   overlapping keywords, confidence level
-- [ ] T225 [US3] Implement `internal/cli/role_prompt.go`:
+- [x] T225 [US3] Implement `internal/cli/role_prompt.go`:
   Phase 1 flow — present predefined role list plus "My role
   isn't listed" option. Handle free-text input, call
   MatchRole, present partial matches for user confirmation.
@@ -163,52 +163,52 @@ FR-021, FR-022, FR-023)
 
 ### Tests
 
-- [ ] T226 [P] [US3] Write test
+- [x] T226 [P] [US3] Write test
   `internal/roles/activities_test.go`: Security Engineer +
   "CI/CD pipeline management, dependency management, coding
   with upstream open-source components" resolves to Layer 2
   (Threats & Controls) emphasis
-- [ ] T227 [P] [US3] Write test
+- [x] T227 [P] [US3] Write test
   `internal/roles/activities_test.go`: Security Engineer +
   "evidence collection, audit interviews, defining
   compliance scope" resolves to Layers 1 and 3 emphasis
-- [ ] T228 [P] [US3] Write test
+- [x] T228 [P] [US3] Write test
   `internal/roles/activities_test.go`: Same role title with
   different activities produces different layer mappings
-- [ ] T229 [P] [US3] Write test
+- [x] T229 [P] [US3] Write test
   `internal/roles/activities_test.go`: "map my best
   practices to the EU CRA" extracts keywords "best
   practices," "map," "EU CRA" and routes to Layer 1
-- [ ] T230 [P] [US3] Write test
+- [x] T230 [P] [US3] Write test
   `internal/roles/activities_test.go`: "create a reusable
   machine-readable format for my internal standards" routes
   to Layer 1
-- [ ] T231 [P] [US3] Write test
+- [x] T231 [P] [US3] Write test
   `internal/roles/activities_test.go`: "create a policy and
   define a timeline for adherence" routes to Layer 3
-- [ ] T232 [P] [US3] Write test
+- [x] T232 [P] [US3] Write test
   `internal/roles/activities_test.go`: Ambiguous keyword
   "evidence collection" triggers clarifying follow-up
   between Layers 1 and 3
-- [ ] T233 [P] [US3] Write test
+- [x] T233 [P] [US3] Write test
   `internal/cli/role_prompt_test.go`: No recognizable
   keywords in activity description presents full activity
   category list for manual selection
-- [ ] T234 [P] [US3] Write test
+- [x] T234 [P] [US3] Write test
   `internal/cli/role_prompt_test.go`: "Secure Software
   Development professional" role extracts "SDLC" keyword
   and presents relevant activity categories
 
 ### Implementation
 
-- [ ] T235 [US3] Implement `internal/roles/activities.go`:
+- [x] T235 [US3] Implement `internal/roles/activities.go`:
   complete activity probing logic — `ExtractKeywords`
   handles full sentences and multi-word domain terms,
   `ResolveLayerMappings` combines role defaults with
   keyword-resolved layers to produce a unified
   `ActivityProfile`, `ClarificationNeeded` returns
   ambiguous keywords (those matching multiple layers)
-- [ ] T236 [US3] Implement `internal/cli/role_prompt.go`:
+- [x] T236 [US3] Implement `internal/cli/role_prompt.go`:
   Phase 2 flow — ask user to describe activities or select
   from categories, call ExtractKeywords, handle ambiguous
   keywords with clarifying questions via the prompter,
@@ -227,42 +227,42 @@ role with different activities. Ambiguous keywords handled.
 
 ### Tests
 
-- [ ] T237 [P] [US3] Write test
+- [x] T237 [P] [US3] Write test
   `internal/tutorials/path_test.go`: GeneratePath produces
   an ordered list of PathSteps based on the ActivityProfile
   layer mappings
-- [ ] T238 [P] [US3] Write test
+- [x] T238 [P] [US3] Write test
   `internal/tutorials/path_test.go`: Every PathStep has
   non-empty why, how, and what annotations tailored to the
   user's stated activities (not generic role text)
-- [ ] T239 [P] [US3] Write test
+- [x] T239 [P] [US3] Write test
   `internal/tutorials/path_test.go`: Learning path for
   Security Engineer (CI/CD focus) starts with Threat
   Assessment Guide and Control Catalog Guide (Layer 2)
-- [ ] T240 [P] [US3] Write test
+- [x] T240 [P] [US3] Write test
   `internal/tutorials/path_test.go`: Learning path for
   Security Engineer (audit focus) starts with Guidance
   Catalog Guide (Layer 1) and Policy Guide (Layer 3)
-- [ ] T241 [P] [US3] Write test
+- [x] T241 [P] [US3] Write test
   `internal/tutorials/path_test.go`: Non-linear navigation —
   accessing a later step without completing earlier ones
   shows prerequisite note
-- [ ] T242 [P] [US3] Write test
+- [x] T242 [P] [US3] Write test
   `internal/tutorials/path_test.go`: Activities spanning
   multiple layers produce a combined learning path ordered
   by user-stated priority
-- [ ] T243 [P] [US3] Write test
+- [x] T243 [P] [US3] Write test
   `internal/tutorials/path_test.go`: Layers with no
   tutorials (e.g., Layers 6-7) produce informative message
   with fallback to model documentation
-- [ ] T244 [P] [US3] Write test
+- [x] T244 [P] [US3] Write test
   `internal/tutorials/path_test.go`: Schema version mismatch
   between tutorial and selected version is flagged in path
   step
 
 ### Implementation
 
-- [ ] T245 [US3] Implement `internal/tutorials/path.go`:
+- [x] T245 [US3] Implement `internal/tutorials/path.go`:
   `LearningPath` struct (target role, ordered steps,
   completion map).
   `PathStep` struct (tutorial reference, layer, why/how/what
@@ -286,32 +286,32 @@ supported.
 
 ### Tests
 
-- [ ] T246 [P] [US3] Write test
+- [x] T246 [P] [US3] Write test
   `internal/roles/profiles_test.go`: SaveProfile writes a
   valid YAML file with role name, keywords, layer mappings,
   and description
-- [ ] T247 [P] [US3] Write test
+- [x] T247 [P] [US3] Write test
   `internal/roles/profiles_test.go`: LoadProfile reads a
   saved profile and returns the correct RoleProfile struct
-- [ ] T248 [P] [US3] Write test
+- [x] T248 [P] [US3] Write test
   `internal/roles/profiles_test.go`: ListProfiles returns
   all saved profiles from the profiles directory
-- [ ] T249 [P] [US3] Write test
+- [x] T249 [P] [US3] Write test
   `internal/roles/profiles_test.go`: Saved custom profiles
   appear in the role selection list alongside predefined
   roles
-- [ ] T250 [P] [US3] Write test
+- [x] T250 [P] [US3] Write test
   `internal/cli/role_prompt_test.go`: After completing
   discovery, user can save their profile as a custom role
   for future reuse
 
 ### Implementation
 
-- [ ] T251 [US3] Add profile directory and file constants to
+- [x] T251 [US3] Add profile directory and file constants to
   `internal/consts/consts.go`: profile directory path
   (`~/.config/pacman/roles/`), profile file extension
   (`.yaml`)
-- [ ] T252 [US3] Implement `internal/roles/profiles.go`:
+- [x] T252 [US3] Implement `internal/roles/profiles.go`:
   `RoleProfile` struct (role name, activity keywords, layer
   mappings, description, created timestamp).
   `SaveProfile(dir string, profile *RoleProfile) error` —
@@ -323,7 +323,7 @@ supported.
   `MergeWithPredefined(predefined []Role,
   custom []RoleProfile) []Role` — combine predefined and
   custom roles into a unified selection list
-- [ ] T253 [US3] Update `internal/cli/role_prompt.go`:
+- [x] T253 [US3] Update `internal/cli/role_prompt.go`:
   after learning path generation, offer to save the profile.
   On role selection, include saved custom profiles in the
   list via MergeWithPredefined
@@ -335,32 +335,32 @@ profiles appear in the role selection list.
 
 ## Phase 7: CLI Integration and Polish
 
-- [ ] T254 [US3] Update `internal/session/session.go`:
+- [x] T254 [US3] Update `internal/session/session.go`:
   add `RoleProfile *ActivityProfile` and `LearningPath
   *LearningPath` fields to the `Session` struct with
   appropriate getter/setter methods
-- [ ] T255 [US3] Update `internal/cli/setup.go`:
+- [x] T255 [US3] Update `internal/cli/setup.go`:
   call role discovery flow after version selection completes,
   passing the session from SetupResult. Wire the full flow:
   MCP setup -> version selection -> role discovery
-- [ ] T256 [US3] Implement learning path TUI display in
+- [x] T256 [US3] Implement learning path TUI display in
   `internal/cli/role_prompt.go`: styled output using
   existing lipgloss styles — render the learning path with
   numbered steps, layer badges, and why/how/what sections.
   Use panelStyle for path overview and headingStyle for
   section headers
-- [ ] T257 [US3] Integration test: full flow from MCP setup
+- [x] T257 [US3] Integration test: full flow from MCP setup
   through version selection through role discovery with
   "Security Engineer" + CI/CD activities — verify session
   has correct ActivityProfile and LearningPath targeting
   Layer 2
-- [ ] T258 [US3] Integration test: full flow with custom role
+- [x] T258 [US3] Integration test: full flow with custom role
   "Product Security Engineer" + audit activities — verify
   partial match identification, activity probing, and
   Layer 1/3 learning path
-- [ ] T259 [US3] Verify all CLI help text and error messages
+- [x] T259 [US3] Verify all CLI help text and error messages
   use Gemara lexicon terms consistently (FR-011)
-- [ ] T260 [US3] Verify `make build`, `make test`, `make lint`
+- [x] T260 [US3] Verify `make build`, `make test`, `make lint`
   pass with zero errors and zero warnings
 
 **Checkpoint**: US3 is fully functional. A user can launch

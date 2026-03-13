@@ -53,6 +53,45 @@ type Session struct {
 	// DegradedCapabilities lists capabilities that are
 	// unavailable or degraded in the current session.
 	DegradedCapabilities []string
+
+	// RoleName is the identified role name for this
+	// session.
+	RoleName string
+
+	// ActivityKeywords are the extracted activity keywords
+	// from the user's description.
+	ActivityKeywords []string
+
+	// ResolvedLayers are the Gemara layer numbers resolved
+	// from role + activity probing.
+	ResolvedLayers []int
+
+	// LearningPathSteps is the number of steps in the
+	// generated learning path.
+	LearningPathSteps int
+}
+
+// SetRoleProfile stores role discovery results in the session.
+func (s *Session) SetRoleProfile(
+	roleName string,
+	keywords []string,
+	layers []int,
+	pathSteps int,
+) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.RoleName = roleName
+	s.ActivityKeywords = keywords
+	s.ResolvedLayers = layers
+	s.LearningPathSteps = pathSteps
+}
+
+// GetRoleName returns the session's identified role name.
+func (s *Session) GetRoleName() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.RoleName
 }
 
 // NewSessionWithMCP creates a session with an active MCP

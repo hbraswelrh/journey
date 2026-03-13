@@ -129,3 +129,40 @@ func TestSession_HandleReconnection(t *testing.T) {
 		)
 	}
 }
+
+// T254: Session stores role profile data.
+func TestSessionSetRoleProfile(t *testing.T) {
+	s := session.NewSessionWithMCP("v0.20.0")
+
+	s.SetRoleProfile(
+		"Security Engineer",
+		[]string{"CI/CD", "SDLC"},
+		[]int{2, 1},
+		3,
+	)
+
+	if s.GetRoleName() != "Security Engineer" {
+		t.Errorf(
+			"expected 'Security Engineer', got %s",
+			s.GetRoleName(),
+		)
+	}
+	if len(s.ActivityKeywords) != 2 {
+		t.Errorf(
+			"expected 2 keywords, got %d",
+			len(s.ActivityKeywords),
+		)
+	}
+	if len(s.ResolvedLayers) != 2 {
+		t.Errorf(
+			"expected 2 layers, got %d",
+			len(s.ResolvedLayers),
+		)
+	}
+	if s.LearningPathSteps != 3 {
+		t.Errorf(
+			"expected 3 path steps, got %d",
+			s.LearningPathSteps,
+		)
+	}
+}

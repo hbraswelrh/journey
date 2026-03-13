@@ -10,6 +10,7 @@ import (
 
 	"github.com/hbraswelrh/pacman/internal/mcp"
 	"github.com/hbraswelrh/pacman/internal/session"
+	"github.com/hbraswelrh/pacman/internal/tutorials"
 )
 
 // UserPrompter abstracts user input for testing.
@@ -38,6 +39,14 @@ type SetupConfig struct {
 	// VersionCachePath is the path to the local release
 	// cache file.
 	VersionCachePath string
+	// RolePrompter handles free-text input for role
+	// discovery. When set (along with TutorialsDir),
+	// RunSetup will run role discovery after version
+	// selection.
+	RolePrompter FreeTextPrompter
+	// TutorialsDir is the path to the Gemara tutorials
+	// directory. Required for role discovery.
+	TutorialsDir string
 }
 
 // SetupResult holds the outcome of the setup flow.
@@ -88,7 +97,86 @@ func RunSetup(
 		}
 	}
 
+	// Run role discovery if configured.
+	if cfg.RolePrompter != nil {
+		roleCfg := &RolePromptConfig{
+			Prompter:      cfg.RolePrompter,
+			TutorialsDir:  cfg.TutorialsDir,
+			SchemaVersion: result.Session.SchemaVersion,
+		}
+		roleResult, err := RunRoleDiscovery(
+			roleCfg, out,
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"role discovery: %w", err,
+			)
+		}
+
+		// Store role profile in session.
+		if roleResult.Profile != nil {
+			roleName := ""
+			if roleResult.Profile.Role != nil {
+				roleName = roleResult.Profile.
+					Role.Name
+			}
+			pathSteps := 0
+			if roleResult.Tutorials != nil {
+				path := generateLearningPath(
+					roleResult, out,
+				)
+				if path != nil {
+					pathSteps = len(path.Steps)
+				}
+			}
+			result.Session.SetRoleProfile(
+				roleName,
+				roleResult.Profile.ExtractedKeywords,
+				roleResult.Profile.
+					UniqueLayerNumbers(),
+				pathSteps,
+			)
+		}
+	}
+
 	return result, nil
+}
+
+// generateLearningPath builds and displays the learning path.
+func generateLearningPath(
+	roleResult *RolePromptResult,
+	out io.Writer,
+) *tutorials.LearningPath {
+	if roleResult.Profile == nil ||
+		len(roleResult.Tutorials) == 0 {
+		return nil
+	}
+
+	path := tutorials.GeneratePath(
+		roleResult.Profile,
+		roleResult.Tutorials,
+		"", // Version already checked in RolePromptResult
+	)
+
+	if len(path.Steps) > 0 {
+		RenderLearningPath(path, out)
+	}
+
+	// Report missing layers.
+	covered := make(map[int]bool)
+	for _, step := range path.Steps {
+		covered[step.Layer] = true
+	}
+	for _, layer := range roleResult.Profile.
+		UniqueLayerNumbers() {
+		if !covered[layer] {
+			fmt.Fprintln(out, RenderNote(
+				tutorials.MissingLayerMessage(layer),
+			))
+		}
+	}
+
+	return path
 }
 
 // runMCPSetup handles MCP detection and installation.

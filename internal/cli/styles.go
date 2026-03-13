@@ -3,10 +3,14 @@
 package cli
 
 import (
+	"fmt"
+	"io"
+
 	lipgloss "charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
 
 	"github.com/hbraswelrh/pacman/internal/consts"
+	"github.com/hbraswelrh/pacman/internal/tutorials"
 )
 
 // Color palette for the Pac-Man TUI.
@@ -187,4 +191,68 @@ func RenderSuccess(msg string) string {
 // RenderStatus formats a status/progress message.
 func RenderStatus(msg string) string {
 	return subtleStyle.Render("▸") + " " + msg
+}
+
+// RenderLearningPath displays a styled learning path with
+// numbered steps, layer badges, and why/how/what sections.
+func RenderLearningPath(
+	path *tutorials.LearningPath,
+	out io.Writer,
+) {
+	fmt.Fprintln(out)
+	header := headingStyle.Render(
+		"Your Tailored Learning Path",
+	)
+	if path.TargetRole != "" {
+		header += " " + faintStyle.Render(
+			"("+path.TargetRole+")",
+		)
+	}
+	fmt.Fprintln(out, header)
+	fmt.Fprintln(out)
+
+	for i, step := range path.Steps {
+		stepNum := fmt.Sprintf("Step %d", i+1)
+		layerBadge := fmt.Sprintf(
+			"Layer %d", step.Layer,
+		)
+
+		fmt.Fprintf(out, "  %s  %s  %s\n",
+			successStyle.Render(stepNum),
+			titleStyle.Render(" "+layerBadge+" "),
+			step.Tutorial.Title,
+		)
+
+		fmt.Fprintf(out,
+			"    %s %s\n",
+			headingStyle.Render("Why:"),
+			step.WhyAnnotation,
+		)
+		fmt.Fprintf(out,
+			"    %s %s\n",
+			headingStyle.Render("How:"),
+			step.HowAnnotation,
+		)
+		fmt.Fprintf(out,
+			"    %s %s\n",
+			headingStyle.Render("What:"),
+			step.WhatAnnotation,
+		)
+
+		if step.VersionMismatch != nil {
+			fmt.Fprintf(out,
+				"    %s\n",
+				RenderWarning(fmt.Sprintf(
+					"Tutorial uses schema %s "+
+						"(you selected %s)",
+					step.VersionMismatch.
+						TutorialVersion,
+					step.VersionMismatch.
+						SelectedVersion,
+				)),
+			)
+		}
+
+		fmt.Fprintln(out)
+	}
 }

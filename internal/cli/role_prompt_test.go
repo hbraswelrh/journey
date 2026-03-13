@@ -308,6 +308,126 @@ func TestRoleDiscovery_LoadsTutorials(t *testing.T) {
 	}
 }
 
+// T257: Integration test — Security Engineer + CI/CD
+// activities produces Layer 2 learning path.
+func TestRoleDiscovery_IntegrationCICD(t *testing.T) {
+	var buf bytes.Buffer
+
+	cfg := &cli.RolePromptConfig{
+		Prompter: &mockFreeTextPrompter{
+			choices: []int{0}, // Security Engineer
+			texts: []string{
+				"CI/CD pipeline management, " +
+					"dependency management, and " +
+					"coding with upstream " +
+					"open-source components",
+			},
+		},
+		TutorialsDir:  filepath.Join("..", "tutorials", "testdata", "valid"),
+		SchemaVersion: "v0.18.0",
+	}
+
+	result, err := cli.RunRoleDiscovery(cfg, &buf)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify profile targets Layer 2.
+	if result.Profile == nil {
+		t.Fatal("expected non-nil profile")
+	}
+	layers := result.Profile.UniqueLayerNumbers()
+	hasL2 := false
+	for _, l := range layers {
+		if l == consts.LayerThreatsControls {
+			hasL2 = true
+			break
+		}
+	}
+	if !hasL2 {
+		t.Errorf(
+			"expected Layer 2 for CI/CD activities, "+
+				"got layers: %v",
+			layers,
+		)
+	}
+
+	// Verify role is Security Engineer.
+	if result.Profile.Role.Name !=
+		consts.RoleSecurityEngineer {
+		t.Errorf(
+			"expected role %s, got %s",
+			consts.RoleSecurityEngineer,
+			result.Profile.Role.Name,
+		)
+	}
+}
+
+// T258: Integration test — custom "Product Security
+// Engineer" + audit activities produces Layer 1/3 path.
+func TestRoleDiscovery_IntegrationAudit(t *testing.T) {
+	var buf bytes.Buffer
+
+	predefined := roles.PredefinedRoles()
+	customIdx := len(predefined)
+
+	cfg := &cli.RolePromptConfig{
+		Prompter: &mockFreeTextPrompter{
+			choices: []int{
+				customIdx, // "My role isn't listed"
+				2,         // "Both layers" for
+				//   ambiguous "evidence collection"
+			},
+			texts: []string{
+				"Product Security Engineer",
+				"evidence collection, audit " +
+					"interviews, and defining " +
+					"compliance scope",
+			},
+		},
+		TutorialsDir:  filepath.Join("..", "tutorials", "testdata", "valid"),
+		SchemaVersion: "v0.18.0",
+	}
+
+	result, err := cli.RunRoleDiscovery(cfg, &buf)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Profile == nil {
+		t.Fatal("expected non-nil profile")
+	}
+
+	// Verify partial match was identified.
+	output := buf.String()
+	if !strings.Contains(output, "partially matches") {
+		t.Errorf(
+			"expected partial match message, got: %s",
+			output,
+		)
+	}
+
+	// Verify layers include 1 and/or 3.
+	layers := result.Profile.UniqueLayerNumbers()
+	hasL1 := false
+	hasL3 := false
+	for _, l := range layers {
+		if l == consts.LayerGuidance {
+			hasL1 = true
+		}
+		if l == consts.LayerRiskPolicy {
+			hasL3 = true
+		}
+	}
+	if !hasL1 && !hasL3 {
+		t.Errorf(
+			"expected Layers 1 and/or 3 for audit "+
+				"activities, got layers: %v",
+			layers,
+		)
+	}
+}
+
 // Ambiguous keywords trigger clarification question.
 func TestRoleDiscovery_AmbiguousKeywords(t *testing.T) {
 	var buf bytes.Buffer
