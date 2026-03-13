@@ -218,7 +218,19 @@ func runTutorialStep(
 		)
 
 		fmt.Fprintln(out)
-		_, err := cfg.Prompter.Ask(question, qOpts)
+		qChoice, err := cfg.Prompter.Ask(
+			question, qOpts,
+		)
+		if err != nil {
+			return false, err
+		}
+
+		// Run follow-up prompts based on the user's
+		// answer to deepen understanding.
+		err = runFollowUps(
+			cfg, section.Heading, qChoice,
+			qOpts, out,
+		)
 		if err != nil {
 			return false, err
 		}
@@ -294,6 +306,316 @@ func runTutorialStep(
 			return false, nil
 		}
 	}
+}
+
+// runFollowUps asks targeted follow-up questions based on
+// the user's answer to the main section question. This
+// ensures all paths are explored — e.g., choosing "Import
+// from FINOS CCC" still prompts about custom items.
+func runFollowUps(
+	cfg *TutorialPromptConfig,
+	heading string,
+	choice int,
+	options []string,
+	out io.Writer,
+) error {
+	lower := strings.ToLower(heading)
+	if choice < 0 || choice >= len(options) {
+		return nil
+	}
+	selected := strings.ToLower(options[choice])
+
+	// --- Capability Identification follow-ups ---
+	if strings.Contains(lower, "capability") &&
+		strings.Contains(lower, "ident") {
+		return followUpCapabilities(
+			cfg, selected, out,
+		)
+	}
+
+	// --- Threat Identification follow-ups ---
+	if strings.Contains(lower, "threat") &&
+		strings.Contains(lower, "ident") {
+		return followUpThreats(cfg, selected, out)
+	}
+
+	// --- Control Structure / Authoring follow-ups ---
+	if strings.Contains(lower, "control") &&
+		(strings.Contains(lower, "structure") ||
+			strings.Contains(lower, "authoring") ||
+			strings.Contains(lower, "custom")) {
+		return followUpControls(cfg, selected, out)
+	}
+
+	// --- Importing External Catalogs follow-ups ---
+	if strings.Contains(lower, "importing") {
+		return followUpImporting(cfg, selected, out)
+	}
+
+	return nil
+}
+
+func followUpCapabilities(
+	cfg *TutorialPromptConfig,
+	selected string,
+	out io.Writer,
+) error {
+	roleCtx := ""
+	if cfg.RoleName != "" {
+		roleCtx = " for your " + cfg.RoleName + " work"
+	}
+
+	if strings.Contains(selected, "import") &&
+		!strings.Contains(selected, "custom") &&
+		!strings.Contains(selected, "both") {
+		// User chose import only — ask about custom.
+		fmt.Fprintln(out)
+		fmt.Fprintln(out, stepBarStyle.Render(
+			subtleStyle.Render(
+				"FINOS CCC Core provides common "+
+					"capabilities like Active "+
+					"Ingestion (CP29) and Resource "+
+					"Versioning (CP18). But your "+
+					"component likely has unique "+
+					"capabilities too.",
+			),
+		))
+
+		_, err := cfg.Prompter.Ask(
+			"Would you also like to define custom "+
+				"capabilities specific to your "+
+				"component"+roleCtx+"?",
+			[]string{
+				"Yes, define custom capabilities too",
+				"No, imported capabilities are sufficient",
+				"Show me what custom capabilities look like",
+			},
+		)
+		return err
+	}
+
+	if strings.Contains(selected, "custom") &&
+		!strings.Contains(selected, "import") &&
+		!strings.Contains(selected, "both") {
+		// User chose custom only — suggest imports.
+		fmt.Fprintln(out)
+		fmt.Fprintln(out, stepBarStyle.Render(
+			subtleStyle.Render(
+				"Before defining everything from "+
+					"scratch, consider importing from "+
+					"FINOS CCC Core. It provides "+
+					"well-vetted capabilities that "+
+					"apply broadly across cloud "+
+					"services and can save time.",
+			),
+		))
+
+		_, err := cfg.Prompter.Ask(
+			"Would you also like to import "+
+				"capabilities from FINOS CCC Core?",
+			[]string{
+				"Yes, import from CCC and add custom",
+				"No, custom capabilities only",
+			},
+		)
+		return err
+	}
+
+	return nil
+}
+
+func followUpThreats(
+	cfg *TutorialPromptConfig,
+	selected string,
+	out io.Writer,
+) error {
+	roleCtx := ""
+	if cfg.RoleName != "" {
+		roleCtx = " in your " + cfg.RoleName + " role"
+	}
+
+	if strings.Contains(selected, "import") &&
+		!strings.Contains(selected, "custom") &&
+		!strings.Contains(selected, "both") {
+		// User chose imported threats only.
+		fmt.Fprintln(out)
+		fmt.Fprintln(out, stepBarStyle.Render(
+			subtleStyle.Render(
+				"CCC Core threats cover common "+
+					"attack patterns, but your "+
+					"component will have unique "+
+					"threat scenarios that imported "+
+					"catalogs don't address.",
+			),
+		))
+
+		_, err := cfg.Prompter.Ask(
+			"Would you also like to define custom "+
+				"threats for your component"+
+				roleCtx+"?",
+			[]string{
+				"Yes, define custom threats too",
+				"No, imported threats cover my scope",
+				"Show me the custom threat structure",
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		// MITRE ATT&CK follow-up.
+		fmt.Fprintln(out)
+		_, err = cfg.Prompter.Ask(
+			"Would you like to link threats to "+
+				"MITRE ATT&CK techniques? This adds "+
+				"structured vector entries for threat "+
+				"intelligence.",
+			[]string{
+				"Yes, link to MITRE ATT&CK",
+				"No, skip MITRE ATT&CK linking",
+				"What is MITRE ATT&CK linking?",
+			},
+		)
+		return err
+	}
+
+	if strings.Contains(selected, "custom") &&
+		!strings.Contains(selected, "import") &&
+		!strings.Contains(selected, "both") {
+		// User chose custom only — suggest imports.
+		fmt.Fprintln(out)
+		fmt.Fprintln(out, stepBarStyle.Render(
+			subtleStyle.Render(
+				"Before defining all threats from "+
+					"scratch, check if CCC Core "+
+					"already defines threats for "+
+					"the capabilities you imported. "+
+					"For example, TH14 (Older "+
+					"Resource Versions) maps to "+
+					"CP18 (Resource Versioning).",
+			),
+		))
+
+		_, err := cfg.Prompter.Ask(
+			"Would you also like to check for "+
+				"imported threats from CCC Core?",
+			[]string{
+				"Yes, import matching CCC threats",
+				"No, define all threats custom",
+			},
+		)
+		return err
+	}
+
+	// For "both" or "show structure" — ask about MITRE.
+	fmt.Fprintln(out)
+	_, err := cfg.Prompter.Ask(
+		"Would you like to link threats to "+
+			"MITRE ATT&CK techniques?",
+		[]string{
+			"Yes, link to MITRE ATT&CK",
+			"No, skip MITRE ATT&CK linking",
+			"What is MITRE ATT&CK linking?",
+		},
+	)
+	return err
+}
+
+func followUpControls(
+	cfg *TutorialPromptConfig,
+	selected string,
+	out io.Writer,
+) error {
+	// After any control-related answer, prompt about
+	// assessment requirements.
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, stepBarStyle.Render(
+		subtleStyle.Render(
+			"Each control needs assessment "+
+				"requirements — testable conditions "+
+				"that evaluators use to determine "+
+				"pass or fail. Use the pattern:\n\n"+
+				"  \"When [condition], [subject] MUST "+
+				"[observable action].\"\n\n"+
+				"Good: \"When YAML is submitted, the "+
+				"server MUST reject payloads exceeding "+
+				"a configured maximum size.\"\n"+
+				"Bad: \"User input MUST be validated.\"",
+		),
+	))
+
+	_, err := cfg.Prompter.Ask(
+		"How would you like to define assessment "+
+			"requirements?",
+		[]string{
+			"Write requirements per control",
+			"Start with examples and adapt",
+			"Show me the requirement format",
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	// Follow-up: threat mapping.
+	fmt.Fprintln(out)
+	_, err = cfg.Prompter.Ask(
+		"Would you like to map controls to "+
+			"threats from your Threat Catalog?",
+		[]string{
+			"Yes, link controls to threat IDs",
+			"No, define controls without threat mapping",
+			"Show me how threat mapping works",
+		},
+	)
+	return err
+}
+
+func followUpImporting(
+	cfg *TutorialPromptConfig,
+	selected string,
+	out io.Writer,
+) error {
+	if strings.Contains(selected, "finos") ||
+		strings.Contains(selected, "ccc") {
+		fmt.Fprintln(out)
+		fmt.Fprintln(out, stepBarStyle.Render(
+			subtleStyle.Render(
+				"FINOS CCC Core provides pre-built "+
+					"controls with threat mappings. "+
+					"You can import these and add "+
+					"your own custom controls on top.",
+			),
+		))
+
+		_, err := cfg.Prompter.Ask(
+			"Would you also like to define custom "+
+				"controls specific to your component?",
+			[]string{
+				"Yes, import CCC and add custom controls",
+				"No, imported controls are sufficient",
+				"Show me how to combine imports and custom",
+			},
+		)
+		return err
+	}
+
+	if strings.Contains(selected, "osps") {
+		fmt.Fprintln(out)
+		_, err := cfg.Prompter.Ask(
+			"OSPS Baseline focuses on open source "+
+				"project security. Would you also "+
+				"like to import from FINOS CCC Core "+
+				"for cloud-specific controls?",
+			[]string{
+				"Yes, import from both OSPS and CCC",
+				"No, OSPS Baseline only",
+			},
+		)
+		return err
+	}
+
+	return nil
 }
 
 // SplitSectionBody splits a section body into an intro

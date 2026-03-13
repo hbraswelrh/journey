@@ -87,24 +87,26 @@ func testLearningPath() *tutorials.LearningPath {
 func TestRunTutorialPlayer_SelectAndWalk(t *testing.T) {
 	t.Parallel()
 
-	// For each section: question choice + nav choice
-	// 4 sections = 8 Ask calls + 1 select + 1 back
+	// For each section: question + follow-ups + nav
 	prompter := &tutorialMockPrompter{
 		choices: []int{
 			0, // Select first tutorial
 			// Section 1 (Scope Definition):
-			0, // Answer focused question
+			0, // Answer focused question (no follow-up)
 			0, // Continue to next section
 			// Section 2 (Capability Identification):
-			0, // Answer focused question
+			0, // "Import from FINOS CCC Core"
+			0, // Follow-up: "also define custom?" -> Yes
 			0, // Continue to next section
 			// Section 3 (Threat Identification):
-			0, // Answer focused question
+			0, // "Check for imported threats"
+			0, // Follow-up: "also custom threats?" -> Yes
+			0, // Follow-up: MITRE ATT&CK -> Yes
 			0, // Continue to next section
 			// Section 4 (CUE Validation):
-			0, // Answer focused question
+			0, // Answer focused question (no follow-up)
 			// Last section nav: [Go back, Mark complete,
-			//   Back to tutorial list]
+			//   Back to list]
 			1, // Mark complete
 			2, // Back to main menu (from step list)
 		},
