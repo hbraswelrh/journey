@@ -54,12 +54,6 @@ var (
 	faintStyle = lipgloss.NewStyle().
 			Foreground(colorFaint)
 
-	panelStyle = lipgloss.NewStyle().
-			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(colorPrimary).
-			Padding(1, 2)
-
-	// Additional styles for the role discovery flow.
 	sectionDivider = lipgloss.NewStyle().
 			Foreground(colorDim)
 
@@ -100,15 +94,23 @@ var (
 	answerStyle = lipgloss.NewStyle().
 			Foreground(colorSuccess)
 
-	stepCardStyle = lipgloss.NewStyle().
-			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(colorDim).
-			Padding(0, 2).
-			MarginLeft(2)
-
 	roleInfoStyle = lipgloss.NewStyle().
 			Foreground(colorOrange).
 			Bold(true)
+
+	// stepBarStyle uses a left-side colored border only.
+	// No box outline — just a vertical accent bar with
+	// padding. This wraps cleanly at any terminal width.
+	stepBarStyle = lipgloss.NewStyle().
+			BorderStyle(lipgloss.ThickBorder()).
+			BorderLeft(true).
+			BorderRight(false).
+			BorderTop(false).
+			BorderBottom(false).
+			BorderForeground(colorPrimary).
+			PaddingLeft(2).
+			MarginLeft(2).
+			MarginBottom(1)
 )
 
 // LayerNames maps Gemara layer numbers to display names.
@@ -196,8 +198,8 @@ func RenderMCPToolsPanel() string {
 	)
 }
 
-// RenderSessionStatus returns a styled session summary
-// including role and learning path information.
+// RenderSessionStatus returns a styled session summary.
+// Uses simple indented text — no box borders.
 func RenderSessionStatus(
 	version string,
 	fallback bool,
@@ -218,19 +220,21 @@ func RenderSessionStatus(
 	}
 	fallbackLine := "  " + mLabel + " " + modeLabel
 
-	content := lipgloss.JoinVertical(
+	return lipgloss.JoinVertical(
 		lipgloss.Left,
+		"",
+		RenderDivider(),
+		"",
 		header,
 		"",
 		versionLine,
 		fallbackLine,
+		"",
 	)
-
-	return "\n" + panelStyle.Render(content) + "\n"
 }
 
 // RenderSessionRoleInfo returns a styled role/path summary
-// to display after the session panel.
+// to display after the session status.
 func RenderSessionRoleInfo(
 	roleName string,
 	pathSteps int,
@@ -309,7 +313,7 @@ func RenderAnswer(answer string) string {
 }
 
 // RenderLearningPath displays a styled learning path with
-// numbered steps inside bordered cards, layer badges, and
+// numbered steps, left-bar accent, layer badges, and
 // color-coded why/how/what annotations.
 func RenderLearningPath(
 	path *tutorials.LearningPath,
@@ -335,8 +339,8 @@ func RenderLearningPath(
 	}
 }
 
-// renderPathStep renders a single learning path step as a
-// styled card with layer badge and annotations.
+// renderPathStep renders a single learning path step with
+// a left-side color bar accent and indented annotations.
 func renderPathStep(
 	index int,
 	step tutorials.PathStep,
@@ -358,15 +362,14 @@ func renderPathStep(
 		step.Tutorial.Title,
 	)
 
-	// Build the card content.
-	whyLabel := annotationLabelStyle.Render("Why:")
+	whyLabel := annotationLabelStyle.Render("Why: ")
 	whyText := annotationTextStyle.Render(
-		" " + step.WhyAnnotation,
+		step.WhyAnnotation,
 	)
 
-	howLabel := annotationLabelStyle.Render("How:")
+	howLabel := annotationLabelStyle.Render("How: ")
 	howText := annotationTextStyle.Render(
-		" " + step.HowAnnotation,
+		step.HowAnnotation,
 	)
 
 	whatLabel := annotationLabelStyle.Render("What:")
@@ -374,26 +377,18 @@ func renderPathStep(
 		" " + step.WhatAnnotation,
 	)
 
-	var cardLines []string
-	cardLines = append(cardLines, "")
-	cardLines = append(cardLines,
-		stepNum+"  "+badge+"  "+title,
-	)
-	cardLines = append(cardLines, "")
-	cardLines = append(cardLines,
-		"  "+whyLabel+whyText,
-	)
-	cardLines = append(cardLines,
-		"  "+howLabel+howText,
-	)
-	cardLines = append(cardLines,
-		"  "+whatLabel+whatText,
-	)
+	lines := []string{
+		stepNum + "  " + badge + "  " + title,
+		"",
+		whyLabel + whyText,
+		howLabel + howText,
+		whatLabel + whatText,
+	}
 
 	if step.VersionMismatch != nil {
-		cardLines = append(cardLines, "")
-		cardLines = append(cardLines,
-			"  "+RenderWarning(fmt.Sprintf(
+		lines = append(lines, "")
+		lines = append(lines,
+			RenderWarning(fmt.Sprintf(
 				"Tutorial uses schema %s "+
 					"(you selected %s)",
 				step.VersionMismatch.TutorialVersion,
@@ -402,11 +397,8 @@ func renderPathStep(
 		)
 	}
 
-	cardLines = append(cardLines, "")
-
-	cardContent := strings.Join(cardLines, "\n")
-	fmt.Fprintln(out, stepCardStyle.Render(cardContent))
-	fmt.Fprintln(out)
+	content := strings.Join(lines, "\n")
+	fmt.Fprintln(out, stepBarStyle.Render(content))
 }
 
 // RenderLayerBadge returns a styled inline layer badge.
