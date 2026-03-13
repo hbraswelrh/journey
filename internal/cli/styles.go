@@ -99,6 +99,10 @@ var (
 			Foreground(colorOrange).
 			Bold(true)
 
+	orangeStyle = lipgloss.NewStyle().
+			Foreground(colorOrange).
+			Bold(true)
+
 	// stepBarStyle uses a left-side colored border only.
 	// No box outline — just a vertical accent bar with
 	// padding. This wraps cleanly at any terminal width.
@@ -1045,6 +1049,102 @@ func RenderAuthoringProgress(
 		successStyle.Render(bar),
 		pct,
 	)
+}
+
+// RenderTutorialHeader renders the header for a tutorial
+// step with title, layer badge, role-specific motivation,
+// and section count.
+func RenderTutorialHeader(
+	title string,
+	layer int,
+	whyAnnotation string,
+	sectionCount int,
+) string {
+	var lines []string
+	lines = append(lines,
+		tutorialTitleStyle.Render(title)+
+			"  "+RenderLayerBadge(layer),
+	)
+	lines = append(lines, "")
+	if whyAnnotation != "" {
+		lines = append(lines,
+			annotationLabelStyle.Render("Why: ")+
+				annotationTextStyle.Render(
+					whyAnnotation,
+				),
+		)
+		lines = append(lines, "")
+	}
+	lines = append(lines,
+		faintStyle.Render(fmt.Sprintf(
+			"%d sections to complete", sectionCount,
+		)),
+	)
+	content := strings.Join(lines, "\n")
+	return stepBarStyle.Render(content)
+}
+
+// RenderTutorialSection renders a single tutorial section
+// with its heading, body content, position indicator, and
+// role-personalized context.
+func RenderTutorialSection(
+	heading string,
+	body string,
+	current int,
+	total int,
+	tutorialTitle string,
+	roleName string,
+) string {
+	progress := fmt.Sprintf(
+		"Section %d of %d", current+1, total,
+	)
+
+	var lines []string
+	lines = append(lines,
+		stepNumStyle.Render(progress)+"  "+
+			headingStyle.Render(heading),
+	)
+	lines = append(lines, "")
+
+	// Render the section body with wrapping.
+	if body != "" {
+		bodyLines := strings.Split(
+			strings.TrimSpace(body), "\n",
+		)
+		for _, bl := range bodyLines {
+			bl = strings.TrimSpace(bl)
+			if bl == "" {
+				lines = append(lines, "")
+				continue
+			}
+			lines = append(lines, bl)
+		}
+	} else {
+		lines = append(lines,
+			faintStyle.Render(
+				"(This section has no content yet.)",
+			),
+		)
+	}
+
+	// Add role context if available.
+	if roleName != "" {
+		lines = append(lines, "")
+		lines = append(lines,
+			annotationLabelStyle.Render("Context: ")+
+				annotationTextStyle.Render(
+					fmt.Sprintf(
+						"As a %s, apply this "+
+							"section's concepts to "+
+							"your daily workflows.",
+						roleName,
+					),
+				),
+		)
+	}
+
+	content := strings.Join(lines, "\n")
+	return stepBarStyle.Render(content)
 }
 
 // min returns the smaller of two ints.

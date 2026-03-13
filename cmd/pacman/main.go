@@ -17,8 +17,10 @@ import (
 	"github.com/hbraswelrh/pacman/internal/cli"
 	"github.com/hbraswelrh/pacman/internal/consts"
 	"github.com/hbraswelrh/pacman/internal/mcp"
+	"github.com/hbraswelrh/pacman/internal/roles"
 	"github.com/hbraswelrh/pacman/internal/schema"
 	"github.com/hbraswelrh/pacman/internal/session"
+	"github.com/hbraswelrh/pacman/internal/tutorials"
 )
 
 // huhPrompter implements cli.FreeTextPrompter using the
@@ -309,8 +311,8 @@ func runMainMenu(
 	}
 }
 
-// runTutorialFlow displays the user's learning path and
-// offers to start a tutorial step.
+// runTutorialFlow regenerates the learning path and
+// launches the interactive tutorial player.
 func runTutorialFlow(
 	prompter cli.FreeTextPrompter,
 	sess *session.Session,
@@ -323,7 +325,23 @@ func runTutorialFlow(
 		return
 	}
 
-	if sess.LearningPathSteps == 0 {
+	// Load tutorials and regenerate the learning path.
+	tuts, err := tutorials.LoadTutorials(tutorialsDir)
+	if err != nil {
+		fmt.Println(cli.RenderWarning(
+			"Could not load tutorials: " + err.Error(),
+		))
+		return
+	}
+
+	// Build a minimal activity profile for path
+	// generation.
+	profile := buildProfileFromSession(sess)
+	path := tutorials.GeneratePath(
+		profile, tuts, sess.SchemaVersion,
+	)
+
+	if path == nil || len(path.Steps) == 0 {
 		fmt.Println(cli.RenderNote(
 			"No tutorials matched your role and " +
 				"activities. Try different keywords.",
@@ -331,18 +349,38 @@ func runTutorialFlow(
 		return
 	}
 
-	lipgloss.Println(cli.RenderSessionRoleInfo(
-		sess.GetRoleName(),
-		sess.LearningPathSteps,
-	))
+	// Launch the interactive tutorial player.
+	tutCfg := &cli.TutorialPromptConfig{
+		Prompter:     prompter,
+		LearningPath: path,
+		TutorialsDir: tutorialsDir,
+		RoleName:     sess.GetRoleName(),
+	}
 
-	fmt.Println()
-	fmt.Println(cli.RenderNote(
-		"Tutorial content is delivered through the " +
-			"Gemara tutorials in " + tutorialsDir + ". " +
-			"Follow the learning path steps above " +
-			"in order.",
-	))
+	result, err := cli.RunTutorialPlayer(
+		tutCfg, os.Stdout,
+	)
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"\nTutorial error: %v\n", err,
+		)
+		return
+	}
+
+	// Update session with completion count.
+	completed := 0
+	for _, done := range result.CompletedSteps {
+		if done {
+			completed++
+		}
+	}
+	if completed > 0 {
+		fmt.Println(cli.RenderSuccess(fmt.Sprintf(
+			"%d of %d tutorials completed",
+			completed, len(path.Steps),
+		)))
+	}
 }
 
 // runTeamFlow runs the interactive team collaboration
@@ -547,6 +585,35 @@ func homeConfigDir() string {
 		return "."
 	}
 	return filepath.Join(home, ".config")
+}
+
+// buildProfileFromSession creates a minimal ActivityProfile
+// from session state for learning path regeneration.
+func buildProfileFromSession(
+	sess *session.Session,
+) *roles.ActivityProfile {
+	var layers []roles.LayerMapping
+	for _, l := range sess.ResolvedLayers {
+		layers = append(layers, roles.LayerMapping{
+			Layer:      l,
+			Confidence: roles.ConfidenceStrong,
+		})
+	}
+
+	predefined := roles.PredefinedRoles()
+	var role *roles.Role
+	for i := range predefined {
+		if predefined[i].Name == sess.GetRoleName() {
+			role = &predefined[i]
+			break
+		}
+	}
+
+	return &roles.ActivityProfile{
+		Role:              role,
+		ExtractedKeywords: sess.ActivityKeywords,
+		ResolvedLayers:    layers,
+	}
 }
 
 // truncateSHAStr truncates a SHA to 12 chars for display.
