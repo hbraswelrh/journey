@@ -124,3 +124,35 @@ const ReleaseCacheFile = "releases.json"
 // SessionHealthCheckInterval is the interval in seconds between
 // MCP server health checks during an active session.
 const SessionHealthCheckInterval = 30
+
+// Gemara layer numbers. The seven-layer model is Gemara's core
+// organizing framework.
+const (
+	LayerGuidance          = 1
+	LayerThreatsControls   = 2
+	LayerRiskPolicy        = 3
+	LayerSensitiveActivity = 4
+	LayerEvaluation        = 5
+	LayerDataCollection    = 6
+	LayerReporting         = 7
+)
+
+// Predefined role names per FR-002. This list MUST be updated
+// as research identifies new personas.
+const (
+	RoleSecurityEngineer  = "Security Engineer"
+	RoleComplianceOfficer = "Compliance Officer"
+	RoleCISO              = "CISO/Security Leader"
+	RoleDeveloper         = "Developer"
+	RolePlatformEngineer  = "Platform Engineer"
+	RolePolicyAuthor      = "Policy Author"
+	RoleAuditor           = "Auditor"
+	RoleCustom            = "My role isn't listed"
+)
+
+// RoleProfileDir is the subdirectory under the user's config
+// directory where custom role profiles are stored.
+const RoleProfileDir = "pacman/roles"
+
+// RoleProfileExt is the file extension for saved role profiles.
+const RoleProfileExt = ".yaml"
