@@ -17,6 +17,7 @@ import (
 	"github.com/hbraswelrh/pacman/internal/consts"
 	"github.com/hbraswelrh/pacman/internal/mcp"
 	"github.com/hbraswelrh/pacman/internal/schema"
+	"github.com/hbraswelrh/pacman/internal/session"
 )
 
 // huhPrompter implements cli.FreeTextPrompter using the
@@ -234,5 +235,155 @@ func main() {
 			result.Session.GetRoleName(),
 			result.Session.LearningPathSteps,
 		))
+	}
+
+	// Demo mode: continue with team collaboration and
+	// guided authoring demonstrations.
+	if demoMode {
+		runDemoTeamAndAuthoring(
+			result.Session, tutorialsDir,
+		)
+	}
+}
+
+// runDemoTeamAndAuthoring runs the US5 team collaboration
+// view and US6 guided authoring flow in demo mode with
+// predefined inputs.
+func runDemoTeamAndAuthoring(
+	sess *session.Session,
+	tutorialsDir string,
+) {
+	// --- US5: Team Collaboration View ---
+	//
+	// Team prompt call sequence:
+	// AskText: team name
+	// AskText: member 1 name
+	// Ask:     member 1 role (0=Security Engineer)
+	// AskText: member 2 name
+	// Ask:     member 2 role (1=Compliance Officer)
+	// AskText: member 3 name
+	// Ask:     member 3 role (3=Developer)
+	// AskText: "" (finish adding members)
+	teamDemo := &demoPrompter{
+		choices: []int{0, 1, 3},
+		texts: []string{
+			"GRC Product Team",
+			"Alice",
+			"Bob",
+			"Carol",
+			"", // finish adding members
+		},
+	}
+
+	teamCfg := &cli.TeamPromptConfig{
+		Prompter:      teamDemo,
+		TutorialsDir:  tutorialsDir,
+		SchemaVersion: sess.SchemaVersion,
+		TeamConfigDir: filepath.Join(
+			os.TempDir(), "pacman-demo-teams",
+		),
+	}
+
+	teamResult, err := cli.RunTeamSetup(
+		teamCfg, os.Stdout,
+	)
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"\nTeam setup error: %v\n", err,
+		)
+		return
+	}
+
+	if teamResult.Team != nil {
+		sess.SetTeamInfo(
+			teamResult.Team.Name,
+			len(teamResult.Team.Members),
+		)
+	}
+
+	// --- US6: Guided Gemara Content Authoring ---
+	//
+	// Authoring flow call sequence:
+	// Ask:     artifact type (2=ThreatCatalog)
+	//
+	// Step 1 — metadata (3 fields):
+	// AskText: name (required)
+	// AskText: description (required)
+	// AskText: version (optional)
+	//
+	// Step 2 — scope (2 fields):
+	// AskText: scope (required)
+	// AskText: boundary (optional)
+	//
+	// Step 3 — capabilities (2 fields):
+	// AskText: capability_name (required)
+	// AskText: capability_description (required)
+	//
+	// Step 4 — threats (3 fields):
+	// AskText: threat_id (required)
+	// AskText: threat_description (required)
+	// AskText: target_capability (required)
+	authorDemo := &demoPrompter{
+		choices: []int{2}, // ThreatCatalog
+		texts: []string{
+			// metadata
+			"ACME.WEB.THR01",
+			"Threat catalog for web application " +
+				"attack surface assessment",
+			"1.0.0",
+			// scope
+			"Web application authentication " +
+				"and session management",
+			"Third-party SaaS integrations",
+			// capabilities
+			"Authentication",
+			"User identity verification and " +
+				"session management",
+			// threats
+			"THR-001",
+			"SQL injection via unvalidated " +
+				"user input in search parameters",
+			"Authentication",
+		},
+	}
+
+	outputDir := filepath.Join(
+		os.TempDir(), "pacman-demo-artifacts",
+	)
+
+	authorCfg := &cli.AuthorPromptConfig{
+		Prompter:      authorDemo,
+		Session:       sess,
+		SchemaVersion: sess.SchemaVersion,
+		OutputDir:     outputDir,
+		OutputFormat:  consts.DefaultArtifactFormat,
+		RoleName:      sess.GetRoleName(),
+		Keywords:      sess.ActivityKeywords,
+	}
+
+	authorResult, err := cli.RunGuidedAuthoring(
+		authorCfg, os.Stdout,
+	)
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"\nAuthoring error: %v\n", err,
+		)
+		return
+	}
+
+	if authorResult.Artifact != nil {
+		fmt.Println()
+		lipgloss.Println(cli.RenderSessionStatus(
+			sess.SchemaVersion,
+			sess.IsFallback(),
+		))
+		if sess.GetRoleName() != "" {
+			lipgloss.Println(cli.RenderSessionRoleInfo(
+				sess.GetRoleName(),
+				sess.LearningPathSteps,
+			))
+		}
 	}
 }
