@@ -10,19 +10,13 @@ import (
 	"github.com/hbraswelrh/pacman/internal/consts"
 )
 
-// WizardInfo describes an available MCP wizard that can be
-// launched through an AI agent like OpenCode.
+// WizardInfo describes an available MCP wizard.
 type WizardInfo struct {
-	// Name is the MCP prompt name.
-	Name string
-	// Title is the display title.
-	Title string
-	// Description explains what the wizard does.
+	Name        string
+	Title       string
 	Description string
-	// Layer is the Gemara layer this wizard targets.
-	Layer int
-	// Args are the required argument names.
-	Args []string
+	Layer       int
+	Args        []string
 }
 
 // AvailableWizards returns the known gemara-mcp wizards.
@@ -49,42 +43,32 @@ func AvailableWizards() []WizardInfo {
 	}
 }
 
-// WizardPromptConfig holds dependencies for the wizard
-// launcher.
+// WizardPromptConfig holds dependencies for the wizard.
 type WizardPromptConfig struct {
-	// Prompter handles user interaction with multi-select
-	// and confirmation support.
-	Prompter WizardPrompter
-	// MCPAvailable indicates whether the MCP server is
-	// connected.
+	Prompter     WizardPrompter
 	MCPAvailable bool
-	// RoleName is the user's role for context.
-	RoleName string
+	RoleName     string
 }
 
 // WizardPromptResult holds the outcome of wizard execution.
 type WizardPromptResult struct {
-	// WizardName is the selected wizard's MCP prompt name.
-	WizardName string
-	// Component is the user-provided component name.
-	Component string
-	// IDPrefix is the user-provided ID prefix.
-	IDPrefix string
-	// LaunchCommand is the generated command to run the
-	// wizard in OpenCode.
+	WizardName    string
+	Component     string
+	IDPrefix      string
 	LaunchCommand string
-	// CatalogRef is the selected reference catalog.
-	CatalogRef string
-	// Capabilities are the selected/approved capabilities.
-	Capabilities []string
-	// IncludeMITRE indicates whether MITRE ATT&CK linking
-	// was requested.
-	IncludeMITRE bool
+	CatalogRef    string
+	CatalogURL    string
+	Description   string
+	AuthorName    string
+	AuthorID      string
+	Capabilities  []string
+	IncludeMITRE  bool
+	// GuidelineFrameworks is for control catalog wizard.
+	GuidelineFrameworks []string
 }
 
-// RunWizardLauncher presents the available MCP wizards
-// and walks the user through a structured multi-step flow
-// with selections, multi-choice, and pre-filled values.
+// RunWizardLauncher presents the wizards and runs the
+// selected one through its structured steps.
 func RunWizardLauncher(
 	cfg *WizardPromptConfig,
 	out io.Writer,
@@ -111,15 +95,12 @@ func RunWizardLauncher(
 	}
 
 	wizards := AvailableWizards()
-
-	// Display wizard cards.
 	for _, w := range wizards {
 		fmt.Fprintln(out, RenderWizardCard(
 			w.Title, w.Description, w.Layer,
 		))
 	}
 
-	// Step 1: Select wizard.
 	options := make([]string, len(wizards)+1)
 	for i, w := range wizards {
 		options[i] = w.Title
@@ -140,13 +121,7 @@ func RunWizardLauncher(
 
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, RenderDivider())
-	fmt.Fprintln(out)
-	fmt.Fprintln(out, headingStyle.Render(
-		selected.Title,
-	))
-	fmt.Fprintln(out)
 
-	// Route to the specific wizard flow.
 	switch selected.Name {
 	case consts.WizardThreatAssessment:
 		return runThreatWizard(cfg, selected, out)
@@ -160,6 +135,7 @@ func RunWizardLauncher(
 }
 
 // --- Threat Assessment Wizard ---
+// Mirrors gemara-mcp threat_assessment prompt exactly.
 
 func runThreatWizard(
 	cfg *WizardPromptConfig,
@@ -170,92 +146,28 @@ func runThreatWizard(
 		WizardName: wizard.Name,
 	}
 
-	// Step 1: Component selection.
-	fmt.Fprintln(out, renderWizardStep(
-		1, 5, "Component Selection",
-		"What component or technology are you "+
-			"assessing?",
-	))
-
-	componentOpts := []string{
-		"Container Runtime",
-		"API Gateway",
-		"Object Storage",
-		"Database System",
-		"CI/CD Pipeline",
-		"Identity Provider",
-		"Message Queue",
-		"Load Balancer",
-	}
-
-	compChoice, err := cfg.Prompter.Ask(
-		"Select a component type (or type your own):",
-		append(componentOpts, "Enter custom component"),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	if compChoice < len(componentOpts) {
-		result.Component = componentOpts[compChoice]
-	} else {
-		custom, err := cfg.Prompter.AskText(
-			"Component name:",
-		)
-		if err != nil {
-			return nil, err
-		}
-		result.Component = custom
-	}
-
-	if result.Component == "" {
-		return nil, nil
-	}
-
-	fmt.Fprintln(out, RenderSuccess(
-		"Component: "+result.Component,
-	))
-
-	// Step 2: ID Prefix with suggestion.
+	// Step 1: Catalog Import
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, renderWizardStep(
-		2, 5, "ID Prefix",
-		"Set the identifier prefix for this "+
-			"artifact in ORG.PROJECT.COMPONENT format.",
+		1, 5, "Catalog Import",
+		"The FINOS CCC Core catalog provides "+
+			"pre-built capabilities and threats you "+
+			"can import rather than redefine.",
 	))
-
-	suggestedPrefix := suggestIDPrefix(result.Component)
-	prefix, err := cfg.Prompter.AskTextWithDefault(
-		"ID prefix:",
-		suggestedPrefix,
-	)
-	if err != nil {
-		return nil, err
-	}
-	result.IDPrefix = prefix
-
-	fmt.Fprintln(out, RenderSuccess(
-		"ID prefix: "+result.IDPrefix,
-	))
-
-	// Step 3: Reference catalog selection.
 	fmt.Fprintln(out)
-	fmt.Fprintln(out, renderWizardStep(
-		3, 5, "Reference Catalog",
-		"Select a reference catalog to import "+
-			"capabilities and threats from.",
+	fmt.Fprintln(out, faintStyle.Render(
+		"  Catalog: https://github.com/finos/"+
+			"common-cloud-controls/releases",
 	))
-
-	catalogOpts := []string{
-		"FINOS CCC Core (recommended)",
-		"OWASP Top 10",
-		"CIS Benchmarks",
-		"NIST SP 800-53",
-		"No reference catalog (start from scratch)",
-	}
+	fmt.Fprintln(out)
 
 	catChoice, err := cfg.Prompter.Ask(
-		"Reference catalog:", catalogOpts,
+		"Import from FINOS CCC Core?",
+		[]string{
+			"Yes, use FINOS CCC Core (recommended)",
+			"Provide an alternative catalog URL",
+			"No reference catalog (start from scratch)",
+		},
 	)
 	if err != nil {
 		return nil, err
@@ -264,41 +176,167 @@ func runThreatWizard(
 	switch catChoice {
 	case 0:
 		result.CatalogRef = "FINOS CCC Core"
-	case 1:
-		result.CatalogRef = "OWASP Top 10"
-	case 2:
-		result.CatalogRef = "CIS Benchmarks"
-	case 3:
-		result.CatalogRef = "NIST SP 800-53"
-	default:
-		result.CatalogRef = ""
-	}
-
-	if result.CatalogRef != "" {
+		result.CatalogURL = "https://github.com/finos/" +
+			"common-cloud-controls/releases/download/" +
+			"v2025.10/CCC.Core_v2025.10.yaml"
 		fmt.Fprintln(out, RenderSuccess(
-			"Reference: "+result.CatalogRef,
+			"Using FINOS CCC Core as reference catalog",
+		))
+	case 1:
+		url, err := cfg.Prompter.AskText(
+			"Catalog URL or file path:",
+		)
+		if err != nil {
+			return nil, err
+		}
+		result.CatalogRef = "Custom"
+		result.CatalogURL = url
+		// Warn if not from trusted source.
+		if !strings.Contains(url, "github.com/finos") &&
+			!strings.Contains(
+				url, "github.com/gemaraproj",
+			) {
+			fmt.Fprintln(out, RenderWarning(
+				"Source is unverified. Confirm the "+
+					"catalog is from a trusted source.",
+			))
+		}
+		fmt.Fprintln(out, RenderSuccess(
+			"Using custom catalog: "+url,
+		))
+	default:
+		fmt.Fprintln(out, RenderNote(
+			"No reference catalog. All capabilities "+
+				"and threats will be custom.",
 		))
 	}
 
-	// Step 4: Capability selection (multi-select).
+	// Step 2: Scope and Metadata
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, renderWizardStep(
-		4, 5, "Capabilities",
-		"Select the capabilities of "+
-			result.Component+
-			" that threats may target.",
+		2, 5, "Scope and Metadata",
+		"Define the component, author, and scope "+
+			"for your Threat Catalog.",
 	))
 
-	capOpts := suggestCapabilities(result.Component)
-	defaultCaps := make([]int, len(capOpts))
-	for i := range capOpts {
-		defaultCaps[i] = i
+	component, err := cfg.Prompter.AskText(
+		"Component name (e.g., 'container runtime', " +
+			"'API gateway'):",
+	)
+	if err != nil {
+		return nil, err
+	}
+	if component == "" {
+		return nil, nil
+	}
+	result.Component = component
+
+	description, err := cfg.Prompter.AskText(
+		"Short description of what " + component +
+			" does:",
+	)
+	if err != nil {
+		return nil, err
+	}
+	result.Description = description
+
+	authorName, err := cfg.Prompter.AskText(
+		"Author name:",
+	)
+	if err != nil {
+		return nil, err
+	}
+	result.AuthorName = authorName
+
+	authorID, err := cfg.Prompter.AskTextWithDefault(
+		"Author identifier:",
+		strings.ToLower(
+			strings.ReplaceAll(authorName, " ", "."),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	result.AuthorID = authorID
+
+	suggestedPrefix := suggestIDPrefix(component)
+	prefix, err := cfg.Prompter.AskTextWithDefault(
+		"ID prefix (ORG.PROJECT.COMPONENT format):",
+		suggestedPrefix,
+	)
+	if err != nil {
+		return nil, err
+	}
+	result.IDPrefix = prefix
+
+	// Show metadata YAML preview.
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, faintStyle.Render(
+		"  Generated metadata:",
+	))
+	fmt.Fprintln(out, renderMetadataPreview(
+		result, "ThreatCatalog",
+	))
+
+	confirmed, err := cfg.Prompter.AskConfirm(
+		"Confirm metadata?",
+	)
+	if err != nil {
+		return nil, err
+	}
+	if !confirmed {
+		fmt.Fprintln(out, RenderNote("Metadata skipped."))
+	} else {
+		fmt.Fprintln(out, RenderSuccess(
+			"Metadata confirmed",
+		))
 	}
 
+	// Step 3: Identify Capabilities
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, renderWizardStep(
+		3, 5, "Identify Capabilities",
+		"What are the core functions or features "+
+			"of "+component+"?",
+	))
+	fmt.Fprintln(out)
+
+	if result.CatalogRef == "FINOS CCC Core" {
+		fmt.Fprintln(out, faintStyle.Render(
+			"  Capabilities from FINOS CCC Core are "+
+				"available for import. Select which "+
+				"to include.",
+		))
+		fmt.Fprintln(out)
+	}
+
+	capOpts := suggestCapabilities(component)
+
+	// Present as a table like the gemara-mcp wizard.
+	fmt.Fprintln(out, faintStyle.Render(
+		"  Proposed capabilities:",
+	))
+	for i, cap := range capOpts {
+		letter := string(rune('a' + i))
+		source := "Custom"
+		if i < 4 && result.CatalogRef != "" {
+			source = "Import from " + result.CatalogRef
+		}
+		fmt.Fprintf(out,
+			"  %s) %s — %s\n",
+			letter, cap, faintStyle.Render(source),
+		)
+	}
+	fmt.Fprintln(out)
+
+	allCaps := make([]int, len(capOpts))
+	for i := range capOpts {
+		allCaps[i] = i
+	}
 	selectedCaps, err := cfg.Prompter.AskMultiSelect(
-		"Select capabilities (all selected by default):",
+		"Select capabilities to include:",
 		capOpts,
-		defaultCaps,
+		allCaps,
 	)
 	if err != nil {
 		return nil, err
@@ -317,34 +355,62 @@ func runThreatWizard(
 		len(result.Capabilities),
 	)))
 
-	// Step 5: MITRE ATT&CK and launch.
+	// Step 4: Identify Threats
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, renderWizardStep(
-		5, 5, "Options & Launch",
-		"Configure additional options and launch "+
-			"the wizard.",
+		4, 5, "Identify Threats",
+		"For each capability, what could go wrong?",
 	))
+	fmt.Fprintln(out)
 
 	mitre, err := cfg.Prompter.AskConfirm(
-		"Link threats to MITRE ATT&CK techniques?",
+		"Link threats to MITRE ATT&CK techniques? " +
+			"This adds structured vectors entries " +
+			"referencing the ATT&CK Enterprise matrix.",
 	)
 	if err != nil {
 		return nil, err
 	}
 	result.IncludeMITRE = mitre
 
-	// Generate launch command.
+	if mitre {
+		fmt.Fprintln(out, RenderSuccess(
+			"MITRE ATT&CK linking enabled",
+		))
+		fmt.Fprintln(out, faintStyle.Render(
+			"  Reference: https://attack.mitre.org/"+
+				"techniques/enterprise/",
+		))
+	}
+
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, faintStyle.Render(
+		"  Threat identification will be completed "+
+			"interactively in the MCP wizard session. "+
+			"The wizard proposes threats per capability "+
+			"with table-based approval.",
+	))
+
+	// Step 5: Launch
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, renderWizardStep(
+		5, 5, "Assemble and Validate",
+		"The MCP wizard will assemble the complete "+
+			"Threat Catalog YAML and validate it "+
+			"against #ThreatCatalog using "+
+			"validate_gemara_artifact.",
+	))
+
 	result.LaunchCommand = generateLaunchCommand(
 		wizard.Name, result.Component, result.IDPrefix,
 	)
 
-	// Display summary.
 	renderWizardSummary(result, out)
-
 	return result, nil
 }
 
 // --- Control Catalog Wizard ---
+// Mirrors gemara-mcp control_catalog prompt exactly.
 
 func runControlWizard(
 	cfg *WizardPromptConfig,
@@ -355,63 +421,123 @@ func runControlWizard(
 		WizardName: wizard.Name,
 	}
 
-	// Step 1: Component selection.
+	// Step 1: Catalog Import (identical to threat wizard)
+	fmt.Fprintln(out)
 	fmt.Fprintln(out, renderWizardStep(
-		1, 4, "Component Selection",
-		"What component or technology are you "+
-			"creating controls for?",
+		1, 5, "Catalog Import",
+		"The FINOS CCC Core catalog provides "+
+			"pre-built controls, families, and threat "+
+			"mappings you can import rather than "+
+			"redefine.",
 	))
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, faintStyle.Render(
+		"  Catalog: https://github.com/finos/"+
+			"common-cloud-controls/releases",
+	))
+	fmt.Fprintln(out)
 
-	componentOpts := []string{
-		"Container Runtime",
-		"API Gateway",
-		"Object Storage",
-		"Database System",
-		"CI/CD Pipeline",
-		"Identity Provider",
-		"Message Queue",
-		"Load Balancer",
-	}
-
-	compChoice, err := cfg.Prompter.Ask(
-		"Select a component type (or type your own):",
-		append(componentOpts, "Enter custom component"),
+	catChoice, err := cfg.Prompter.Ask(
+		"Import from FINOS CCC Core?",
+		[]string{
+			"Yes, use FINOS CCC Core (recommended)",
+			"Provide an alternative catalog URL",
+			"No reference catalog (start from scratch)",
+		},
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	if compChoice < len(componentOpts) {
-		result.Component = componentOpts[compChoice]
-	} else {
-		custom, err := cfg.Prompter.AskText(
-			"Component name:",
+	switch catChoice {
+	case 0:
+		result.CatalogRef = "FINOS CCC Core"
+		result.CatalogURL = "https://github.com/finos/" +
+			"common-cloud-controls/releases/download/" +
+			"v2025.10/CCC.Core_v2025.10.yaml"
+		fmt.Fprintln(out, RenderSuccess(
+			"Using FINOS CCC Core as reference catalog",
+		))
+	case 1:
+		url, err := cfg.Prompter.AskText(
+			"Catalog URL or file path:",
 		)
 		if err != nil {
 			return nil, err
 		}
-		result.Component = custom
+		result.CatalogRef = "Custom"
+		result.CatalogURL = url
+		if !strings.Contains(url, "github.com/finos") &&
+			!strings.Contains(
+				url, "github.com/gemaraproj",
+			) {
+			fmt.Fprintln(out, RenderWarning(
+				"Source is unverified. Confirm the "+
+					"catalog is from a trusted source.",
+			))
+		}
+		fmt.Fprintln(out, RenderSuccess(
+			"Using custom catalog: "+url,
+		))
+	default:
+		fmt.Fprintln(out, RenderNote(
+			"No reference catalog. All controls "+
+				"will be custom.",
+		))
 	}
 
-	if result.Component == "" {
-		return nil, nil
-	}
-
-	fmt.Fprintln(out, RenderSuccess(
-		"Component: "+result.Component,
-	))
-
-	// Step 2: ID Prefix.
+	// Step 2: Scope and Metadata
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, renderWizardStep(
-		2, 4, "ID Prefix",
-		"Set the identifier prefix for this "+
-			"artifact in ORG.PROJECT.COMPONENT format.",
+		2, 5, "Scope and Metadata",
+		"Define the component, author, guideline "+
+			"frameworks, and scope for your Control "+
+			"Catalog.",
 	))
 
-	suggestedPrefix := suggestIDPrefix(result.Component)
+	component, err := cfg.Prompter.AskText(
+		"Component name (e.g., 'container runtime', " +
+			"'API gateway'):",
+	)
+	if err != nil {
+		return nil, err
+	}
+	if component == "" {
+		return nil, nil
+	}
+	result.Component = component
+
+	description, err := cfg.Prompter.AskText(
+		"Short description of what " + component +
+			" does:",
+	)
+	if err != nil {
+		return nil, err
+	}
+	result.Description = description
+
+	authorName, err := cfg.Prompter.AskText(
+		"Author name:",
+	)
+	if err != nil {
+		return nil, err
+	}
+	result.AuthorName = authorName
+
+	authorID, err := cfg.Prompter.AskTextWithDefault(
+		"Author identifier:",
+		strings.ToLower(
+			strings.ReplaceAll(authorName, " ", "."),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	result.AuthorID = authorID
+
+	suggestedPrefix := suggestIDPrefix(component)
 	prefix, err := cfg.Prompter.AskTextWithDefault(
-		"ID prefix:",
+		"ID prefix (ORG.PROJECT.COMPONENT format):",
 		suggestedPrefix,
 	)
 	if err != nil {
@@ -419,51 +545,144 @@ func runControlWizard(
 	}
 	result.IDPrefix = prefix
 
-	fmt.Fprintln(out, RenderSuccess(
-		"ID prefix: "+result.IDPrefix,
-	))
-
-	// Step 3: Control source selection.
+	// Guideline framework selection (control catalog
+	// specific, from gemara-mcp system prompt).
 	fmt.Fprintln(out)
-	fmt.Fprintln(out, renderWizardStep(
-		3, 4, "Control Sources",
-		"Select control frameworks to import from.",
+	fmt.Fprintln(out, faintStyle.Render(
+		"  Select Layer 1 guideline frameworks to "+
+			"map controls against:",
 	))
 
-	sourceOpts := []string{
-		"FINOS CCC Core (recommended)",
-		"OSPS Baseline",
-		"CIS Benchmarks",
+	frameworkOpts := []string{
+		"NIST Cybersecurity Framework (CSF)",
+		"CSA Cloud Controls Matrix (CCM)",
+		"ISO/IEC 27001",
 		"NIST SP 800-53",
-		"Custom controls only",
 	}
 
-	sourceDefaults := []int{0}
-	selectedSources, err := cfg.Prompter.AskMultiSelect(
-		"Select control sources:",
-		sourceOpts,
-		sourceDefaults,
+	// Present as lettered table like gemara-mcp.
+	for i, fw := range frameworkOpts {
+		letter := string(rune('a' + i))
+		fmt.Fprintf(out,
+			"  %s) %s\n", letter, fw,
+		)
+	}
+	fmt.Fprintln(out)
+
+	selectedFw, err := cfg.Prompter.AskMultiSelect(
+		"Select guideline frameworks:",
+		frameworkOpts,
+		[]int{0, 3}, // Default: CSF + NIST 800-53
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	var sources []string
-	for _, idx := range selectedSources {
-		if idx < len(sourceOpts) {
-			sources = append(sources, sourceOpts[idx])
+	for _, idx := range selectedFw {
+		if idx < len(frameworkOpts) {
+			result.GuidelineFrameworks = append(
+				result.GuidelineFrameworks,
+				frameworkOpts[idx],
+			)
 		}
 	}
 
 	fmt.Fprintln(out, RenderSuccess(fmt.Sprintf(
-		"%d source(s) selected", len(sources),
+		"%d guideline framework(s) selected",
+		len(result.GuidelineFrameworks),
 	)))
 
-	// Step 4: Launch.
+	// Show metadata preview.
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, faintStyle.Render(
+		"  Generated metadata:",
+	))
+	fmt.Fprintln(out, renderMetadataPreview(
+		result, "ControlCatalog",
+	))
+
+	confirmed, err := cfg.Prompter.AskConfirm(
+		"Confirm metadata?",
+	)
+	if err != nil {
+		return nil, err
+	}
+	if !confirmed {
+		fmt.Fprintln(out, RenderNote("Metadata skipped."))
+	} else {
+		fmt.Fprintln(out, RenderSuccess(
+			"Metadata confirmed",
+		))
+	}
+
+	// Step 3: Define Control Families
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, renderWizardStep(
-		4, 4, "Launch",
-		"Review and launch the wizard.",
+		3, 5, "Define Control Families",
+		"What logical groupings should your "+
+			"controls fall into?",
+	))
+	fmt.Fprintln(out)
+
+	familyOpts := suggestControlFamilies(component)
+
+	fmt.Fprintln(out, faintStyle.Render(
+		"  Proposed control families:",
+	))
+	for i, fam := range familyOpts {
+		letter := string(rune('a' + i))
+		fmt.Fprintf(out,
+			"  %s) %s\n", letter, fam,
+		)
+	}
+	fmt.Fprintln(out)
+
+	allFamilies := make([]int, len(familyOpts))
+	for i := range familyOpts {
+		allFamilies[i] = i
+	}
+	_, err = cfg.Prompter.AskMultiSelect(
+		"Select control families:",
+		familyOpts,
+		allFamilies,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Fprintln(out, RenderSuccess(
+		"Control families confirmed",
+	))
+
+	// Step 4: Define Controls
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, renderWizardStep(
+		4, 5, "Define Controls",
+		"For each family, what risks need to be "+
+			"reduced? Controls will be defined "+
+			"interactively in the MCP wizard session "+
+			"with threat mappings, guideline mappings, "+
+			"and assessment requirements.",
+	))
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, faintStyle.Render(
+		"  The MCP wizard will walk through each "+
+			"control with:\n"+
+			"  - Risk-reduction objective\n"+
+			"  - Threat mappings (table approval)\n"+
+			"  - Guideline mappings (table approval)\n"+
+			"  - Assessment requirements (testable "+
+			"statements)",
+	))
+
+	// Step 5: Launch
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, renderWizardStep(
+		5, 5, "Assemble and Validate",
+		"The MCP wizard will assemble the complete "+
+			"Control Catalog YAML and validate it "+
+			"against #ControlCatalog using "+
+			"validate_gemara_artifact.",
 	))
 
 	result.LaunchCommand = generateLaunchCommand(
@@ -471,14 +690,11 @@ func runControlWizard(
 	)
 
 	renderWizardSummary(result, out)
-
 	return result, nil
 }
 
-// --- Helpers ---
+// --- Shared helpers ---
 
-// renderWizardStep renders a wizard step header with
-// progress.
 func renderWizardStep(
 	current int,
 	total int,
@@ -502,10 +718,7 @@ func renderWizardStep(
 	)
 }
 
-// suggestIDPrefix generates a suggested ID prefix from the
-// component name.
 func suggestIDPrefix(component string) string {
-	// Convert component name to uppercase abbreviation.
 	words := strings.Fields(
 		strings.ToUpper(component),
 	)
@@ -527,12 +740,9 @@ func suggestIDPrefix(component string) string {
 	return "ORG.PROJ." + abbrev
 }
 
-// suggestCapabilities returns suggested capabilities based
-// on the component type.
 func suggestCapabilities(component string) []string {
 	lower := strings.ToLower(component)
 
-	// Common capabilities across all components.
 	common := []string{
 		"Authentication",
 		"Authorization",
@@ -589,8 +799,109 @@ func suggestCapabilities(component string) []string {
 	}
 }
 
-// generateLaunchCommand produces the OpenCode prompt to
-// invoke the MCP wizard.
+func suggestControlFamilies(component string) []string {
+	lower := strings.ToLower(component)
+
+	families := []string{
+		"Identity and Access Management",
+		"Data Protection",
+		"Logging and Monitoring",
+	}
+
+	switch {
+	case strings.Contains(lower, "container"):
+		return append(families,
+			"Image Security",
+			"Network Policy",
+			"Runtime Protection",
+		)
+	case strings.Contains(lower, "api") ||
+		strings.Contains(lower, "gateway"):
+		return append(families,
+			"Input Validation",
+			"Rate Limiting",
+			"Transport Security",
+		)
+	case strings.Contains(lower, "storage") ||
+		strings.Contains(lower, "database"):
+		return append(families,
+			"Encryption",
+			"Backup and Recovery",
+			"Access Control",
+		)
+	default:
+		return append(families,
+			"Configuration Management",
+			"Network Security",
+			"Vulnerability Management",
+		)
+	}
+}
+
+func renderMetadataPreview(
+	result *WizardPromptResult,
+	artifactType string,
+) string {
+	var lines []string
+	lines = append(lines,
+		"    metadata:",
+	)
+	lines = append(lines, fmt.Sprintf(
+		"      id: %s", result.IDPrefix,
+	))
+	lines = append(lines, fmt.Sprintf(
+		"      type: %s", artifactType,
+	))
+	lines = append(lines,
+		"      gemara-version: \"v0.20.0\"",
+	)
+	if result.Description != "" {
+		lines = append(lines, fmt.Sprintf(
+			"      description: %s", result.Description,
+		))
+	}
+	lines = append(lines,
+		"      version: 1.0.0",
+	)
+	lines = append(lines,
+		"      author:",
+	)
+	if result.AuthorID != "" {
+		lines = append(lines, fmt.Sprintf(
+			"        id: %s", result.AuthorID,
+		))
+	}
+	if result.AuthorName != "" {
+		lines = append(lines, fmt.Sprintf(
+			"        name: %s", result.AuthorName,
+		))
+	}
+	lines = append(lines,
+		"        type: Software Assisted",
+	)
+	if result.CatalogRef != "" {
+		lines = append(lines,
+			"      mapping-references:",
+		)
+		lines = append(lines, fmt.Sprintf(
+			"        - id: %s", result.CatalogRef,
+		))
+		if result.CatalogURL != "" {
+			lines = append(lines, fmt.Sprintf(
+				"          url: %s", result.CatalogURL,
+			))
+		}
+	}
+	lines = append(lines, fmt.Sprintf(
+		"    title: %s Security %s",
+		result.Component, artifactType,
+	))
+
+	return faintStyle.Render(
+		strings.Join(lines, "\n"),
+	)
+}
+
 func generateLaunchCommand(
 	wizardName string,
 	component string,
@@ -605,8 +916,6 @@ func generateLaunchCommand(
 	)
 }
 
-// renderWizardSummary displays the wizard configuration
-// summary and launch instructions.
 func renderWizardSummary(
 	result *WizardPromptResult,
 	out io.Writer,
@@ -634,8 +943,15 @@ func renderWizardSummary(
 	)
 	if result.CatalogRef != "" {
 		lines = append(lines,
-			annotationLabelStyle.Render("Reference: ")+
+			annotationLabelStyle.Render("Catalog: ")+
 				result.CatalogRef,
+		)
+	}
+	if result.AuthorName != "" {
+		lines = append(lines,
+			annotationLabelStyle.Render("Author: ")+
+				result.AuthorName+" ("+
+				result.AuthorID+")",
 		)
 	}
 	if len(result.Capabilities) > 0 {
@@ -644,6 +960,15 @@ func renderWizardSummary(
 				"Capabilities: ",
 			)+fmt.Sprintf(
 				"%d selected", len(result.Capabilities),
+			),
+		)
+	}
+	if len(result.GuidelineFrameworks) > 0 {
+		lines = append(lines,
+			annotationLabelStyle.Render(
+				"Guidelines: ",
+			)+strings.Join(
+				result.GuidelineFrameworks, ", ",
 			),
 		)
 	}
@@ -674,9 +999,11 @@ func renderWizardSummary(
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, faintStyle.Render(
 		"The wizard will use the MCP server's "+
-			"lexicon, schema docs, and validation "+
-			"tools to guide you through creating a "+
-			"valid Gemara artifact step by step.",
+			"lexicon, schema docs, and "+
+			"validate_gemara_artifact tool to guide "+
+			"you through the remaining steps "+
+			"(threat/control definition and YAML "+
+			"assembly) interactively.",
 	))
 }
 

@@ -85,26 +85,28 @@ func (m *wizardMockPrompter) AskTextWithDefault(
 	return text, nil
 }
 
-// TestRunWizardLauncher_ThreatWizardFullFlow walks through
-// the complete threat assessment wizard flow.
-func TestRunWizardLauncher_ThreatWizardFullFlow(
-	t *testing.T,
-) {
+// TestThreatWizard_FullFlow walks the threat assessment
+// wizard with FINOS CCC import.
+func TestThreatWizard_FullFlow(t *testing.T) {
 	t.Parallel()
 
 	prompter := &wizardMockPrompter{
 		choices: []int{
 			0, // Select Threat Assessment Wizard
-			0, // Select "Container Runtime"
-			0, // Select "FINOS CCC Core"
+			0, // Yes, use FINOS CCC Core
 		},
 		texts: []string{
-			"ACME.PLAT.CR", // ID prefix
+			"container runtime",      // Component name
+			"Manages OCI containers", // Description
+			"Alice Smith",            // Author name
+			"alice.smith",            // Author ID
+			"ACME.PLAT.CR",           // ID prefix
 		},
 		multiSelects: [][]int{
-			{0, 1, 2, 3}, // Select first 4 capabilities
+			{0, 1, 2, 3, 4}, // Capabilities
 		},
 		confirms: []bool{
+			true, // Confirm metadata
 			true, // Enable MITRE ATT&CK
 		},
 	}
@@ -126,19 +128,12 @@ func TestRunWizardLauncher_ThreatWizardFullFlow(
 	if result.WizardName !=
 		consts.WizardThreatAssessment {
 		t.Errorf(
-			"WizardName = %q, want %q",
-			result.WizardName,
-			consts.WizardThreatAssessment,
+			"WizardName = %q", result.WizardName,
 		)
 	}
-	if result.Component != "Container Runtime" {
+	if result.Component != "container runtime" {
 		t.Errorf(
 			"Component = %q", result.Component,
-		)
-	}
-	if result.IDPrefix != "ACME.PLAT.CR" {
-		t.Errorf(
-			"IDPrefix = %q", result.IDPrefix,
 		)
 	}
 	if result.CatalogRef != "FINOS CCC Core" {
@@ -146,9 +141,19 @@ func TestRunWizardLauncher_ThreatWizardFullFlow(
 			"CatalogRef = %q", result.CatalogRef,
 		)
 	}
-	if len(result.Capabilities) != 4 {
+	if result.AuthorName != "Alice Smith" {
 		t.Errorf(
-			"Capabilities = %d, want 4",
+			"AuthorName = %q", result.AuthorName,
+		)
+	}
+	if result.IDPrefix != "ACME.PLAT.CR" {
+		t.Errorf(
+			"IDPrefix = %q", result.IDPrefix,
+		)
+	}
+	if len(result.Capabilities) != 5 {
+		t.Errorf(
+			"Capabilities = %d, want 5",
 			len(result.Capabilities),
 		)
 	}
@@ -160,35 +165,52 @@ func TestRunWizardLauncher_ThreatWizardFullFlow(
 	}
 
 	output := buf.String()
+	if !strings.Contains(output, "FINOS CCC Core") {
+		t.Error(
+			"output should mention FINOS CCC Core",
+		)
+	}
+	if !strings.Contains(output, "Catalog Import") {
+		t.Error(
+			"output should contain step 1 title",
+		)
+	}
 	if !strings.Contains(output, "Wizard Summary") {
-		t.Error("expected wizard summary in output")
+		t.Error(
+			"output should contain wizard summary",
+		)
 	}
 }
 
-// TestRunWizardLauncher_ControlWizardFullFlow walks
-// through the control catalog wizard.
-func TestRunWizardLauncher_ControlWizardFullFlow(
-	t *testing.T,
-) {
+// TestControlWizard_FullFlow walks the control catalog
+// wizard with guideline framework selection.
+func TestControlWizard_FullFlow(t *testing.T) {
 	t.Parallel()
 
 	prompter := &wizardMockPrompter{
 		choices: []int{
 			1, // Select Control Catalog Wizard
-			2, // Select "Object Storage"
+			0, // Yes, use FINOS CCC Core
 		},
 		texts: []string{
-			"ACME.PROJ.OS", // ID prefix
+			"API gateway",         // Component name
+			"Routes API requests", // Description
+			"Bob Jones",           // Author name
+			"bob.jones",           // Author ID
+			"ACME.PROJ.GW",        // ID prefix
 		},
 		multiSelects: [][]int{
-			{0, 1}, // Select FINOS CCC + OSPS Baseline
+			{0, 3},       // CSF + NIST 800-53
+			{0, 1, 2, 3}, // All families
+		},
+		confirms: []bool{
+			true, // Confirm metadata
 		},
 	}
 
 	cfg := &cli.WizardPromptConfig{
 		Prompter:     prompter,
 		MCPAvailable: true,
-		RoleName:     consts.RoleSecurityEngineer,
 	}
 
 	var buf bytes.Buffer
@@ -204,32 +226,58 @@ func TestRunWizardLauncher_ControlWizardFullFlow(
 			"WizardName = %q", result.WizardName,
 		)
 	}
-	if result.Component != "Object Storage" {
+	if result.Component != "API gateway" {
 		t.Errorf(
 			"Component = %q", result.Component,
 		)
 	}
+	if len(result.GuidelineFrameworks) != 2 {
+		t.Errorf(
+			"GuidelineFrameworks = %d, want 2",
+			len(result.GuidelineFrameworks),
+		)
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "Control Families") {
+		t.Error(
+			"output should contain families step",
+		)
+	}
+	if !strings.Contains(
+		output, "ControlCatalog",
+	) {
+		t.Error(
+			"output should reference ControlCatalog",
+		)
+	}
 }
 
-// TestRunWizardLauncher_CustomComponent tests entering a
-// custom component name.
-func TestRunWizardLauncher_CustomComponent(t *testing.T) {
+// TestWizard_AlternativeCatalog tests providing a custom
+// catalog URL with unverified source warning.
+func TestWizard_AlternativeCatalog(t *testing.T) {
 	t.Parallel()
 
 	prompter := &wizardMockPrompter{
 		choices: []int{
 			0, // Threat Assessment Wizard
-			8, // "Enter custom component" (last option)
-			0, // Reference catalog
+			1, // Provide alternative catalog
 		},
 		texts: []string{
-			"ML Training Pipeline",
-			"", // Accept default ID prefix
+			"https://example.com/my-catalog.yaml",
+			"web server",
+			"Serves HTTP requests",
+			"Carol",
+			"carol",
+			"ACME.WEB.SRV",
 		},
 		multiSelects: [][]int{
-			{0, 1}, // Accept first 2 capabilities
+			{0, 1},
 		},
-		confirms: []bool{false}, // No MITRE
+		confirms: []bool{
+			true,  // Confirm metadata
+			false, // No MITRE
+		},
 	}
 
 	cfg := &cli.WizardPromptConfig{
@@ -245,19 +293,22 @@ func TestRunWizardLauncher_CustomComponent(t *testing.T) {
 	if result == nil {
 		t.Fatal("expected non-nil result")
 	}
-	if result.Component != "ML Training Pipeline" {
+	if result.CatalogRef != "Custom" {
 		t.Errorf(
-			"Component = %q", result.Component,
+			"CatalogRef = %q", result.CatalogRef,
 		)
 	}
-	if !result.IncludeMITRE {
-		// Confirm was false, so MITRE should be off.
-		// Actually our mock returns false.
+
+	output := buf.String()
+	if !strings.Contains(output, "unverified") {
+		t.Error(
+			"expected unverified source warning",
+		)
 	}
 }
 
-// TestRunWizardLauncher_BackToMenu returns nil.
-func TestRunWizardLauncher_BackToMenu(t *testing.T) {
+// TestWizard_BackToMenu returns nil.
+func TestWizard_BackToMenu(t *testing.T) {
 	t.Parallel()
 
 	prompter := &wizardMockPrompter{
@@ -275,7 +326,7 @@ func TestRunWizardLauncher_BackToMenu(t *testing.T) {
 		t.Fatalf("RunWizardLauncher: %v", err)
 	}
 	if result != nil {
-		t.Error("expected nil result when backing out")
+		t.Error("expected nil result")
 	}
 }
 
@@ -291,46 +342,12 @@ func TestAvailableWizards(t *testing.T) {
 	}
 	if wizards[0].Name != consts.WizardThreatAssessment {
 		t.Errorf(
-			"wizard[0].Name = %q",
-			wizards[0].Name,
+			"wizard[0].Name = %q", wizards[0].Name,
 		)
 	}
 	if wizards[1].Name != consts.WizardControlCatalog {
 		t.Errorf(
-			"wizard[1].Name = %q",
-			wizards[1].Name,
+			"wizard[1].Name = %q", wizards[1].Name,
 		)
-	}
-}
-
-// TestSuggestCapabilities returns relevant suggestions.
-func TestSuggestCapabilities(t *testing.T) {
-	t.Parallel()
-	// Exported via the wizard flow, but test indirectly
-	// by checking the result has capabilities.
-	prompter := &wizardMockPrompter{
-		choices: []int{0, 0, 0},
-		texts:   []string{""},
-		multiSelects: [][]int{
-			{0, 1, 2},
-		},
-		confirms: []bool{false},
-	}
-
-	cfg := &cli.WizardPromptConfig{
-		Prompter:     prompter,
-		MCPAvailable: true,
-	}
-
-	var buf bytes.Buffer
-	result, err := cli.RunWizardLauncher(cfg, &buf)
-	if err != nil {
-		t.Fatalf("RunWizardLauncher: %v", err)
-	}
-	if result == nil {
-		t.Fatal("expected result")
-	}
-	if len(result.Capabilities) == 0 {
-		t.Error("expected capabilities from suggestions")
 	}
 }
