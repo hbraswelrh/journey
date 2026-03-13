@@ -10,25 +10,25 @@ version compatibility, session management)
 
 ### Tests
 
-- [ ] T101 [P] [US2] Write test
+- [x] T101 [P] [US2] Write test
   `internal/schema/releases_test.go`: Fetch releases returns
   parsed list of versions with tags and dates
-- [ ] T102 [P] [US2] Write test
+- [x] T102 [P] [US2] Write test
   `internal/schema/releases_test.go`: Fetch releases handles
   empty release list gracefully
-- [ ] T103 [P] [US2] Write test
+- [x] T103 [P] [US2] Write test
   `internal/schema/releases_test.go`: Fetch releases handles
   API error (network unreachable) gracefully
-- [ ] T104 [P] [US2] Write test
+- [x] T104 [P] [US2] Write test
   `internal/schema/releases_test.go`: Parse schema status
   correctly identifies Stable vs Experimental schemas at a
   given version
 
 ### Implementation
 
-- [ ] T105 [US2] Add GitHub API release list URL constant to
+- [x] T105 [US2] Add GitHub API release list URL constant to
   `internal/consts/consts.go`
-- [ ] T106 [US2] Implement `internal/schema/releases.go`:
+- [x] T106 [US2] Implement `internal/schema/releases.go`:
   `FetchReleases(ctx) ([]Release, error)` — query GitHub
   releases API for gemaraproj/gemara, return parsed release
   list with version tag, commit SHA, release date, and schema
@@ -42,27 +42,27 @@ version compatibility, session management)
 
 ### Tests
 
-- [ ] T107 [P] [US2] Write test
+- [x] T107 [P] [US2] Write test
   `internal/schema/cache_test.go`: Write cache creates valid
   JSON file with timestamp
-- [ ] T108 [P] [US2] Write test
+- [x] T108 [P] [US2] Write test
   `internal/schema/cache_test.go`: Read cache returns cached
   data with last-fetched timestamp
-- [ ] T109 [P] [US2] Write test
+- [x] T109 [P] [US2] Write test
   `internal/schema/cache_test.go`: Stale cache is refreshed
   when upstream is available
-- [ ] T110 [P] [US2] Write test
+- [x] T110 [P] [US2] Write test
   `internal/schema/cache_test.go`: Offline with cache returns
   cached data and informs user
-- [ ] T111 [P] [US2] Write test
+- [x] T111 [P] [US2] Write test
   `internal/schema/cache_test.go`: Offline without cache
   returns informative error
 
 ### Implementation
 
-- [ ] T112 [US2] Add cache file name and directory constants
+- [x] T112 [US2] Add cache file name and directory constants
   to `internal/consts/consts.go`
-- [ ] T113 [US2] Implement `internal/schema/cache.go`:
+- [x] T113 [US2] Implement `internal/schema/cache.go`:
   `WriteCache(path, releases, timestamp) error` and
   `ReadCache(path) (*CachedReleases, error)` — JSON
   serialization with `last_fetched` timestamp.
@@ -78,32 +78,32 @@ version compatibility, session management)
 
 ### Tests
 
-- [ ] T114 [P] [US2] Write test
+- [x] T114 [P] [US2] Write test
   `internal/schema/selector_test.go`: DetermineVersions
   identifies correct Stable version (most recent with core
   schemas Stable)
-- [ ] T115 [P] [US2] Write test
+- [x] T115 [P] [US2] Write test
   `internal/schema/selector_test.go`: DetermineVersions
   identifies correct Latest version (most recent tag)
-- [ ] T116 [P] [US2] Write test
+- [x] T116 [P] [US2] Write test
   `internal/schema/selector_test.go`: User selects Stable —
   session schema version set correctly, Experimental schemas
   listed
-- [ ] T117 [P] [US2] Write test
+- [x] T117 [P] [US2] Write test
   `internal/schema/selector_test.go`: User selects Latest —
   session schema version set correctly, warning about
   Experimental schemas displayed
-- [ ] T118 [P] [US2] Write test
+- [x] T118 [P] [US2] Write test
   `internal/schema/selector_test.go`: User selects Latest
   with MCP installed — version compatibility check triggered,
   mismatch warning displayed
-- [ ] T119 [P] [US2] Write test
+- [x] T119 [P] [US2] Write test
   `internal/schema/selector_test.go`: Mid-session version
   switch requires explicit confirmation
 
 ### Implementation
 
-- [ ] T120 [US2] Implement `internal/schema/selector.go`:
+- [x] T120 [US2] Implement `internal/schema/selector.go`:
   `DetermineVersions(releases) (*VersionChoice, error)` —
   identify Stable and Latest versions from release list.
   `SelectVersion(choice, session) error` — record user's
@@ -122,29 +122,29 @@ scenarios. Session updated with selected version.
 
 ### Tests
 
-- [ ] T121 [P] [US2] Write test
+- [x] T121 [P] [US2] Write test
   `internal/cli/version_prompt_test.go`: Version prompt
   displays Stable and Latest options with version numbers
-- [ ] T122 [P] [US2] Write test
+- [x] T122 [P] [US2] Write test
   `internal/cli/version_prompt_test.go`: Newer version
   available upstream triggers notification
-- [ ] T123 [P] [US2] Write test
+- [x] T123 [P] [US2] Write test
   `internal/cli/version_prompt_test.go`: Offline mode uses
   cached version and informs user
 
 ### Implementation
 
-- [ ] T124 [US2] Implement `internal/cli/version_prompt.go`:
+- [x] T124 [US2] Implement `internal/cli/version_prompt.go`:
   `RunVersionSelection(ctx, session, prompter, out)
   error` — fetch or cache releases, determine versions,
   prompt user, record selection, display warnings
-- [ ] T125 [US2] Update `internal/cli/setup.go` to call
+- [x] T125 [US2] Update `internal/cli/setup.go` to call
   `RunVersionSelection` after MCP setup completes, passing
   the session from SetupResult
-- [ ] T126 [US2] Integration test: full flow from MCP setup
+- [x] T126 [US2] Integration test: full flow from MCP setup
   through version selection — verify session has correct
   schema version
-- [ ] T127 [US2] Verify `make build` and `make test` pass
+- [x] T127 [US2] Verify `make build` and `make test` pass
   with zero errors
 
 **Checkpoint**: US2 is fully functional. User can select
