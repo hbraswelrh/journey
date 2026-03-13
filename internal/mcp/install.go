@@ -277,7 +277,9 @@ func (i *Installer) ResolveLatestRelease(
 }
 
 // CloneAndBuild clones the gemara-mcp repository at the
-// specified commit digest and runs make build.
+// specified commit digest and runs make build. If the
+// repository was previously cloned, it fetches updates and
+// checks out the requested SHA instead of cloning again.
 func (i *Installer) CloneAndBuild(
 	ctx context.Context,
 	method CloneMethod,
@@ -289,29 +291,74 @@ func (i *Installer) CloneAndBuild(
 		cloneURL = consts.GemaraMCPCloneSSH
 	}
 
-	// Clone the repository.
 	repoDir := filepath.Join(destDir, consts.MCPBinaryName)
-	_, err := i.runCommand(
-		ctx, "",
-		"git", "clone", cloneURL, repoDir,
-	)
-	if err != nil {
-		return "", fmt.Errorf("git clone: %w", err)
+
+	if isGitRepo(repoDir) {
+		// Repository already exists — fetch and checkout
+		// the pinned SHA.
+		out, err := i.runCommand(
+			ctx, repoDir,
+			"git", "fetch", "--all",
+		)
+		if err != nil {
+			return "", fmt.Errorf(
+				"git fetch: %s: %w",
+				string(out), err,
+			)
+		}
+	} else {
+		// Ensure parent directory exists.
+		if err := os.MkdirAll(destDir, 0o755); err != nil {
+			return "", fmt.Errorf(
+				"create install dir: %w", err,
+			)
+		}
+
+		// Remove any leftover non-git directory (e.g.,
+		// from a failed prior install).
+		if _, err := os.Stat(repoDir); err == nil {
+			if err := os.RemoveAll(repoDir); err != nil {
+				return "", fmt.Errorf(
+					"clean prior install dir: %w", err,
+				)
+			}
+		}
+
+		// Fresh clone.
+		out, err := i.runCommand(
+			ctx, "",
+			"git", "clone", cloneURL, repoDir,
+		)
+		if err != nil {
+			return "", fmt.Errorf(
+				"git clone: %s: %w",
+				string(out), err,
+			)
+		}
 	}
 
-	// Checkout the pinned commit by SHA256 digest.
-	_, err = i.runCommand(
+	// Checkout the pinned commit by SHA digest.
+	out, err := i.runCommand(
 		ctx, repoDir,
 		"git", "checkout", release.CommitSHA,
 	)
 	if err != nil {
-		return "", fmt.Errorf("git checkout: %w", err)
+		return "", fmt.Errorf(
+			"git checkout %s: %s: %w",
+			truncateForLog(release.CommitSHA),
+			string(out), err,
+		)
 	}
 
 	// Build the binary.
-	_, err = i.runCommand(ctx, repoDir, "make", "build")
+	out, err = i.runCommand(
+		ctx, repoDir, "make", "build",
+	)
 	if err != nil {
-		return "", fmt.Errorf("make build: %w", err)
+		return "", fmt.Errorf(
+			"make build: %s: %w",
+			string(out), err,
+		)
 	}
 
 	binaryPath := filepath.Join(
@@ -332,6 +379,24 @@ func (i *Installer) CloneAndBuild(
 	}
 
 	return binaryPath, nil
+}
+
+// isGitRepo returns true if the directory exists and
+// contains a .git subdirectory.
+func isGitRepo(dir string) bool {
+	info, err := os.Stat(
+		filepath.Join(dir, ".git"),
+	)
+	return err == nil && info.IsDir()
+}
+
+// truncateForLog truncates a string to 12 characters for
+// log output.
+func truncateForLog(s string) string {
+	if len(s) > 12 {
+		return s[:12]
+	}
+	return s
 }
 
 // InstallPodman provides the Podman run configuration for the
