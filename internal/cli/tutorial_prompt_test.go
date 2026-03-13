@@ -25,8 +25,6 @@ func (m *tutorialMockPrompter) Ask(
 	opts []string,
 ) (int, error) {
 	if m.choiceIdx >= len(m.choices) {
-		// Return last option (typically "Back" or "Exit")
-		// to prevent infinite loops.
 		return len(opts) - 1, nil
 	}
 	choice := m.choices[m.choiceIdx]
@@ -51,9 +49,10 @@ func testLearningPath() *tutorials.LearningPath {
 		Steps: []tutorials.PathStep{
 			{
 				Tutorial: tutorials.Tutorial{
-					Title:    "Threat Assessment Guide",
-					FilePath: "../../internal/tutorials/testdata/valid/threat-assessment-guide.md",
-					Layer:    2,
+					Title:         "Threat Assessment Guide",
+					FilePath:      "../../internal/tutorials/testdata/valid/threat-assessment-guide.md",
+					Layer:         2,
+					SchemaVersion: "v0.20.0",
 					Sections: []string{
 						"Scope Definition",
 						"Capability Identification",
@@ -66,9 +65,10 @@ func testLearningPath() *tutorials.LearningPath {
 			},
 			{
 				Tutorial: tutorials.Tutorial{
-					Title:    "Guidance Catalog Guide",
-					FilePath: "../../internal/tutorials/testdata/valid/guidance-catalog-guide.md",
-					Layer:    1,
+					Title:         "Guidance Catalog Guide",
+					FilePath:      "../../internal/tutorials/testdata/valid/guidance-catalog-guide.md",
+					Layer:         1,
+					SchemaVersion: "v0.20.0",
 					Sections: []string{
 						"Creating a Guidance Catalog",
 						"Metadata Setup",
@@ -82,19 +82,29 @@ func testLearningPath() *tutorials.LearningPath {
 	}
 }
 
-// TestRunTutorialPlayer_SelectAndWalk verifies that
-// selecting a tutorial walks through its sections.
+// TestRunTutorialPlayer_SelectAndWalk walks through all
+// sections with focused questions at each step.
 func TestRunTutorialPlayer_SelectAndWalk(t *testing.T) {
 	t.Parallel()
 
+	// For each section: question choice + nav choice
+	// 4 sections = 8 Ask calls + 1 select + 1 back
 	prompter := &tutorialMockPrompter{
 		choices: []int{
 			0, // Select first tutorial
-			0, // Next section (Scope -> Capability)
-			0, // Next section (Capability -> Threat)
-			0, // Next section (Threat -> CUE)
-			// At last section, opts are:
-			//   [Previous, Mark complete, Back]
+			// Section 1 (Scope Definition):
+			0, // Answer focused question
+			0, // Continue to next section
+			// Section 2 (Capability Identification):
+			0, // Answer focused question
+			0, // Continue to next section
+			// Section 3 (Threat Identification):
+			0, // Answer focused question
+			0, // Continue to next section
+			// Section 4 (CUE Validation):
+			0, // Answer focused question
+			// Last section nav: [Go back, Mark complete,
+			//   Back to tutorial list]
 			1, // Mark complete
 			2, // Back to main menu (from step list)
 		},
@@ -113,7 +123,6 @@ func TestRunTutorialPlayer_SelectAndWalk(t *testing.T) {
 		t.Fatalf("RunTutorialPlayer: %v", err)
 	}
 
-	// First tutorial should be marked complete.
 	if !result.CompletedSteps[0] {
 		t.Error("expected step 0 to be completed")
 	}
@@ -123,8 +132,10 @@ func TestRunTutorialPlayer_SelectAndWalk(t *testing.T) {
 	if !strings.Contains(output, "Scope Definition") {
 		t.Error("expected Scope Definition in output")
 	}
-	if !strings.Contains(output, "CUE Validation") {
-		t.Error("expected CUE Validation in output")
+	// Should contain focused questions.
+	if !strings.Contains(output, "component") ||
+		!strings.Contains(output, "assess") {
+		t.Error("expected focused question about scope")
 	}
 	// Should show completion.
 	if !strings.Contains(output, "Completed") {
@@ -132,8 +143,8 @@ func TestRunTutorialPlayer_SelectAndWalk(t *testing.T) {
 	}
 }
 
-// TestRunTutorialPlayer_BackWithoutComplete verifies
-// exiting a tutorial without marking it complete.
+// TestRunTutorialPlayer_BackWithoutComplete exits without
+// marking complete.
 func TestRunTutorialPlayer_BackWithoutComplete(
 	t *testing.T,
 ) {
@@ -142,9 +153,9 @@ func TestRunTutorialPlayer_BackWithoutComplete(
 	prompter := &tutorialMockPrompter{
 		choices: []int{
 			0, // Select first tutorial
-			1, // Back to tutorial list (from first
-			//    section, only options are "Next" and
-			//    "Back" so index 1 = Back)
+			0, // Answer focused question
+			// Section 1 nav: [Continue, Back to list]
+			1, // Back to tutorial list
 			2, // Back to main menu
 		},
 	}
@@ -162,7 +173,6 @@ func TestRunTutorialPlayer_BackWithoutComplete(
 		t.Fatalf("RunTutorialPlayer: %v", err)
 	}
 
-	// Should NOT be marked complete.
 	if result.CompletedSteps[0] {
 		t.Error("step 0 should not be completed")
 	}
@@ -197,13 +207,14 @@ func TestRunTutorialPlayer_EmptyPath(t *testing.T) {
 }
 
 // TestRunTutorialPlayer_RoleContext verifies role-specific
-// context is displayed.
+// questions and context.
 func TestRunTutorialPlayer_RoleContext(t *testing.T) {
 	t.Parallel()
 
 	prompter := &tutorialMockPrompter{
 		choices: []int{
 			0, // Select first tutorial
+			0, // Answer focused question
 			1, // Back to tutorial list
 			2, // Back to main menu
 		},
@@ -226,7 +237,39 @@ func TestRunTutorialPlayer_RoleContext(t *testing.T) {
 	if !strings.Contains(output, "Security Engineer") {
 		t.Error(
 			"expected role name in output for " +
-				"personalized context",
+				"personalized questions",
 		)
+	}
+}
+
+// TestSplitSectionBody verifies progressive disclosure.
+func TestSplitSectionBody(t *testing.T) {
+	t.Parallel()
+
+	body := "First paragraph intro.\n\n" +
+		"Second paragraph with details.\n\n" +
+		"Third paragraph with more."
+
+	intro, detail := cli.SplitSectionBody(body)
+	if intro != "First paragraph intro." {
+		t.Errorf("intro = %q", intro)
+	}
+	if !strings.Contains(detail, "Second paragraph") {
+		t.Errorf("detail = %q", detail)
+	}
+}
+
+// TestSplitSectionBody_SingleParagraph returns no detail.
+func TestSplitSectionBody_SingleParagraph(t *testing.T) {
+	t.Parallel()
+
+	intro, detail := cli.SplitSectionBody(
+		"Just one paragraph.",
+	)
+	if intro != "Just one paragraph." {
+		t.Errorf("intro = %q", intro)
+	}
+	if detail != "" {
+		t.Errorf("expected empty detail, got %q", detail)
 	}
 }
