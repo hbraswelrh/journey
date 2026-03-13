@@ -57,12 +57,11 @@ func RunVersionSelection(
 	}
 
 	if cached.FromCache {
-		fmt.Fprintf(
-			out,
-			"Using cached version data (fetched %s). "+
-				"Upstream was not reachable.\n",
+		fmt.Fprintln(out, RenderNote(fmt.Sprintf(
+			"Using cached version data (fetched %s)."+
+				" Upstream was not reachable.",
 			cached.LastFetched.Format("2006-01-02"),
-		)
+		)))
 	}
 
 	// Step 2: Determine versions.
@@ -76,36 +75,34 @@ func RunVersionSelection(
 	// Step 3: Build prompt options.
 	options, selectionMap := buildOptions(choice)
 
-	fmt.Fprintf(out, "\nGemara Schema Version Selection\n")
-	fmt.Fprintf(out, "-------------------------------\n")
+	fmt.Fprintln(out, RenderVersionHeader())
 
 	if choice.StableVersion != nil {
-		fmt.Fprintf(
-			out,
-			"Stable: %s — all core schemas are Stable\n",
+		fmt.Fprintln(out, RenderVersionOption(
+			"Stable",
 			choice.StableVersion.Tag,
-		)
+			"all core schemas are Stable",
+		))
 	}
 	if choice.LatestVersion != nil {
-		fmt.Fprintf(
-			out,
-			"Latest: %s",
-			choice.LatestVersion.Tag,
-		)
+		detail := ""
 		expSchemas := experimentalNames(
 			choice.LatestSchemaStatus,
 		)
 		if len(expSchemas) > 0 {
-			fmt.Fprintf(
-				out,
-				" — Experimental schemas: %v",
+			detail = fmt.Sprintf(
+				"Experimental schemas: %v",
 				expSchemas,
 			)
 		}
-		fmt.Fprintf(out, "\n")
+		fmt.Fprintln(out, RenderVersionOption(
+			"Latest",
+			choice.LatestVersion.Tag,
+			detail,
+		))
 	}
 
-	fmt.Fprintf(out, "\n")
+	fmt.Fprintln(out)
 
 	idx, err := cfg.Prompter.Ask(
 		"Select a schema version:", options,
@@ -128,29 +125,24 @@ func RunVersionSelection(
 		return fmt.Errorf("select version: %w", err)
 	}
 
-	fmt.Fprintf(
-		out,
-		"Selected schema version: %s\n",
-		result.SelectedTag,
-	)
+	fmt.Fprintln(out, RenderSuccess(
+		"Selected schema version: "+result.SelectedTag,
+	))
 
 	// Step 5: Warnings.
 	if len(result.ExperimentalSchemas) > 0 {
-		fmt.Fprintf(
-			out,
-			"Note: the following schemas are "+
-				"Experimental at %s: %v\n",
+		fmt.Fprintln(out, RenderNote(fmt.Sprintf(
+			"The following schemas are "+
+				"Experimental at %s: %v",
 			result.SelectedTag,
 			result.ExperimentalSchemas,
-		)
+		)))
 	}
 
 	if result.CompatWarning != "" {
-		fmt.Fprintf(
-			out,
-			"Warning: %s\n",
+		fmt.Fprintln(out, RenderWarning(
 			result.CompatWarning,
-		)
+		))
 	}
 
 	// Newer version notification (when user picks Stable
@@ -160,13 +152,12 @@ func RunVersionSelection(
 		choice.StableVersion != nil &&
 		choice.LatestVersion.Tag !=
 			choice.StableVersion.Tag {
-		fmt.Fprintf(
-			out,
-			"Note: a newer version (%s) is available "+
-				"upstream but contains Experimental "+
-				"schemas.\n",
+		fmt.Fprintln(out, RenderNote(fmt.Sprintf(
+			"A newer version (%s) is available "+
+				"upstream but contains "+
+				"Experimental schemas.",
 			choice.LatestVersion.Tag,
-		)
+		)))
 	}
 
 	return nil

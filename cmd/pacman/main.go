@@ -3,144 +3,115 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"image/color"
-	"log"
+	"net/http"
+	"os"
+	"path/filepath"
 
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"charm.land/huh/v2"
+	lipgloss "charm.land/lipgloss/v2"
+
+	"github.com/hbraswelrh/pacman/internal/cli"
+	"github.com/hbraswelrh/pacman/internal/consts"
+	"github.com/hbraswelrh/pacman/internal/mcp"
+	"github.com/hbraswelrh/pacman/internal/schema"
 )
 
-const (
-	// Board dimensions (in tiles)
-	boardCols = 28
-	boardRows = 31
+// huhPrompter implements cli.UserPrompter using the
+// charmbracelet/huh interactive select widget.
+type huhPrompter struct{}
 
-	// Tile size in pixels
-	tileSize = 16
+func (p *huhPrompter) Ask(
+	question string,
+	options []string,
+) (int, error) {
+	var selected int
 
-	// Window dimensions
-	screenWidth  = boardCols * tileSize // 448
-	screenHeight = boardRows * tileSize // 496
-
-	// Game title
-	title = "Pac-Man"
-)
-
-// Direction represents movement direction.
-type Direction int
-
-const (
-	DirNone Direction = iota
-	DirUp
-	DirDown
-	DirLeft
-	DirRight
-)
-
-// Game implements the ebiten.Game interface.
-type Game struct {
-	// Pac-Man position (in pixels)
-	playerX float64
-	playerY float64
-
-	// Current movement direction
-	playerDir Direction
-
-	// Score
-	score int
-}
-
-// NewGame creates and returns a new Game instance.
-func NewGame() *Game {
-	return &Game{
-		playerX:   float64(14 * tileSize),
-		playerY:   float64(23 * tileSize),
-		playerDir: DirNone,
-		score:     0,
-	}
-}
-
-// Update handles game logic each tick.
-func (g *Game) Update() error {
-	switch {
-	case ebiten.IsKeyPressed(ebiten.KeyArrowUp):
-		g.playerDir = DirUp
-	case ebiten.IsKeyPressed(ebiten.KeyArrowDown):
-		g.playerDir = DirDown
-	case ebiten.IsKeyPressed(ebiten.KeyArrowLeft):
-		g.playerDir = DirLeft
-	case ebiten.IsKeyPressed(ebiten.KeyArrowRight):
-		g.playerDir = DirRight
+	opts := make([]huh.Option[int], len(options))
+	for i, label := range options {
+		opts[i] = huh.NewOption(label, i)
 	}
 
-	speed := 2.0
-	switch g.playerDir {
-	case DirUp:
-		g.playerY -= speed
-	case DirDown:
-		g.playerY += speed
-	case DirLeft:
-		g.playerX -= speed
-	case DirRight:
-		g.playerX += speed
+	err := huh.NewSelect[int]().
+		Title(question).
+		Options(opts...).
+		Value(&selected).
+		Run()
+	if err != nil {
+		return 0, fmt.Errorf("prompt: %w", err)
 	}
 
-	if g.playerX < 0 {
-		g.playerX = 0
-	}
-	if g.playerY < 0 {
-		g.playerY = 0
-	}
-	if g.playerX > float64(screenWidth-tileSize) {
-		g.playerX = float64(screenWidth - tileSize)
-	}
-	if g.playerY > float64(screenHeight-tileSize) {
-		g.playerY = float64(screenHeight - tileSize)
-	}
-
-	return nil
-}
-
-// Draw renders the game screen.
-func (g *Game) Draw(screen *ebiten.Image) {
-	screen.Fill(color.Black)
-
-	pacmanColor := color.RGBA{R: 255, G: 255, B: 0, A: 255}
-	for y := 0; y < tileSize; y++ {
-		for x := 0; x < tileSize; x++ {
-			px := int(g.playerX) + x
-			py := int(g.playerY) + y
-			if px >= 0 && px < screenWidth &&
-				py >= 0 && py < screenHeight {
-				screen.Set(px, py, pacmanColor)
-			}
-		}
-	}
-
-	ebitenutil.DebugPrint(
-		screen,
-		fmt.Sprintf(
-			"Score: %d\nTPS: %0.2f\nArrow keys to move",
-			g.score,
-			ebiten.ActualTPS(),
-		),
-	)
-}
-
-// Layout returns the game's logical screen dimensions.
-func (g *Game) Layout(
-	outsideWidth, outsideHeight int,
-) (int, int) {
-	return screenWidth, screenHeight
+	return selected, nil
 }
 
 func main() {
-	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
-	ebiten.SetWindowTitle(title)
+	ctx := context.Background()
 
-	game := NewGame()
-	if err := ebiten.RunGame(game); err != nil {
-		log.Fatal(err)
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr, "Error: %v\n", err,
+		)
+		os.Exit(1)
 	}
+
+	cachePath := filepath.Join(
+		homeDir,
+		".config",
+		consts.CacheDir,
+		consts.ReleaseCacheFile,
+	)
+
+	// Ensure cache directory exists.
+	cacheDir := filepath.Dir(cachePath)
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"Warning: could not create cache "+
+				"dir: %v\n",
+			err,
+		)
+	}
+
+	configPath := filepath.Join(
+		".", consts.OpenCodeConfigFile,
+	)
+
+	httpClient := http.DefaultClient
+	fetcher := func(
+		fetchCtx context.Context,
+	) ([]schema.Release, error) {
+		return schema.FetchReleases(
+			fetchCtx, httpClient,
+		)
+	}
+
+	cfg := &cli.SetupConfig{
+		Prompter:      &huhPrompter{},
+		BinaryLookup:  mcp.DefaultBinaryLookup,
+		PodmanChecker: mcp.DefaultPodmanChecker,
+		Installer: mcp.NewInstaller(
+			mcp.DefaultReleaseFetcher,
+			mcp.DefaultCommandRunner,
+		),
+		ConfigPath:       configPath,
+		VersionFetcher:   fetcher,
+		VersionCachePath: cachePath,
+	}
+
+	lipgloss.Println(cli.RenderBanner())
+
+	result, err := cli.RunSetup(ctx, cfg, os.Stdout)
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr, "\nSetup error: %v\n", err,
+		)
+		os.Exit(1)
+	}
+
+	lipgloss.Println(cli.RenderSessionStatus(
+		result.Session.SchemaVersion,
+		result.Session.IsFallback(),
+	))
 }

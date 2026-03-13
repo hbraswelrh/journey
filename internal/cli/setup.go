@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
 	"github.com/hbraswelrh/pacman/internal/mcp"
 	"github.com/hbraswelrh/pacman/internal/session"
 )
@@ -108,11 +107,12 @@ func runMCPSetup(
 	}
 
 	if detection.Detected {
-		fmt.Fprintf(
-			out,
-			"Gemara MCP server detected (%s).\n",
-			methodLabel(detection.Method),
-		)
+		fmt.Fprintln(out, RenderSuccess(
+			fmt.Sprintf(
+				"Gemara MCP server detected (%s)",
+				methodLabel(detection.Method),
+			),
+		))
 
 		// Configure opencode.json if binary was found.
 		if detection.Method == mcp.MethodBinary {
@@ -131,19 +131,7 @@ func runMCPSetup(
 	}
 
 	// Step 2: Explain and offer installation.
-	fmt.Fprintf(out, "\n"+
-		"The Gemara MCP server provides three tools that "+
-		"enhance\nPac-Man's capabilities:\n\n"+
-		"  - %s: Retrieve the upstream Gemara lexicon\n"+
-		"    to ensure consistent terminology.\n"+
-		"  - %s: Validate YAML artifacts against\n"+
-		"    Gemara CUE schemas without local CUE tooling.\n"+
-		"  - %s: Retrieve schema documentation for\n"+
-		"    contextual reference during authoring.\n\n",
-		consts.ToolGetLexicon,
-		consts.ToolValidateArtifact,
-		consts.ToolGetSchemaDocs,
-	)
+	fmt.Fprintln(out, RenderMCPToolsPanel())
 
 	choice, err := cfg.Prompter.Ask(
 		"How would you like to install the Gemara MCP server?",
@@ -189,20 +177,23 @@ func handleSourceBuild(
 		method = mcp.CloneSSH
 	}
 
-	fmt.Fprintf(out, "Resolving latest gemara-mcp release...\n")
+	fmt.Fprintln(out, RenderStatus(
+		"Resolving latest gemara-mcp release...",
+	))
 
 	release, err := cfg.Installer.ResolveLatestRelease(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("resolve release: %w", err)
 	}
 
-	fmt.Fprintf(
-		out,
-		"Found release %s (commit %s).\n"+
-			"Cloning and building...\n",
+	fmt.Fprintln(out, RenderSuccess(fmt.Sprintf(
+		"Found release %s (commit %s)",
 		release.Tag,
 		truncateSHA(release.CommitSHA),
-	)
+	)))
+	fmt.Fprintln(out, RenderStatus(
+		"Cloning and building...",
+	))
 
 	homeDir, err := userHomeDir()
 	if err != nil {
@@ -217,11 +208,9 @@ func handleSourceBuild(
 		return nil, fmt.Errorf("install: %w", err)
 	}
 
-	fmt.Fprintf(
-		out,
-		"Build complete: %s\n",
-		binaryPath,
-	)
+	fmt.Fprintln(out, RenderSuccess(
+		"Build complete: "+binaryPath,
+	))
 
 	// Configure opencode.json.
 	if err := configureMCPEntry(
@@ -230,10 +219,9 @@ func handleSourceBuild(
 		return nil, err
 	}
 
-	fmt.Fprintf(
-		out,
-		"OpenCode MCP configuration updated.\n",
-	)
+	fmt.Fprintln(out, RenderSuccess(
+		"OpenCode MCP configuration updated",
+	))
 
 	sess := session.NewSessionWithMCP("")
 	return &SetupResult{
@@ -247,13 +235,17 @@ func handlePodmanInstall(
 	cfg *SetupConfig,
 	out io.Writer,
 ) (*SetupResult, error) {
-	fmt.Fprintf(out, "Starting Podman container...\n")
+	fmt.Fprintln(out, RenderStatus(
+		"Starting Podman container...",
+	))
 
 	if err := cfg.Installer.InstallPodman(ctx); err != nil {
 		return nil, fmt.Errorf("podman install: %w", err)
 	}
 
-	fmt.Fprintf(out, "Podman container running.\n")
+	fmt.Fprintln(out, RenderSuccess(
+		"Podman container running",
+	))
 
 	sess := session.NewSessionWithMCP("")
 	return &SetupResult{
@@ -265,16 +257,24 @@ func handlePodmanInstall(
 func handleDecline(out io.Writer) (*SetupResult, error) {
 	sess := session.NewSessionWithoutMCP("")
 
-	fmt.Fprintf(out, "\nMCP server installation skipped.\n")
-	fmt.Fprintf(out, "Degraded capabilities:\n")
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, RenderWarning(
+		"MCP server installation skipped",
+	))
+	fmt.Fprintln(out, headingStyle.Render(
+		"Degraded capabilities:",
+	))
 	for _, cap := range sess.DegradedCapabilities {
-		fmt.Fprintf(out, "  - %s\n", cap)
+		fmt.Fprintf(out, "  %s %s\n",
+			warningStyle.Render("▪"),
+			cap,
+		)
 	}
-	fmt.Fprintf(
-		out,
-		"\nYou can install the MCP server at any time "+
-			"during your session.\n",
-	)
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, RenderNote(
+		"You can install the MCP server at any "+
+			"time during your session.",
+	))
 
 	return &SetupResult{
 		Session:  sess,
