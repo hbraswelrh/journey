@@ -433,3 +433,167 @@ func RenderKeywordTags(keywords []string) string {
 	}
 	return strings.Join(tags, faintStyle.Render(", "))
 }
+
+// categoryBadgeStyle is a compact badge for block categories.
+var categoryBadgeStyle = lipgloss.NewStyle().
+	Foreground(colorWhite).
+	Background(colorCyan).
+	Padding(0, 1)
+
+// driftAddedStyle styles added drift indicators.
+var driftAddedStyle = lipgloss.NewStyle().
+	Foreground(colorSuccess).
+	Bold(true)
+
+// driftModifiedStyle styles modified drift indicators.
+var driftModifiedStyle = lipgloss.NewStyle().
+	Foreground(colorWarning).
+	Bold(true)
+
+// driftRemovedStyle styles removed drift indicators.
+var driftRemovedStyle = lipgloss.NewStyle().
+	Foreground(lipgloss.Color("#FF4444")).
+	Bold(true)
+
+// RenderContentBlock displays a styled content block card
+// with left-bar accent, category badge, layer badge, and
+// source info.
+func RenderContentBlock(
+	id string,
+	category string,
+	layer int,
+	source string,
+	schemaVersion string,
+	body string,
+) string {
+	catBadge := categoryBadgeStyle.Render(
+		" " + category + " ",
+	)
+
+	layerName := LayerNames[layer]
+	if layerName == "" {
+		layerName = fmt.Sprintf("Layer %d", layer)
+	}
+	lBadge := layerBadgeStyle.Render(
+		fmt.Sprintf(" L%d ", layer),
+	)
+
+	titleLine := catBadge + "  " + lBadge + "  " +
+		tutorialTitleStyle.Render(id)
+
+	srcLine := faintStyle.Render(
+		"Source: " + source +
+			" (" + schemaVersion + ")",
+	)
+
+	// Truncate body for display (first 3 lines).
+	bodyLines := strings.SplitN(body, "\n", 4)
+	preview := strings.Join(bodyLines[:min(
+		len(bodyLines), 3,
+	)], "\n")
+	if len(bodyLines) > 3 {
+		preview += "\n" + faintStyle.Render("...")
+	}
+	bodyText := subtleStyle.Render(preview)
+
+	content := strings.Join([]string{
+		titleLine,
+		srcLine,
+		"",
+		bodyText,
+	}, "\n")
+
+	return stepBarStyle.Render(content)
+}
+
+// RenderDriftResult displays a drift indicator with styled
+// type and block ID.
+func RenderDriftResult(
+	blockID string,
+	driftType string,
+) string {
+	var indicator string
+	switch driftType {
+	case "added":
+		indicator = driftAddedStyle.Render("+ ADDED")
+	case "modified":
+		indicator = driftModifiedStyle.Render(
+			"~ MODIFIED",
+		)
+	case "removed":
+		indicator = driftRemovedStyle.Render("- REMOVED")
+	default:
+		indicator = faintStyle.Render("? " + driftType)
+	}
+
+	return fmt.Sprintf(
+		"  %s  %s",
+		indicator,
+		faintStyle.Render(blockID),
+	)
+}
+
+// RenderBlockSummary displays a summary of extracted blocks
+// by category and layer.
+func RenderBlockSummary(
+	total int,
+	byCat map[string]int,
+	byLayer map[int]int,
+	out io.Writer,
+) {
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, RenderDivider())
+	fmt.Fprintln(out)
+
+	header := headingStyle.Render(
+		"Content Block Extraction Summary",
+	)
+	fmt.Fprintln(out, header)
+	fmt.Fprintln(out)
+
+	fmt.Fprintf(out, "  %s %s\n",
+		faintStyle.Render("Total blocks:"),
+		successStyle.Render(
+			fmt.Sprintf("%d", total),
+		),
+	)
+	fmt.Fprintln(out)
+
+	if len(byCat) > 0 {
+		fmt.Fprintln(out,
+			faintStyle.Render("  By category:"),
+		)
+		for cat, count := range byCat {
+			fmt.Fprintf(out, "    %s %s\n",
+				keywordTagStyle.Render(cat),
+				faintStyle.Render(
+					fmt.Sprintf("(%d)", count),
+				),
+			)
+		}
+		fmt.Fprintln(out)
+	}
+
+	if len(byLayer) > 0 {
+		fmt.Fprintln(out,
+			faintStyle.Render("  By layer:"),
+		)
+		for layer, count := range byLayer {
+			fmt.Fprintf(out, "    %s %s\n",
+				RenderLayerBadge(layer),
+				faintStyle.Render(
+					fmt.Sprintf("(%d)", count),
+				),
+			)
+		}
+		fmt.Fprintln(out)
+	}
+}
+
+// min returns the smaller of two ints.
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}

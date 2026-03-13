@@ -74,6 +74,63 @@ type ContentBlock struct {
 	ExtractedAt time.Time `yaml:"extracted_at"`
 }
 
+// BlockIndex is a collection of content blocks with lookup
+// methods by ID, layer, and category.
+type BlockIndex struct {
+	blocks  []ContentBlock
+	byID    map[string]*ContentBlock
+	byLayer map[int][]ContentBlock
+	byCat   map[BlockCategory][]ContentBlock
+}
+
+// NewBlockIndex creates a BlockIndex from a slice of blocks,
+// building the internal lookup maps.
+func NewBlockIndex(
+	blocks []ContentBlock,
+) *BlockIndex {
+	idx := &BlockIndex{
+		blocks:  blocks,
+		byID:    make(map[string]*ContentBlock),
+		byLayer: make(map[int][]ContentBlock),
+		byCat:   make(map[BlockCategory][]ContentBlock),
+	}
+	for i := range blocks {
+		b := &blocks[i]
+		idx.byID[b.ID] = b
+		idx.byLayer[b.Layer] = append(
+			idx.byLayer[b.Layer], *b,
+		)
+		idx.byCat[b.Category] = append(
+			idx.byCat[b.Category], *b,
+		)
+	}
+	return idx
+}
+
+// ByID returns a block by its ID, or nil if not found.
+func (idx *BlockIndex) ByID(id string) *ContentBlock {
+	return idx.byID[id]
+}
+
+// ByLayer returns all blocks for the given Gemara layer.
+func (idx *BlockIndex) ByLayer(
+	layer int,
+) []ContentBlock {
+	return idx.byLayer[layer]
+}
+
+// ByCategory returns all blocks of the given category.
+func (idx *BlockIndex) ByCategory(
+	cat BlockCategory,
+) []ContentBlock {
+	return idx.byCat[cat]
+}
+
+// All returns every block in the index.
+func (idx *BlockIndex) All() []ContentBlock {
+	return idx.blocks
+}
+
 // ManifestEntry records a single block's identity and hash
 // within the manifest.
 type ManifestEntry struct {

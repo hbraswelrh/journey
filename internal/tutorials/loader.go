@@ -219,3 +219,71 @@ func parseFrontMatterLine(
 
 	return key, value, true
 }
+
+// SectionContent holds a heading and its body text parsed
+// from a tutorial's Markdown content.
+type SectionContent struct {
+	// Heading is the section heading text (without ##).
+	Heading string
+	// Body is the full text content of the section.
+	Body string
+}
+
+// ParseSections reads a tutorial file and returns the body
+// content split by `## ` headings. Content before the first
+// heading is ignored (typically the H1 title). Returns nil
+// for files with no sections.
+func ParseSections(path string) ([]SectionContent, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"open tutorial %s: %w", path, err,
+		)
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+
+	// Skip past front matter.
+	inFrontMatter := false
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "---" {
+			if inFrontMatter {
+				break // End of front matter.
+			}
+			inFrontMatter = true
+		}
+	}
+
+	var sections []SectionContent
+	var current *SectionContent
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if strings.HasPrefix(line, "## ") {
+			// Save previous section.
+			if current != nil &&
+				strings.TrimSpace(current.Body) != "" {
+				sections = append(sections, *current)
+			}
+			heading := strings.TrimPrefix(line, "## ")
+			heading = strings.TrimSpace(heading)
+			current = &SectionContent{Heading: heading}
+			continue
+		}
+
+		if current != nil {
+			current.Body += line + "\n"
+		}
+	}
+
+	// Save last section.
+	if current != nil &&
+		strings.TrimSpace(current.Body) != "" {
+		sections = append(sections, *current)
+	}
+
+	return sections, nil
+}

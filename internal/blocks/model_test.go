@@ -170,3 +170,72 @@ func TestNewBlockIDFormat(t *testing.T) {
 		)
 	}
 }
+
+// T302: BlockIndex lookups by ID, layer, and category.
+func TestBlockIndexLookups(t *testing.T) {
+	t.Parallel()
+
+	b1 := NewBlock(
+		"/a.md", "TutA", "Scope",
+		"v0.18.0", 1, Pattern, "scope body",
+	)
+	b2 := NewBlock(
+		"/a.md", "TutA", "Validation",
+		"v0.18.0", 1, ValidationStep, "val body",
+	)
+	b3 := NewBlock(
+		"/b.md", "TutB", "Structure",
+		"v0.18.0", 2, SchemaStruct, "struct body",
+	)
+
+	idx := NewBlockIndex([]ContentBlock{b1, b2, b3})
+
+	// ByID.
+	got := idx.ByID("TutA/Scope")
+	if got == nil {
+		t.Fatal("expected block for TutA/Scope")
+	}
+	if got.Category != Pattern {
+		t.Errorf("expected Pattern, got %s", got.Category)
+	}
+
+	if idx.ByID("nonexistent") != nil {
+		t.Error("expected nil for nonexistent ID")
+	}
+
+	// ByLayer.
+	l1 := idx.ByLayer(1)
+	if len(l1) != 2 {
+		t.Errorf("expected 2 layer-1 blocks, got %d",
+			len(l1))
+	}
+	l2 := idx.ByLayer(2)
+	if len(l2) != 1 {
+		t.Errorf("expected 1 layer-2 block, got %d",
+			len(l2))
+	}
+	l3 := idx.ByLayer(3)
+	if len(l3) != 0 {
+		t.Errorf("expected 0 layer-3 blocks, got %d",
+			len(l3))
+	}
+
+	// ByCategory.
+	patterns := idx.ByCategory(Pattern)
+	if len(patterns) != 1 {
+		t.Errorf("expected 1 Pattern block, got %d",
+			len(patterns))
+	}
+	vals := idx.ByCategory(ValidationStep)
+	if len(vals) != 1 {
+		t.Errorf("expected 1 ValidationStep, got %d",
+			len(vals))
+	}
+
+	// All.
+	all := idx.All()
+	if len(all) != 3 {
+		t.Errorf("expected 3 total blocks, got %d",
+			len(all))
+	}
+}

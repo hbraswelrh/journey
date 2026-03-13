@@ -69,6 +69,10 @@ type Session struct {
 	// LearningPathSteps is the number of steps in the
 	// generated learning path.
 	LearningPathSteps int
+
+	// ContentBlocksCount is the number of content blocks
+	// extracted from tutorials.
+	ContentBlocksCount int
 }
 
 // SetRoleProfile stores role discovery results in the session.
@@ -92,6 +96,22 @@ func (s *Session) GetRoleName() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.RoleName
+}
+
+// SetContentBlocks stores the content blocks count in the
+// session.
+func (s *Session) SetContentBlocks(count int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.ContentBlocksCount = count
+}
+
+// GetContentBlocksCount returns the number of extracted
+// content blocks.
+func (s *Session) GetContentBlocksCount() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.ContentBlocksCount
 }
 
 // NewSessionWithMCP creates a session with an active MCP
