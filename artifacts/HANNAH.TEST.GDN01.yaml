@@ -1,0 +1,10 @@
+guidance_items:
+    item_description: test
+    item_id: test
+metadata:
+    description: Guifance catalog for testing container registry security and supply chain
+    name: HANNAH.TEST.GDN01
+    version: 1.0.0
+scope:
+    boundary: Third-party SaaS
+    scope: Container Registry Security and Supply Chain
