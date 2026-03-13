@@ -338,16 +338,48 @@ func handleSourceBuild(
 		))
 	}
 
-	// Configure opencode.json.
-	if err := configureMCPEntry(
-		cfg.ConfigPath, binaryPath,
-	); err != nil {
-		return nil, err
-	}
-
-	fmt.Fprintln(out, RenderSuccess(
-		"OpenCode MCP configuration updated",
+	// Show the user the absolute path and ask for
+	// confirmation before writing MCP config.
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, headingStyle.Render(
+		"MCP Configuration",
 	))
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, subtleStyle.Render(
+		"The following MCP server config will be "+
+			"written:",
+	))
+	fmt.Fprintf(out, "\n  command: %s\n", binaryPath)
+	fmt.Fprintf(out, "  args:    [serve]\n\n")
+
+	confirmChoice, err := cfg.Prompter.Ask(
+		"Write this MCP configuration?",
+		[]string{
+			"Yes, configure MCP server",
+			"Skip configuration",
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"prompt config confirm: %w", err,
+		)
+	}
+	if confirmChoice != 0 {
+		fmt.Fprintln(out, RenderNote(
+			"MCP configuration skipped. You can "+
+				"configure it later by adding the "+
+				"entry to your MCP client config.",
+		))
+	} else {
+		if err := configureMCPEntry(
+			cfg.ConfigPath, binaryPath,
+		); err != nil {
+			return nil, err
+		}
+		fmt.Fprintln(out, RenderSuccess(
+			"MCP configuration updated",
+		))
+	}
 
 	sess := session.NewSessionWithMCP("")
 	return &SetupResult{
@@ -362,15 +394,53 @@ func handlePodmanInstall(
 	out io.Writer,
 ) (*SetupResult, error) {
 	fmt.Fprintln(out, RenderStatus(
-		"Starting Podman container...",
+		"Starting container...",
 	))
 
 	if err := cfg.Installer.InstallPodman(ctx); err != nil {
-		return nil, fmt.Errorf("podman install: %w", err)
+		return nil, fmt.Errorf("container install: %w", err)
 	}
 
 	fmt.Fprintln(out, RenderSuccess(
-		"Podman container running",
+		"Container running",
+	))
+
+	// Detect container runtime (podman or docker).
+	runtime := detectContainerRuntime(cfg)
+
+	// Configure MCP entry for container-based server.
+	config, err := mcp.ReadOpenCodeConfig(cfg.ConfigPath)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"read config: %w", err,
+		)
+	}
+	mcp.EnsureMCPEntryPodman(config, runtime)
+
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, headingStyle.Render(
+		"MCP Configuration",
+	))
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, subtleStyle.Render(
+		"The following MCP server config will be "+
+			"written:",
+	))
+	fmt.Fprintf(out, "\n  command: %s\n", runtime)
+	fmt.Fprintf(out,
+		"  args:    [run, --rm, -i, %s, serve]\n\n",
+		consts.MCPPodmanImage,
+	)
+
+	if err := mcp.WriteOpenCodeConfig(
+		cfg.ConfigPath, config,
+	); err != nil {
+		return nil, fmt.Errorf(
+			"write config: %w", err,
+		)
+	}
+	fmt.Fprintln(out, RenderSuccess(
+		"MCP configuration updated",
 	))
 
 	sess := session.NewSessionWithMCP("")
@@ -378,6 +448,15 @@ func handlePodmanInstall(
 		Session:      sess,
 		MCPInstalled: true,
 	}, nil
+}
+
+// detectContainerRuntime returns "podman" if podman is
+// available, otherwise "docker".
+func detectContainerRuntime(cfg *SetupConfig) string {
+	if _, err := cfg.BinaryLookup("podman"); err == nil {
+		return "podman"
+	}
+	return "docker"
 }
 
 func handleDecline(out io.Writer) (*SetupResult, error) {

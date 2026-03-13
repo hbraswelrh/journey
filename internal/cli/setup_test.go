@@ -85,11 +85,18 @@ func mockInstaller(
 				return nil, err
 			}
 		}
-		// Create fake binary on make build.
+		// Create fake binary at bin/<name> matching
+		// the gemara-mcp project layout.
 		if name == "make" && len(args) > 0 &&
 			args[0] == "build" && dir != "" {
+			binDir := filepath.Join(dir, "bin")
+			if mkErr := os.MkdirAll(
+				binDir, 0o755,
+			); mkErr != nil {
+				return nil, mkErr
+			}
 			binaryPath := filepath.Join(
-				dir, consts.MCPBinaryName,
+				binDir, consts.MCPBinaryName,
 			)
 			if err := os.WriteFile(
 				binaryPath, []byte("fake"), 0o755,
@@ -145,9 +152,15 @@ func TestSetup_MCPAlreadyDetected(t *testing.T) {
 	if !ok {
 		t.Fatal("expected gemara-mcp entry in config")
 	}
-	if len(entry.Command) != 1 ||
-		entry.Command[0] != "/usr/local/bin/gemara-mcp" {
-		t.Fatalf("unexpected command: %v", entry.Command)
+	if entry.Command != "/usr/local/bin/gemara-mcp" {
+		t.Fatalf(
+			"unexpected command: %q", entry.Command,
+		)
+	}
+	if len(entry.Args) != 1 || entry.Args[0] != "serve" {
+		t.Fatalf(
+			"unexpected args: %v", entry.Args,
+		)
 	}
 }
 
@@ -211,7 +224,8 @@ func TestSetup_SourceBuildSSH(t *testing.T) {
 	var buf bytes.Buffer
 	cfg := &cli.SetupConfig{
 		Prompter: &mockPrompter{
-			choices: []int{0}, // Build from source
+			// Build from source, then confirm config
+			choices: []int{0, 0},
 		},
 		BinaryLookup:  mockBinaryNotFound(),
 		PodmanChecker: mockPodmanNotRunning(),
@@ -275,6 +289,9 @@ func TestSetup_PodmanInstall(t *testing.T) {
 		return nil, nil
 	}
 
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "opencode.json")
+
 	cfg := &cli.SetupConfig{
 		Prompter: &mockPrompter{
 			choices: []int{1}, // Podman
@@ -282,6 +299,7 @@ func TestSetup_PodmanInstall(t *testing.T) {
 		BinaryLookup:  mockBinaryNotFound(),
 		PodmanChecker: mockPodmanNotRunning(),
 		Installer:     mcp.NewInstaller(nil, runner),
+		ConfigPath:    configPath,
 	}
 
 	result, err := cli.RunSetup(
@@ -295,10 +313,37 @@ func TestSetup_PodmanInstall(t *testing.T) {
 	}
 
 	output := buf.String()
-	if !strings.Contains(output, "Podman container running") {
+	if !strings.Contains(output, "Container running") {
 		t.Fatalf(
-			"expected podman running message, got: %s",
+			"expected container running message, "+
+				"got: %s",
 			output,
+		)
+	}
+
+	// Verify MCP config was written with container
+	// runtime.
+	config, err := mcp.ReadOpenCodeConfig(configPath)
+	if err != nil {
+		t.Fatalf("read config: %v", err)
+	}
+	entry, ok := config.MCP[consts.MCPServerName]
+	if !ok {
+		t.Fatal("expected gemara-mcp entry in config")
+	}
+	// Command should be docker (podman not found by
+	// mockBinaryNotFound).
+	if entry.Command != "docker" {
+		t.Errorf(
+			"command = %q, want docker",
+			entry.Command,
+		)
+	}
+	if len(entry.Args) < 1 ||
+		entry.Args[len(entry.Args)-1] != "serve" {
+		t.Errorf(
+			"last arg should be serve, got %v",
+			entry.Args,
 		)
 	}
 }

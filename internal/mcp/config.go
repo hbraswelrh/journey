@@ -14,19 +14,18 @@ import (
 // structure, focused on the MCP server entries.
 type OpenCodeConfig struct {
 	Schema string                      `json:"$schema,omitempty"`
-	MCP    map[string]OpenCodeMCPEntry `json:"mcp,omitempty"`
+	MCP    map[string]OpenCodeMCPEntry `json:"mcpServers,omitempty"`
 	// Extra preserves unknown top-level fields during
 	// read-modify-write.
 	Extra map[string]json.RawMessage `json:"-"`
 }
 
 // OpenCodeMCPEntry represents a single MCP server entry in
-// the OpenCode configuration.
+// the OpenCode configuration. The format follows the MCP
+// client specification with separate command and args fields.
 type OpenCodeMCPEntry struct {
-	Type        string            `json:"type"`
-	Command     []string          `json:"command,omitempty"`
-	Enabled     *bool             `json:"enabled,omitempty"`
-	Environment map[string]string `json:"environment,omitempty"`
+	Command string   `json:"command"`
+	Args    []string `json:"args,omitempty"`
 }
 
 // ReadOpenCodeConfig reads and parses the OpenCode
@@ -38,8 +37,7 @@ func ReadOpenCodeConfig(
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		return &OpenCodeConfig{
-			Schema: "https://opencode.ai/config.json",
-			MCP:    make(map[string]OpenCodeMCPEntry),
+			MCP: make(map[string]OpenCodeMCPEntry),
 		}, nil
 	}
 	if err != nil {
@@ -73,15 +71,34 @@ func WriteOpenCodeConfig(
 }
 
 // EnsureMCPEntry adds or updates the gemara-mcp entry in the
-// OpenCode configuration with the given binary path.
+// OpenCode configuration for a source-built binary. The
+// command is the absolute path to the binary and the args
+// include the "serve" subcommand.
 func EnsureMCPEntry(
 	config *OpenCodeConfig,
 	binaryPath string,
 ) {
-	enabled := true
 	config.MCP[consts.MCPServerName] = OpenCodeMCPEntry{
-		Type:    "local",
-		Command: []string{binaryPath},
-		Enabled: &enabled,
+		Command: binaryPath,
+		Args:    []string{"serve"},
+	}
+}
+
+// EnsureMCPEntryPodman adds or updates the gemara-mcp entry
+// in the OpenCode configuration for a Podman/Docker-based
+// installation. The command is the container runtime
+// ("docker" or "podman") and the args run the container
+// interactively with the "serve" subcommand.
+func EnsureMCPEntryPodman(
+	config *OpenCodeConfig,
+	runtime string,
+) {
+	config.MCP[consts.MCPServerName] = OpenCodeMCPEntry{
+		Command: runtime,
+		Args: []string{
+			"run", "--rm", "-i",
+			consts.MCPPodmanImage,
+			"serve",
+		},
 	}
 }

@@ -56,11 +56,17 @@ func mockRunner(
 		}
 
 		// When make build is called, create a fake binary
-		// in the working directory.
+		// at bin/<name> matching the gemara-mcp layout.
 		if name == "make" && len(args) > 0 &&
 			args[0] == "build" && dir != "" {
+			binDir := filepath.Join(dir, "bin")
+			if mkErr := os.MkdirAll(
+				binDir, 0o755,
+			); mkErr != nil {
+				return nil, mkErr
+			}
 			binaryPath := filepath.Join(
-				dir, binaryName,
+				binDir, binaryName,
 			)
 			if err := os.WriteFile(
 				binaryPath, []byte("fake"), 0o755,

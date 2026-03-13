@@ -314,13 +314,21 @@ func (i *Installer) CloneAndBuild(
 		return "", fmt.Errorf("make build: %w", err)
 	}
 
-	binaryPath := filepath.Join(repoDir, consts.MCPBinaryName)
+	binaryPath := filepath.Join(
+		repoDir, "bin", consts.MCPBinaryName,
+	)
 	if _, err := os.Stat(binaryPath); err != nil {
-		return "", fmt.Errorf(
-			"binary not found at %s: %w",
-			binaryPath,
-			err,
+		// Fall back to root-level binary for repos that
+		// build to the project root.
+		binaryPath = filepath.Join(
+			repoDir, consts.MCPBinaryName,
 		)
+		if _, err := os.Stat(binaryPath); err != nil {
+			return "", fmt.Errorf(
+				"binary not found after build: %w",
+				err,
+			)
+		}
 	}
 
 	return binaryPath, nil
