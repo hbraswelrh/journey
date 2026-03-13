@@ -11,6 +11,7 @@ import (
 	"charm.land/lipgloss/v2/table"
 
 	"github.com/hbraswelrh/pacman/internal/consts"
+	"github.com/hbraswelrh/pacman/internal/team"
 	"github.com/hbraswelrh/pacman/internal/tutorials"
 )
 
@@ -588,6 +589,268 @@ func RenderBlockSummary(
 		}
 		fmt.Fprintln(out)
 	}
+}
+
+// handoffBarStyle uses an orange left-side accent for
+// handoff point cards.
+var handoffBarStyle = lipgloss.NewStyle().
+	BorderStyle(lipgloss.ThickBorder()).
+	BorderLeft(true).
+	BorderRight(false).
+	BorderTop(false).
+	BorderBottom(false).
+	BorderForeground(colorOrange).
+	PaddingLeft(2).
+	MarginLeft(2).
+	MarginBottom(1)
+
+// gapBarStyle uses a warning-colored left-side accent for
+// coverage gap cards.
+var gapBarStyle = lipgloss.NewStyle().
+	BorderStyle(lipgloss.ThickBorder()).
+	BorderLeft(true).
+	BorderRight(false).
+	BorderTop(false).
+	BorderBottom(false).
+	BorderForeground(colorWarning).
+	PaddingLeft(2).
+	MarginLeft(2).
+	MarginBottom(1)
+
+// RenderCollaborationView displays a styled team
+// collaboration view with member-layer grid, handoff
+// points, and coverage gaps.
+func RenderCollaborationView(
+	view *team.CollaborationView,
+	out io.Writer,
+) {
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, RenderDivider())
+	fmt.Fprintln(out)
+
+	header := headingStyle.Render(
+		"Team Collaboration View",
+	)
+	header += " " + roleInfoStyle.Render(
+		"("+view.TeamName+")",
+	)
+	fmt.Fprintln(out, header)
+	fmt.Fprintln(out)
+
+	// Member-layer grid using table.
+	renderMemberGrid(view, out)
+
+	// Handoff points.
+	if len(view.Handoffs) > 0 {
+		fmt.Fprintln(out, headingStyle.Render(
+			"Handoff Points",
+		))
+		fmt.Fprintln(out)
+
+		for i, hp := range view.Handoffs {
+			fmt.Fprintf(out, "%s\n",
+				renderHandoffCard(i, hp),
+			)
+		}
+	}
+
+	// Coverage gaps.
+	if len(view.CoverageGaps) > 0 {
+		RenderCoverageGaps(view.CoverageGaps, out)
+	}
+}
+
+// renderMemberGrid renders a table of team members and
+// their Gemara layer assignments.
+func renderMemberGrid(
+	view *team.CollaborationView,
+	out io.Writer,
+) {
+	headerStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(colorPrimary)
+
+	t := table.New().
+		Border(lipgloss.RoundedBorder()).
+		BorderStyle(
+			lipgloss.NewStyle().
+				Foreground(colorSubtle),
+		).
+		StyleFunc(
+			func(row, col int) lipgloss.Style {
+				if row == table.HeaderRow {
+					return headerStyle
+				}
+				if col == 0 {
+					return lipgloss.NewStyle().
+						Bold(true).
+						Foreground(colorOrange)
+				}
+				if col == 1 {
+					return lipgloss.NewStyle().
+						Foreground(colorWhite)
+				}
+				return faintStyle
+			},
+		).
+		Headers("Member", "Role", "Layers")
+
+	for _, m := range view.Members {
+		var layerStrs []string
+		for _, l := range m.Layers {
+			name := LayerNames[l]
+			if name == "" {
+				name = fmt.Sprintf("Layer %d", l)
+			}
+			layerStrs = append(layerStrs,
+				fmt.Sprintf("L%d (%s)", l, name),
+			)
+		}
+		t.Row(
+			m.Name,
+			m.RoleName,
+			strings.Join(layerStrs, ", "),
+		)
+	}
+
+	fmt.Fprintln(out, t.String())
+	fmt.Fprintln(out)
+}
+
+// renderHandoffCard renders a single handoff point card
+// with an orange left-bar accent.
+func renderHandoffCard(
+	index int,
+	hp team.HandoffPoint,
+) string {
+	num := stepNumStyle.Render(
+		fmt.Sprintf("Handoff %d", index+1),
+	)
+
+	producerBadge := layerBadgeStyle.Render(
+		fmt.Sprintf(" L%d ", hp.ProducerLayer),
+	)
+	consumerBadge := layerBadgeStyle.Render(
+		fmt.Sprintf(" L%d ", hp.ConsumerLayer),
+	)
+
+	flow := roleInfoStyle.Render(hp.ProducerName) +
+		" " + producerBadge +
+		faintStyle.Render(" → ") +
+		roleInfoStyle.Render(hp.ConsumerName) +
+		" " + consumerBadge
+
+	lines := []string{
+		num + "  " + flow,
+	}
+
+	if hp.Description != "" {
+		lines = append(lines, "")
+		lines = append(lines,
+			faintStyle.Render(hp.Description),
+		)
+	}
+
+	if len(hp.ArtifactTypes) > 0 {
+		lines = append(lines, "")
+		label := annotationLabelStyle.Render(
+			"Artifacts: ",
+		)
+		arts := make([]string, len(hp.ArtifactTypes))
+		for i, at := range hp.ArtifactTypes {
+			arts[i] = keywordTagStyle.Render(at)
+		}
+		lines = append(lines,
+			label+strings.Join(
+				arts, faintStyle.Render(", "),
+			),
+		)
+	}
+
+	if len(hp.ProducerTutorials) > 0 {
+		lines = append(lines, "")
+		label := annotationLabelStyle.Render(
+			"Producer tutorials: ",
+		)
+		lines = append(lines,
+			label+faintStyle.Render(
+				strings.Join(
+					hp.ProducerTutorials, ", ",
+				),
+			),
+		)
+	}
+
+	if len(hp.ConsumerTutorials) > 0 {
+		label := annotationLabelStyle.Render(
+			"Consumer tutorials: ",
+		)
+		lines = append(lines,
+			label+faintStyle.Render(
+				strings.Join(
+					hp.ConsumerTutorials, ", ",
+				),
+			),
+		)
+	}
+
+	content := strings.Join(lines, "\n")
+	return handoffBarStyle.Render(content)
+}
+
+// RenderHandoffPoint returns a styled handoff point card
+// for detailed inspection.
+func RenderHandoffPoint(hp team.HandoffPoint) string {
+	return renderHandoffCard(0, hp)
+}
+
+// RenderCoverageGaps displays warnings for Gemara layers
+// with no assigned team member.
+func RenderCoverageGaps(gaps []int, out io.Writer) {
+	fmt.Fprintln(out, headingStyle.Render(
+		"Coverage Gaps",
+	))
+	fmt.Fprintln(out)
+
+	var lines []string
+	for _, l := range gaps {
+		name := LayerNames[l]
+		if name == "" {
+			name = fmt.Sprintf("Layer %d", l)
+		}
+		lines = append(lines, fmt.Sprintf(
+			"%s %s — no team member assigned",
+			warningStyle.Render("▪"),
+			fmt.Sprintf("L%d (%s)", l, name),
+		))
+	}
+
+	content := strings.Join(lines, "\n")
+	fmt.Fprintln(out, gapBarStyle.Render(content))
+}
+
+// RenderTeamMember returns a styled team member card.
+func RenderTeamMember(
+	name string,
+	roleName string,
+	layers []int,
+) string {
+	memberName := roleInfoStyle.Render(name)
+	role := faintStyle.Render("(" + roleName + ")")
+
+	var badges []string
+	for _, l := range layers {
+		badges = append(badges, RenderLayerBadge(l))
+	}
+
+	lines := []string{
+		memberName + " " + role,
+		"",
+		strings.Join(badges, "  "),
+	}
+
+	content := strings.Join(lines, "\n")
+	return stepBarStyle.Render(content)
 }
 
 // min returns the smaller of two ints.

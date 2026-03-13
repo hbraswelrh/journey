@@ -173,3 +173,47 @@ const (
 	CategorySchemaStruct   = "schema_structure"
 	CategoryCrossRef       = "cross_reference"
 )
+
+// TeamConfigDir is the subdirectory under the user's config
+// directory where team configurations are stored.
+const TeamConfigDir = "pacman/teams"
+
+// TeamConfigExt is the file extension for saved team configs.
+const TeamConfigExt = ".yaml"
+
+// LayerArtifacts maps Gemara layer numbers to the artifact
+// types primarily produced at that layer. MappingDocument is
+// cross-layer (L1-L3) and is listed under each layer it
+// spans.
+var LayerArtifacts = map[int][]string{
+	LayerGuidance: {ArtifactGuidanceCatalog},
+	LayerThreatsControls: {
+		ArtifactThreatCatalog,
+		ArtifactControlCatalog,
+	},
+	LayerRiskPolicy:        {ArtifactPolicy},
+	LayerSensitiveActivity: {},
+	LayerEvaluation:        {ArtifactEvaluationLog},
+	LayerDataCollection:    {},
+	LayerReporting:         {},
+}
+
+// ArtifactFlowDescriptions describes how artifacts flow
+// between adjacent Gemara layers.
+var ArtifactFlowDescriptions = map[[2]int]string{
+	{LayerGuidance, LayerThreatsControls}: "Guidance " +
+		"catalogs inform threat and control scope",
+	{LayerGuidance, LayerRiskPolicy}: "Guidance " +
+		"catalogs are referenced by policy documents",
+	{LayerThreatsControls, LayerRiskPolicy}: "Control " +
+		"and threat catalogs feed policy evaluation " +
+		"criteria",
+	{LayerThreatsControls, LayerSensitiveActivity}: "" +
+		"Controls define requirements for sensitive " +
+		"activities",
+	{LayerRiskPolicy, LayerSensitiveActivity}: "Policy " +
+		"governs which controls apply to sensitive " +
+		"activities",
+	{LayerRiskPolicy, LayerEvaluation}: "Policy drives " +
+		"evaluation log assessments",
+}

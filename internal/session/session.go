@@ -73,6 +73,13 @@ type Session struct {
 	// ContentBlocksCount is the number of content blocks
 	// extracted from tutorials.
 	ContentBlocksCount int
+
+	// TeamName is the name of the configured team, if any.
+	TeamName string
+
+	// TeamMemberCount is the number of members in the
+	// configured team.
+	TeamMemberCount int
 }
 
 // SetRoleProfile stores role discovery results in the session.
@@ -196,6 +203,29 @@ func (s *Session) HandleReconnection() {
 		GetSchemaDocs:    true,
 	}
 	s.DegradedCapabilities = nil
+}
+
+// SetTeamInfo stores team configuration info in the session.
+func (s *Session) SetTeamInfo(name string, count int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.TeamName = name
+	s.TeamMemberCount = count
+}
+
+// GetTeamName returns the session's team name.
+func (s *Session) GetTeamName() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.TeamName
+}
+
+// GetTeamMemberCount returns the number of team members.
+func (s *Session) GetTeamMemberCount() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.TeamMemberCount
 }
 
 // IsFallback returns whether the session is currently operating
