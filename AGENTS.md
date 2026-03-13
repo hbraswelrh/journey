@@ -13,7 +13,19 @@ on their job role and daily activities.
 - `internal/fallback/` — Local fallback (bundled lexicon, local
   CUE validation, cached schema docs)
 - `internal/session/` — Session state management
-- `internal/cli/` — CLI commands and setup flows
+- `internal/schema/` — Schema release fetching and version
+  selection
+- `internal/roles/` — Role identification, activity probing,
+  custom profiles
+- `internal/tutorials/` — Tutorial loading, learning path
+  generation
+- `internal/blocks/` — Content block extraction, drift
+  detection, retrieval
+- `internal/team/` — Team configuration, handoff detection,
+  collaboration view
+- `internal/authoring/` — Guided Gemara content authoring,
+  validation, YAML/JSON output
+- `internal/cli/` — CLI commands, setup flows, TUI rendering
 - `specs/` — Feature specifications, plans, and task lists
 - `docs/adrs/` — Architecture Decision Records
 
@@ -57,4 +69,10 @@ definition constants from `internal/consts/consts.go`.
 - MCP-related logic: `internal/mcp/`
 - Fallback behavior: `internal/fallback/`
 - Session state: `internal/session/`
+- Schema version selection: `internal/schema/`
+- Role and activity logic: `internal/roles/`
+- Tutorial loading and paths: `internal/tutorials/`
+- Content block extraction: `internal/blocks/`
+- Team collaboration: `internal/team/`
+- Guided authoring: `internal/authoring/`
 - CLI flows: `internal/cli/`

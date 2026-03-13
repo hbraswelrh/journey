@@ -255,7 +255,20 @@ pacman/
                            #   local CUE validation, cached
                            #   schema docs)
     session/               # Session state management
-    cli/                   # CLI commands and setup flows
+    schema/                # Schema release fetching and version
+                           #   selection
+    roles/                 # Role identification, activity probing,
+                           #   custom profiles
+    tutorials/             # Tutorial loading, learning path
+                           #   generation
+    blocks/                # Content block extraction, drift
+                           #   detection, retrieval
+    team/                  # Team configuration, handoff detection,
+                           #   collaboration view
+    authoring/             # Guided Gemara content authoring,
+                           #   validation, YAML/JSON output
+    cli/                   # CLI commands, setup flows, TUI
+                           #   rendering
   go.mod                   # Go module definition
   Makefile                 # Single entry point for build/test/lint
   specs/                   # Feature specifications
@@ -263,8 +276,11 @@ pacman/
       spec.md              # Role-based tutorial engine spec
       plan.md              # Implementation plan (US1)
       tasks.md             # Task breakdown (US1)
+      plan-us2.md .. plan-us6.md   # Plans for US2-US6
+      tasks-us2.md .. tasks-us6.md # Tasks for US2-US6
       checklists/          # Quality validation checklists
   docs/adrs/               # Architecture Decision Records
+  .github/                 # Issue templates, PR template, CI
   .specify/
     memory/
       constitution.md      # Project constitution (authoritative)
