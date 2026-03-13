@@ -32,6 +32,14 @@ const MCPPodmanContainer = "gemara-mcp"
 // Gemara MCP server.
 const MCPPodmanImage = "ghcr.io/gemaraproj/gemara-mcp:latest"
 
+// MCPInstallDir is the subdirectory under ~/.local/share
+// where the MCP server is installed from source.
+const MCPInstallDir = "pacman"
+
+// InstalledReleaseFile is the filename for the installed
+// release metadata, stored alongside the built binary.
+const InstalledReleaseFile = "installed-release.json"
+
 // OpenCodeConfigFile is the OpenCode configuration file where
 // MCP server entries are registered.
 const OpenCodeConfigFile = "opencode.json"

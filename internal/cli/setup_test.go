@@ -211,12 +211,17 @@ func TestSetup_SourceBuildSSH(t *testing.T) {
 	var buf bytes.Buffer
 	cfg := &cli.SetupConfig{
 		Prompter: &mockPrompter{
-			choices: []int{0, 0}, // Build from source, SSH
+			choices: []int{0}, // Build from source
 		},
 		BinaryLookup:  mockBinaryNotFound(),
 		PodmanChecker: mockPodmanNotRunning(),
 		Installer:     mockInstaller(t),
-		ConfigPath:    configPath,
+		SSHChecker: func(
+			_ context.Context,
+		) bool {
+			return true // Simulate SSH keys configured
+		},
+		ConfigPath: configPath,
 	}
 
 	result, err := cli.RunSetup(
@@ -233,6 +238,12 @@ func TestSetup_SourceBuildSSH(t *testing.T) {
 	}
 
 	output := buf.String()
+	if !strings.Contains(output, "Using SSH") {
+		t.Fatalf(
+			"expected SSH detection message, got: %s",
+			output,
+		)
+	}
 	if !strings.Contains(output, "Build complete") {
 		t.Fatalf(
 			"expected build complete message, got: %s",

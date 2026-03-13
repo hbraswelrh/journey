@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
+	"github.com/hbraswelrh/pacman/internal/consts"
 	"github.com/hbraswelrh/pacman/internal/mcp"
 	"github.com/hbraswelrh/pacman/internal/session"
 	"github.com/hbraswelrh/pacman/internal/tutorials"
@@ -30,6 +32,9 @@ type SetupConfig struct {
 	PodmanChecker mcp.PodmanChecker
 	// Installer handles gemara-mcp installation.
 	Installer *mcp.Installer
+	// SSHChecker detects whether SSH keys are configured
+	// for GitHub. When nil, HTTPS is used by default.
+	SSHChecker mcp.SSHChecker
 	// ConfigPath is the path to opencode.json.
 	ConfigPath string
 	// VersionFetcher fetches releases from upstream. When
@@ -212,6 +217,13 @@ func runMCPSetup(
 			}
 		}
 
+		// Check for updates if installer is available
+		// and this is a source-built binary.
+		if cfg.Installer != nil &&
+			detection.Method == mcp.MethodBinary {
+			checkAndOfferUpdate(ctx, cfg, out)
+		}
+
 		sess := session.NewSessionWithMCP("")
 		return &SetupResult{
 			Session: sess,
@@ -251,19 +263,21 @@ func handleSourceBuild(
 	cfg *SetupConfig,
 	out io.Writer,
 ) (*SetupResult, error) {
-	// Ask for clone method.
-	cloneChoice, err := cfg.Prompter.Ask(
-		"Clone via SSH or HTTPS?",
-		[]string{"SSH", "HTTPS"},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("prompt clone method: %w", err)
-	}
-
+	// Auto-detect clone method: use SSH if keys are
+	// configured, otherwise default to HTTPS.
 	method := mcp.CloneHTTPS
-	if cloneChoice == 0 {
-		method = mcp.CloneSSH
+	if cfg.SSHChecker != nil {
+		fmt.Fprintln(out, RenderStatus(
+			"Detecting SSH key configuration...",
+		))
+		method = mcp.DetectCloneMethod(
+			ctx, cfg.SSHChecker,
+		)
 	}
+	fmt.Fprintln(out, RenderSuccess(fmt.Sprintf(
+		"Using %s for repository access",
+		mcp.CloneMethodLabel(method),
+	)))
 
 	fmt.Fprintln(out, RenderStatus(
 		"Resolving latest gemara-mcp release...",
@@ -274,11 +288,15 @@ func handleSourceBuild(
 		return nil, fmt.Errorf("resolve release: %w", err)
 	}
 
-	fmt.Fprintln(out, RenderSuccess(fmt.Sprintf(
+	releaseLabel := fmt.Sprintf(
 		"Found release %s (commit %s)",
 		release.Tag,
 		truncateSHA(release.CommitSHA),
-	)))
+	)
+	if release.Prerelease {
+		releaseLabel += " [prerelease]"
+	}
+	fmt.Fprintln(out, RenderSuccess(releaseLabel))
 	fmt.Fprintln(out, RenderStatus(
 		"Cloning and building...",
 	))
@@ -299,6 +317,26 @@ func handleSourceBuild(
 	fmt.Fprintln(out, RenderSuccess(
 		"Build complete: "+binaryPath,
 	))
+
+	// Save installed release metadata for future
+	// update checks.
+	installed := &mcp.InstalledRelease{
+		Tag:        release.Tag,
+		CommitSHA:  release.CommitSHA,
+		Prerelease: release.Prerelease,
+		InstalledAt: time.Now().UTC().Format(
+			time.RFC3339,
+		),
+		BinaryPath: binaryPath,
+	}
+	if err := mcp.SaveInstalledRelease(
+		destDir, installed,
+	); err != nil {
+		fmt.Fprintln(out, RenderWarning(
+			"Could not save release metadata: "+
+				err.Error(),
+		))
+	}
 
 	// Configure opencode.json.
 	if err := configureMCPEntry(
@@ -403,6 +441,127 @@ func truncateSHA(sha string) string {
 		return sha[:12]
 	}
 	return sha
+}
+
+// checkAndOfferUpdate checks for a newer gemara-mcp release
+// and offers to update if one is available. Requires explicit
+// user confirmation. Errors are non-fatal (logged as warnings).
+func checkAndOfferUpdate(
+	ctx context.Context,
+	cfg *SetupConfig,
+	out io.Writer,
+) {
+	homeDir, err := userHomeDir()
+	if err != nil {
+		return
+	}
+	installDir := homeDir + "/.local/share/" +
+		consts.MCPInstallDir
+
+	update, err := cfg.Installer.CheckForUpdate(
+		ctx, installDir,
+	)
+	if err != nil || !update.UpdateAvailable {
+		return
+	}
+
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, headingStyle.Render(
+		"MCP Server Update Available",
+	))
+	fmt.Fprintln(out)
+
+	// Display version comparison.
+	installedLabel := fmt.Sprintf(
+		"Installed: %s (commit %s)",
+		update.Installed.Tag,
+		truncateSHA(update.Installed.CommitSHA),
+	)
+	latestLabel := fmt.Sprintf(
+		"Available: %s (commit %s)",
+		update.Latest.Tag,
+		truncateSHA(update.Latest.CommitSHA),
+	)
+	if update.Latest.Prerelease {
+		latestLabel += " [prerelease]"
+	}
+
+	fmt.Fprintln(out, "  "+faintStyle.Render(
+		installedLabel,
+	))
+	fmt.Fprintln(out, "  "+successStyle.Render(
+		latestLabel,
+	))
+	fmt.Fprintln(out)
+
+	// Ask user for confirmation.
+	choice, err := cfg.Prompter.Ask(
+		"Update gemara-mcp to the latest release?",
+		[]string{"Yes, update now", "Skip update"},
+	)
+	if err != nil || choice != 0 {
+		fmt.Fprintln(out, RenderNote(
+			"Update skipped. You can update later "+
+				"by re-running setup.",
+		))
+		return
+	}
+
+	// Perform update.
+	fmt.Fprintln(out, RenderStatus(
+		"Updating gemara-mcp...",
+	))
+
+	method := mcp.CloneHTTPS
+	if cfg.SSHChecker != nil {
+		method = mcp.DetectCloneMethod(
+			ctx, cfg.SSHChecker,
+		)
+	}
+
+	binaryPath, err := cfg.Installer.CloneAndBuild(
+		ctx, method, update.Latest, installDir,
+	)
+	if err != nil {
+		fmt.Fprintln(out, RenderWarning(
+			"Update failed: "+err.Error(),
+		))
+		return
+	}
+
+	// Save updated release metadata.
+	installed := &mcp.InstalledRelease{
+		Tag:        update.Latest.Tag,
+		CommitSHA:  update.Latest.CommitSHA,
+		Prerelease: update.Latest.Prerelease,
+		InstalledAt: time.Now().UTC().Format(
+			time.RFC3339,
+		),
+		BinaryPath: binaryPath,
+	}
+	if err := mcp.SaveInstalledRelease(
+		installDir, installed,
+	); err != nil {
+		fmt.Fprintln(out, RenderWarning(
+			"Could not save release metadata: "+
+				err.Error(),
+		))
+	}
+
+	fmt.Fprintln(out, RenderSuccess(fmt.Sprintf(
+		"Updated to %s (commit %s)",
+		update.Latest.Tag,
+		truncateSHA(update.Latest.CommitSHA),
+	)))
+
+	// Update opencode.json with new binary path.
+	if err := configureMCPEntry(
+		cfg.ConfigPath, binaryPath,
+	); err != nil {
+		fmt.Fprintln(out, RenderWarning(
+			"Could not update config: "+err.Error(),
+		))
+	}
 }
 
 // userHomeDir returns the user's home directory. Variable for

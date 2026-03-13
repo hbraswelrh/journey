@@ -206,6 +206,7 @@ func main() {
 				mcp.DefaultReleaseFetcher,
 				mcp.DefaultCommandRunner,
 			),
+			SSHChecker:       mcp.DefaultSSHChecker,
 			ConfigPath:       configPath,
 			VersionFetcher:   fetcher,
 			VersionCachePath: cachePath,

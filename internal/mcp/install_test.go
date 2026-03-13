@@ -218,6 +218,269 @@ func TestInstaller_InstallPodman(t *testing.T) {
 	}
 }
 
+func TestDefaultReleaseFetcher_NotFound(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	// Call against a repo that truly does not exist.
+	_, err := mcp.DefaultReleaseFetcher(
+		ctx,
+		"https://github.com/gemaraproj/"+
+			"definitely-nonexistent-repo-xyz",
+	)
+	if err == nil {
+		t.Fatal("expected error for nonexistent repo")
+	}
+	// Should get the user-friendly message, not raw JSON.
+	errMsg := err.Error()
+	if !searchString(errMsg, "no published releases") &&
+		!searchString(errMsg, "no release found") &&
+		!searchString(errMsg, "404") {
+		t.Errorf(
+			"expected error for missing repo, "+
+				"got: %s",
+			errMsg,
+		)
+	}
+}
+
+// TestDefaultReleaseFetcher_PrereleasesFallback verifies
+// that when no stable release exists but prereleases do,
+// the fetcher returns the prerelease.
+func TestDefaultReleaseFetcher_Prerelease(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	// The real gemara-mcp repo has v0.0.0 prerelease
+	// but no stable release — this should succeed via
+	// the fallback path.
+	info, err := mcp.DefaultReleaseFetcher(
+		ctx,
+		"https://github.com/gemaraproj/gemara-mcp",
+	)
+	if err != nil {
+		t.Fatalf("expected prerelease fallback, got: %v", err)
+	}
+	if info.Tag == "" {
+		t.Error("expected non-empty tag")
+	}
+	if info.CommitSHA == "" {
+		t.Error("expected non-empty CommitSHA")
+	}
+	if !info.Prerelease {
+		t.Log(
+			"release is not marked as prerelease " +
+				"— a stable release may now exist",
+		)
+	}
+}
+
+// TestSaveAndLoadInstalledRelease verifies round-trip of
+// installed release metadata.
+func TestSaveAndLoadInstalledRelease(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+
+	release := &mcp.InstalledRelease{
+		Tag:         "v0.0.0",
+		CommitSHA:   "015fcbc483ff18e48fc1063cb8f9e35298a6830c",
+		Prerelease:  true,
+		InstalledAt: "2026-03-13T12:00:00Z",
+		BinaryPath:  "/usr/local/bin/gemara-mcp",
+	}
+
+	err := mcp.SaveInstalledRelease(dir, release)
+	if err != nil {
+		t.Fatalf("SaveInstalledRelease: %v", err)
+	}
+
+	loaded, err := mcp.LoadInstalledRelease(dir)
+	if err != nil {
+		t.Fatalf("LoadInstalledRelease: %v", err)
+	}
+	if loaded == nil {
+		t.Fatal("expected non-nil loaded release")
+	}
+	if loaded.Tag != release.Tag {
+		t.Errorf(
+			"Tag = %q, want %q",
+			loaded.Tag, release.Tag,
+		)
+	}
+	if loaded.CommitSHA != release.CommitSHA {
+		t.Errorf(
+			"CommitSHA = %q, want %q",
+			loaded.CommitSHA, release.CommitSHA,
+		)
+	}
+	if !loaded.Prerelease {
+		t.Error("expected Prerelease = true")
+	}
+}
+
+// TestLoadInstalledRelease_NoFile returns nil when no
+// metadata file exists.
+func TestLoadInstalledRelease_NoFile(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+
+	loaded, err := mcp.LoadInstalledRelease(dir)
+	if err != nil {
+		t.Fatalf("LoadInstalledRelease: %v", err)
+	}
+	if loaded != nil {
+		t.Error("expected nil when no file exists")
+	}
+}
+
+// TestCheckForUpdate_NoUpdate returns false when installed
+// SHA matches latest.
+func TestCheckForUpdate_NoUpdate(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	sha := "abc123def456abc123def456"
+
+	// Save installed release.
+	release := &mcp.InstalledRelease{
+		Tag:         "v0.5.0",
+		CommitSHA:   sha,
+		InstalledAt: "2026-03-13T12:00:00Z",
+		BinaryPath:  "/usr/local/bin/gemara-mcp",
+	}
+	_ = mcp.SaveInstalledRelease(dir, release)
+
+	// Fetcher returns same SHA.
+	fetcher := func(
+		_ context.Context,
+		_ string,
+	) (*mcp.ReleaseInfo, error) {
+		return &mcp.ReleaseInfo{
+			Tag:       "v0.5.0",
+			CommitSHA: sha,
+		}, nil
+	}
+
+	installer := mcp.NewInstaller(fetcher, nil)
+	update, err := installer.CheckForUpdate(
+		context.Background(), dir,
+	)
+	if err != nil {
+		t.Fatalf("CheckForUpdate: %v", err)
+	}
+	if update.UpdateAvailable {
+		t.Error("expected no update available")
+	}
+}
+
+// TestCheckForUpdate_UpdateAvailable returns true when SHAs
+// differ.
+func TestCheckForUpdate_UpdateAvailable(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+
+	// Save installed release with old SHA.
+	release := &mcp.InstalledRelease{
+		Tag:         "v0.5.0",
+		CommitSHA:   "oldsha123",
+		InstalledAt: "2026-03-13T12:00:00Z",
+		BinaryPath:  "/usr/local/bin/gemara-mcp",
+	}
+	_ = mcp.SaveInstalledRelease(dir, release)
+
+	// Fetcher returns new SHA.
+	fetcher := func(
+		_ context.Context,
+		_ string,
+	) (*mcp.ReleaseInfo, error) {
+		return &mcp.ReleaseInfo{
+			Tag:       "v0.6.0",
+			CommitSHA: "newsha456",
+		}, nil
+	}
+
+	installer := mcp.NewInstaller(fetcher, nil)
+	update, err := installer.CheckForUpdate(
+		context.Background(), dir,
+	)
+	if err != nil {
+		t.Fatalf("CheckForUpdate: %v", err)
+	}
+	if !update.UpdateAvailable {
+		t.Error("expected update available")
+	}
+	if update.Installed.Tag != "v0.5.0" {
+		t.Errorf(
+			"Installed.Tag = %q, want %q",
+			update.Installed.Tag, "v0.5.0",
+		)
+	}
+	if update.Latest.Tag != "v0.6.0" {
+		t.Errorf(
+			"Latest.Tag = %q, want %q",
+			update.Latest.Tag, "v0.6.0",
+		)
+	}
+}
+
+// TestCheckForUpdate_NoMetadata returns no update when
+// metadata file does not exist.
+func TestCheckForUpdate_NoMetadata(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+
+	fetcher := func(
+		_ context.Context,
+		_ string,
+	) (*mcp.ReleaseInfo, error) {
+		return &mcp.ReleaseInfo{
+			Tag:       "v0.6.0",
+			CommitSHA: "newsha456",
+		}, nil
+	}
+
+	installer := mcp.NewInstaller(fetcher, nil)
+	update, err := installer.CheckForUpdate(
+		context.Background(), dir,
+	)
+	if err != nil {
+		t.Fatalf("CheckForUpdate: %v", err)
+	}
+	if update.UpdateAvailable {
+		t.Error(
+			"expected no update when no metadata " +
+				"exists",
+		)
+	}
+}
+
+// TestDetectCloneMethod_SSHAvailable returns CloneSSH.
+func TestDetectCloneMethod_SSHAvailable(t *testing.T) {
+	t.Parallel()
+	checker := func(_ context.Context) bool {
+		return true
+	}
+	method := mcp.DetectCloneMethod(
+		context.Background(), checker,
+	)
+	if method != mcp.CloneSSH {
+		t.Errorf("expected CloneSSH, got %d", method)
+	}
+}
+
+// TestDetectCloneMethod_SSHUnavailable returns CloneHTTPS.
+func TestDetectCloneMethod_SSHUnavailable(t *testing.T) {
+	t.Parallel()
+	checker := func(_ context.Context) bool {
+		return false
+	}
+	method := mcp.DetectCloneMethod(
+		context.Background(), checker,
+	)
+	if method != mcp.CloneHTTPS {
+		t.Errorf("expected CloneHTTPS, got %d", method)
+	}
+}
+
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) &&
 		(s == substr ||
