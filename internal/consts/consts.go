@@ -156,3 +156,20 @@ const RoleProfileDir = "pacman/roles"
 
 // RoleProfileExt is the file extension for saved role profiles.
 const RoleProfileExt = ".yaml"
+
+// BlockCacheDir is the subdirectory under the user's config
+// directory where extracted content blocks are stored.
+const BlockCacheDir = "pacman/blocks"
+
+// BlockManifestFile is the filename for the extraction
+// manifest used by drift detection.
+const BlockManifestFile = "manifest.yaml"
+
+// Content block categories per FR-005.
+const (
+	CategoryPattern        = "pattern"
+	CategoryValidationStep = "validation_step"
+	CategoryNamingConv     = "naming_convention"
+	CategorySchemaStruct   = "schema_structure"
+	CategoryCrossRef       = "cross_reference"
+)
