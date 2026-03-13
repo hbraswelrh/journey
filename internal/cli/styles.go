@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	lipgloss "charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/compat"
 	"charm.land/lipgloss/v2/table"
 
 	"github.com/hbraswelrh/pacman/internal/consts"
@@ -15,18 +16,50 @@ import (
 	"github.com/hbraswelrh/pacman/internal/tutorials"
 )
 
-// Color palette for the Pac-Man TUI.
+// Color palette for the Pac-Man TUI. Uses AdaptiveColor to
+// support both light and dark terminal backgrounds,
+// including OpenCode IDE environments.
 var (
-	colorPrimary   = lipgloss.Color("#7D56F4")
-	colorSecondary = lipgloss.Color("#5B3CC4")
-	colorSubtle    = lipgloss.Color("#6C6C6C")
-	colorSuccess   = lipgloss.Color("#04B575")
-	colorWarning   = lipgloss.Color("#FFCC00")
-	colorFaint     = lipgloss.Color("#999999")
-	colorWhite     = lipgloss.Color("#FAFAFA")
-	colorDim       = lipgloss.Color("#555555")
-	colorCyan      = lipgloss.Color("#00D4FF")
-	colorOrange    = lipgloss.Color("#FF8C00")
+	colorPrimary = compat.AdaptiveColor{
+		Light: lipgloss.Color("#6B3FD4"),
+		Dark:  lipgloss.Color("#7D56F4"),
+	}
+	colorSecondary = compat.AdaptiveColor{
+		Light: lipgloss.Color("#4A2BA0"),
+		Dark:  lipgloss.Color("#5B3CC4"),
+	}
+	colorSubtle = compat.AdaptiveColor{
+		Light: lipgloss.Color("#555555"),
+		Dark:  lipgloss.Color("#6C6C6C"),
+	}
+	colorSuccess = compat.AdaptiveColor{
+		Light: lipgloss.Color("#038A5A"),
+		Dark:  lipgloss.Color("#04B575"),
+	}
+	colorWarning = compat.AdaptiveColor{
+		Light: lipgloss.Color("#CC9900"),
+		Dark:  lipgloss.Color("#FFCC00"),
+	}
+	colorFaint = compat.AdaptiveColor{
+		Light: lipgloss.Color("#666666"),
+		Dark:  lipgloss.Color("#999999"),
+	}
+	colorWhite = compat.AdaptiveColor{
+		Light: lipgloss.Color("#1A1A1A"),
+		Dark:  lipgloss.Color("#FAFAFA"),
+	}
+	colorDim = compat.AdaptiveColor{
+		Light: lipgloss.Color("#AAAAAA"),
+		Dark:  lipgloss.Color("#555555"),
+	}
+	colorCyan = compat.AdaptiveColor{
+		Light: lipgloss.Color("#0088AA"),
+		Dark:  lipgloss.Color("#00D4FF"),
+	}
+	colorOrange = compat.AdaptiveColor{
+		Light: lipgloss.Color("#CC6600"),
+		Dark:  lipgloss.Color("#FF8C00"),
+	}
 )
 
 // Reusable text styles.
