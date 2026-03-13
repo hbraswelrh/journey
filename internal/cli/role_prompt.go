@@ -351,63 +351,50 @@ func handleAmbiguousKeywords(
 }
 
 // displayResolvedLayers shows the user which Gemara layers
-// were identified from their profile.
+// were identified from their profile using styled output.
 func displayResolvedLayers(
 	profile *roles.ActivityProfile,
 	out io.Writer,
 ) {
 	fmt.Fprintln(out)
+	fmt.Fprintln(out, RenderDivider())
+	fmt.Fprintln(out)
 	fmt.Fprintln(out, headingStyle.Render(
-		"Resolved Gemara Layers:",
+		"Resolved Gemara Layers",
 	))
-
-	layerNames := map[int]string{
-		consts.LayerGuidance:          "Guidance",
-		consts.LayerThreatsControls:   "Threats & Controls",
-		consts.LayerRiskPolicy:        "Risk & Policy",
-		consts.LayerSensitiveActivity: "Sensitive Activities",
-		consts.LayerEvaluation:        "Evaluation",
-		consts.LayerDataCollection:    "Data Collection",
-		consts.LayerReporting:         "Reporting",
-	}
+	fmt.Fprintln(out)
 
 	for _, lm := range profile.ResolvedLayers {
-		name := layerNames[lm.Layer]
-		if name == "" {
-			name = fmt.Sprintf("Layer %d", lm.Layer)
-		}
-
-		conf := "inferred"
-		if lm.Confidence == roles.ConfidenceStrong {
-			conf = "strong"
-		}
-
-		line := fmt.Sprintf(
-			"  Layer %d (%s) — confidence: %s",
-			lm.Layer, name, conf,
+		badge := RenderLayerBadge(lm.Layer)
+		conf := RenderConfidence(
+			lm.Confidence == roles.ConfidenceStrong,
 		)
+
+		line := "  " + badge + "  " + conf
 		if len(lm.Keywords) > 0 {
-			line += fmt.Sprintf(
-				" [%s]",
-				strings.Join(lm.Keywords, ", "),
-			)
+			line += "  " +
+				RenderKeywordTags(lm.Keywords)
 		}
+
 		fmt.Fprintln(out, line)
 	}
 	fmt.Fprintln(out)
 }
 
-// RenderRoleHeader returns the styled role discovery header.
+// RenderRoleHeader returns the styled role discovery header
+// with a divider.
 func RenderRoleHeader() string {
-	return "\n" + headingStyle.Render(
-		"Role Discovery",
-	) + "\n"
+	return "\n" + RenderDivider() + "\n\n" +
+		titleStyle.Render(
+			" Role Discovery ",
+		) + "\n"
 }
 
 // RenderActivityHeader returns the styled activity probing
-// header.
+// header with a divider.
 func RenderActivityHeader() string {
-	return headingStyle.Render(
-		"Activity Probing",
-	)
+	return RenderDivider() + "\n\n" +
+		titleStyle.Render(
+			" Activity Probing ",
+		)
 }
