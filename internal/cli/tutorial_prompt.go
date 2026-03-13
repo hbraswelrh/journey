@@ -167,6 +167,30 @@ func runTutorialStep(
 		len(sections),
 	))
 
+	// Surface related wizards for Layer 2 tutorials.
+	wizards := AvailableWizards()
+	var relatedWizards []WizardInfo
+	for _, w := range wizards {
+		if w.Layer == step.Layer {
+			relatedWizards = append(relatedWizards, w)
+		}
+	}
+	if len(relatedWizards) > 0 {
+		fmt.Fprintln(out)
+		fmt.Fprintln(out, faintStyle.Render(
+			"Related MCP wizards available:"))
+		for _, w := range relatedWizards {
+			fmt.Fprintf(out, "  %s %s\n",
+				successStyle.Render("→"),
+				faintStyle.Render(w.Title+
+					" — "+w.Description),
+			)
+		}
+		fmt.Fprintln(out, faintStyle.Render(
+			"  Select 'Launch a wizard' from the "+
+				"main menu to start one."))
+	}
+
 	// Walk through sections.
 	sectionIdx := 0
 	for {

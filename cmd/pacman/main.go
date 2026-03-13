@@ -277,6 +277,7 @@ func runMainMenu(
 			"What would you like to do?",
 			[]string{
 				"Start a tutorial",
+				"Launch a wizard (MCP-assisted)",
 				"Configure team collaboration",
 				"Author a Gemara artifact",
 				"Update MCP server",
@@ -294,12 +295,14 @@ func runMainMenu(
 		case 0:
 			runTutorialFlow(prompter, sess, tutorialsDir)
 		case 1:
-			runTeamFlow(prompter, sess, tutorialsDir)
+			runWizardFlow(prompter, sess)
 		case 2:
+			runTeamFlow(prompter, sess, tutorialsDir)
+		case 3:
 			runAuthoringFlow(
 				prompter, sess, tutorialsDir,
 			)
-		case 3:
+		case 4:
 			runMCPUpdate(ctx, cfg, sess)
 		default:
 			fmt.Println()
@@ -380,6 +383,27 @@ func runTutorialFlow(
 			"%d of %d tutorials completed",
 			completed, len(path.Steps),
 		)))
+	}
+}
+
+// runWizardFlow launches the MCP wizard selector and
+// argument collector.
+func runWizardFlow(
+	prompter cli.FreeTextPrompter,
+	sess *session.Session,
+) {
+	wizCfg := &cli.WizardPromptConfig{
+		Prompter:     prompter,
+		MCPAvailable: !sess.IsFallback(),
+		RoleName:     sess.GetRoleName(),
+	}
+
+	_, err := cli.RunWizardLauncher(wizCfg, os.Stdout)
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"\nWizard error: %v\n", err,
+		)
 	}
 }
 

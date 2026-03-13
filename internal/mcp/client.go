@@ -4,6 +4,7 @@ package mcp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"sync"
 	"time"
@@ -175,6 +176,48 @@ func (c *Client) GetSchemaDocs(
 	ctx context.Context,
 ) ([]byte, error) {
 	return c.callTool(ctx, "get_schema_docs", nil)
+}
+
+// MCPPrompt describes an MCP server prompt (wizard).
+type MCPPrompt struct {
+	// Name is the prompt identifier (e.g., "threat_assessment").
+	Name string `json:"name"`
+	// Title is the display title.
+	Title string `json:"title"`
+	// Description explains what the prompt does.
+	Description string `json:"description"`
+	// Arguments are the required/optional parameters.
+	Arguments []MCPPromptArg `json:"arguments"`
+}
+
+// MCPPromptArg describes a single prompt argument.
+type MCPPromptArg struct {
+	// Name is the argument identifier.
+	Name string `json:"name"`
+	// Title is the display title.
+	Title string `json:"title"`
+	// Description explains what the argument is for.
+	Description string `json:"description"`
+	// Required indicates the argument must be provided.
+	Required bool `json:"required"`
+}
+
+// ListPrompts invokes the MCP prompts/list method and
+// returns the available prompts (wizards).
+func (c *Client) ListPrompts(
+	ctx context.Context,
+) ([]MCPPrompt, error) {
+	resp, err := c.callTool(ctx, "prompts/list", nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Prompts []MCPPrompt `json:"prompts"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, err
+	}
+	return result.Prompts, nil
 }
 
 // callTool is a helper that checks connection status before

@@ -48,6 +48,14 @@ const OpenCodeConfigFile = "opencode.json"
 // the OpenCode MCP configuration.
 const MCPServerName = "gemara-mcp"
 
+// WizardThreatAssessment is the MCP prompt name for the
+// threat assessment wizard.
+const WizardThreatAssessment = "threat_assessment"
+
+// WizardControlCatalog is the MCP prompt name for the
+// control catalog wizard.
+const WizardControlCatalog = "control_catalog"
+
 // MCP tool names as defined by the Gemara MCP server.
 const (
 	ToolGetLexicon       = "get_lexicon"
