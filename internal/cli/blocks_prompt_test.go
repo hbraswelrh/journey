@@ -147,8 +147,8 @@ func TestRunDriftCheckWithDrift(t *testing.T) {
 	}
 	modified := strings.Replace(
 		string(data),
-		"Define the scope of your threat assessment.",
-		"UPDATED scope definition content here.",
+		"Select a component or technology to assess",
+		"UPDATED scope definition content here",
 		1,
 	)
 	if err := os.WriteFile(

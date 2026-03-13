@@ -88,6 +88,10 @@ type Session struct {
 	// AuthoringProgress tracks the authoring progress
 	// (e.g., "2/4 steps").
 	AuthoringProgress string
+
+	// CompletedTutorials tracks which tutorial titles
+	// have been marked as complete.
+	CompletedTutorials map[string]bool
 }
 
 // SetRoleProfile stores role discovery results in the session.
@@ -141,6 +145,7 @@ func NewSessionWithMCP(schemaVersion string) *Session {
 			ValidateArtifact: true,
 			GetSchemaDocs:    true,
 		},
+		CompletedTutorials: make(map[string]bool),
 	}
 }
 
@@ -156,6 +161,7 @@ func NewSessionWithoutMCP(schemaVersion string) *Session {
 			ValidateArtifact: false,
 			GetSchemaDocs:    false,
 		},
+		CompletedTutorials: make(map[string]bool),
 		DegradedCapabilities: []string{
 			"Lexicon lookups use bundled data (may not " +
 				"reflect latest upstream terms)",
@@ -234,6 +240,27 @@ func (s *Session) GetTeamMemberCount() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.TeamMemberCount
+}
+
+// MarkTutorialComplete records a tutorial title as
+// completed.
+func (s *Session) MarkTutorialComplete(title string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.CompletedTutorials == nil {
+		s.CompletedTutorials = make(map[string]bool)
+	}
+	s.CompletedTutorials[title] = true
+}
+
+// IsTutorialComplete returns whether a tutorial has been
+// marked as complete.
+func (s *Session) IsTutorialComplete(
+	title string,
+) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.CompletedTutorials[title]
 }
 
 // SetAuthoringState stores the current authoring state in

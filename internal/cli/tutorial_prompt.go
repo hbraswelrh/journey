@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/hbraswelrh/pacman/internal/blocks"
 	"github.com/hbraswelrh/pacman/internal/tutorials"
 )
 
@@ -21,6 +22,9 @@ type TutorialPromptConfig struct {
 	TutorialsDir string
 	// RoleName is the user's role for personalization.
 	RoleName string
+	// Keywords are the user's activity keywords for
+	// content block retrieval.
+	Keywords []string
 }
 
 // TutorialPromptResult holds the outcome of a tutorial
@@ -191,6 +195,15 @@ func runTutorialStep(
 				"main menu to start one."))
 	}
 
+	// Extract content blocks from the tutorial for
+	// inline surfacing of related patterns.
+	tutBlocks := blocks.ExtractBlocks(
+		step.Tutorial,
+		sections,
+		step.Tutorial.SchemaVersion,
+	)
+	blockIndex := blocks.NewBlockIndex(tutBlocks)
+
 	// Walk through sections.
 	sectionIdx := 0
 	for {
@@ -206,6 +219,39 @@ func runTutorialStep(
 			step.Tutorial.Title,
 			cfg.RoleName,
 		))
+
+		// Surface related content blocks for the
+		// current section based on the user's
+		// activity keywords.
+		if len(cfg.Keywords) > 0 && blockIndex != nil {
+			related := blocks.RetrieveBlocks(
+				blockIndex,
+				[]int{step.Layer},
+				cfg.Keywords,
+			)
+			if len(related) > 0 {
+				fmt.Fprintln(out)
+				fmt.Fprintln(out, faintStyle.Render(
+					"  Related patterns:"))
+				limit := len(related)
+				if limit > 2 {
+					limit = 2
+				}
+				for i := range related[:limit] {
+					adapt := blocks.GenerateAdaptation(
+						&related[i].Block,
+						strings.Join(
+							cfg.Keywords, ", ",
+						),
+					)
+					fmt.Fprintln(out,
+						"  "+faintStyle.Render(
+							"  "+adapt,
+						),
+					)
+				}
+			}
+		}
 		fmt.Fprintln(out)
 
 		// Build navigation options.

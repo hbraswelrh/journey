@@ -464,6 +464,7 @@ func runTutorialFlow(
 		LearningPath: path,
 		TutorialsDir: tutorialsDir,
 		RoleName:     sess.GetRoleName(),
+		Keywords:     sess.ActivityKeywords,
 	}
 
 	result, err := cli.RunTutorialPlayer(
@@ -477,16 +478,21 @@ func runTutorialFlow(
 		return
 	}
 
-	// Update session with completion count.
+	// Update session with completion tracking.
 	completed := 0
-	for _, done := range result.CompletedSteps {
+	for idx, done := range result.CompletedSteps {
 		if done {
 			completed++
+			if idx < len(path.Steps) {
+				sess.MarkTutorialComplete(
+					path.Steps[idx].Tutorial.Title,
+				)
+			}
 		}
 	}
 	if completed > 0 {
 		fmt.Println(cli.RenderSuccess(fmt.Sprintf(
-			"%d of %d tutorials completed",
+			"%d of %d tutorials completed this session",
 			completed, len(path.Steps),
 		)))
 	}
