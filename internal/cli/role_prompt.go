@@ -20,6 +20,28 @@ type FreeTextPrompter interface {
 	AskText(question string) (string, error)
 }
 
+// WizardPrompter extends FreeTextPrompter with multi-select
+// and confirmation capabilities for wizard flows.
+type WizardPrompter interface {
+	FreeTextPrompter
+	// AskMultiSelect presents a question with options and
+	// returns the indices of all selected options.
+	AskMultiSelect(
+		question string,
+		options []string,
+		defaults []int,
+	) ([]int, error)
+	// AskConfirm presents a yes/no question and returns
+	// the answer.
+	AskConfirm(question string) (bool, error)
+	// AskTextWithDefault presents a question with a
+	// pre-filled default value.
+	AskTextWithDefault(
+		question string,
+		defaultValue string,
+	) (string, error)
+}
+
 // RolePromptConfig holds dependencies for the role discovery
 // flow.
 type RolePromptConfig struct {

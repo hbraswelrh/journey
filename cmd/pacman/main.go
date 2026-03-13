@@ -66,6 +66,70 @@ func (p *huhPrompter) AskText(
 	return answer, nil
 }
 
+func (p *huhPrompter) AskMultiSelect(
+	question string,
+	options []string,
+	defaults []int,
+) ([]int, error) {
+	var selected []int
+
+	opts := make([]huh.Option[int], len(options))
+	for i, label := range options {
+		opts[i] = huh.NewOption(label, i)
+	}
+
+	ms := huh.NewMultiSelect[int]().
+		Title(question).
+		Options(opts...).
+		Value(&selected)
+
+	if len(defaults) > 0 {
+		ms.Value(&defaults)
+	}
+
+	if err := ms.Run(); err != nil {
+		return nil, fmt.Errorf("prompt: %w", err)
+	}
+
+	if len(defaults) > 0 && len(selected) == 0 {
+		return defaults, nil
+	}
+	return selected, nil
+}
+
+func (p *huhPrompter) AskConfirm(
+	question string,
+) (bool, error) {
+	var confirmed bool
+
+	err := huh.NewConfirm().
+		Title(question).
+		Value(&confirmed).
+		Run()
+	if err != nil {
+		return false, fmt.Errorf("prompt: %w", err)
+	}
+
+	return confirmed, nil
+}
+
+func (p *huhPrompter) AskTextWithDefault(
+	question string,
+	defaultValue string,
+) (string, error) {
+	answer := defaultValue
+
+	err := huh.NewInput().
+		Title(question).
+		Value(&answer).
+		Run()
+	if err != nil {
+		return "", fmt.Errorf("prompt: %w", err)
+	}
+
+	return answer, nil
+}
+
 // demoPrompter simulates user choices for non-interactive
 // demo mode. It cycles through predefined choices and texts.
 type demoPrompter struct {
@@ -108,6 +172,48 @@ func (d *demoPrompter) AskText(
 	fmt.Println()
 
 	return text, nil
+}
+
+func (d *demoPrompter) AskMultiSelect(
+	question string,
+	options []string,
+	defaults []int,
+) ([]int, error) {
+	fmt.Println(cli.RenderQuestion(question))
+	// In demo mode, accept all defaults.
+	selected := defaults
+	if len(selected) == 0 && len(options) > 0 {
+		// Select first option if no defaults.
+		selected = []int{0}
+	}
+	for _, idx := range selected {
+		if idx < len(options) {
+			fmt.Println(cli.RenderAnswer(
+				"  [x] " + options[idx],
+			))
+		}
+	}
+	fmt.Println()
+	return selected, nil
+}
+
+func (d *demoPrompter) AskConfirm(
+	question string,
+) (bool, error) {
+	fmt.Println(cli.RenderQuestion(question))
+	fmt.Println(cli.RenderAnswer("Yes"))
+	fmt.Println()
+	return true, nil
+}
+
+func (d *demoPrompter) AskTextWithDefault(
+	question string,
+	defaultValue string,
+) (string, error) {
+	fmt.Println(cli.RenderQuestion(question))
+	fmt.Println(cli.RenderAnswer(defaultValue))
+	fmt.Println()
+	return defaultValue, nil
 }
 
 func main() {
@@ -392,8 +498,19 @@ func runWizardFlow(
 	prompter cli.FreeTextPrompter,
 	sess *session.Session,
 ) {
+	// Check if the prompter supports wizard operations
+	// (multi-select, confirm, text-with-default).
+	wizPrompter, ok := prompter.(cli.WizardPrompter)
+	if !ok {
+		fmt.Println(cli.RenderWarning(
+			"Wizard flow requires an interactive " +
+				"terminal with multi-select support.",
+		))
+		return
+	}
+
 	wizCfg := &cli.WizardPromptConfig{
-		Prompter:     prompter,
+		Prompter:     wizPrompter,
 		MCPAvailable: !sess.IsFallback(),
 		RoleName:     sess.GetRoleName(),
 	}
