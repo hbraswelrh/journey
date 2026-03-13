@@ -853,6 +853,200 @@ func RenderTeamMember(
 	return stepBarStyle.Render(content)
 }
 
+// RenderAuthoringStep returns a styled authoring step card
+// with progress indicator, field list, and role-specific
+// explanation.
+func RenderAuthoringStep(
+	stepName string,
+	description string,
+	roleExplanation string,
+	fieldNames []string,
+	current int,
+	total int,
+) string {
+	progress := fmt.Sprintf(
+		"Step %d of %d", current+1, total,
+	)
+	header := stepNumStyle.Render(progress) + "  " +
+		headingStyle.Render(stepName)
+
+	var lines []string
+	lines = append(lines, header)
+	lines = append(lines, "")
+	lines = append(lines,
+		subtleStyle.Render(description),
+	)
+
+	if roleExplanation != "" {
+		lines = append(lines, "")
+		lines = append(lines,
+			annotationLabelStyle.Render(
+				"Why: ",
+			)+annotationTextStyle.Render(
+				roleExplanation,
+			),
+		)
+	}
+
+	if len(fieldNames) > 0 {
+		lines = append(lines, "")
+		lines = append(lines,
+			faintStyle.Render("Fields:"),
+		)
+		for _, f := range fieldNames {
+			lines = append(lines,
+				"  "+subtleStyle.Render("- ")+f,
+			)
+		}
+	}
+
+	content := strings.Join(lines, "\n")
+	return stepBarStyle.Render(content)
+}
+
+// RenderFieldPrompt returns a styled field input prompt
+// with description and example value.
+func RenderFieldPrompt(
+	name string,
+	description string,
+	exampleValue string,
+	required bool,
+) string {
+	label := headingStyle.Render(name)
+	if required {
+		label += warningStyle.Render(" *")
+	}
+	desc := subtleStyle.Render(description)
+
+	result := label + "\n" + desc
+	if exampleValue != "" {
+		result += "\n" + faintStyle.Render(
+			"Example: "+exampleValue,
+		)
+	}
+	return result
+}
+
+// RenderValidationResults returns a styled display of
+// validation errors with fix suggestions.
+func RenderValidationResults(
+	errs []validationDisplayError,
+) string {
+	if len(errs) == 0 {
+		return successStyle.Render(
+			"  Validation passed",
+		)
+	}
+
+	var lines []string
+	lines = append(lines,
+		warningStyle.Render(fmt.Sprintf(
+			"  %d validation error(s):",
+			len(errs),
+		)),
+	)
+	for _, e := range errs {
+		lines = append(lines, "")
+		if e.FieldPath != "" {
+			lines = append(lines,
+				"  "+warningStyle.Render("Field: ")+
+					e.FieldPath,
+			)
+		}
+		lines = append(lines,
+			"  "+subtleStyle.Render("Error: ")+
+				e.Message,
+		)
+		if e.FixSuggestion != "" {
+			lines = append(lines,
+				"  "+successStyle.Render("Fix: ")+
+					e.FixSuggestion,
+			)
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+// validationDisplayError is a display-only struct for
+// rendering validation errors without importing the
+// authoring package.
+type validationDisplayError struct {
+	FieldPath     string
+	Message       string
+	FixSuggestion string
+}
+
+// RenderArtifactSummary returns a styled overview of a
+// completed authored artifact.
+func RenderArtifactSummary(
+	artifactType string,
+	schemaDef string,
+	schemaVersion string,
+	sectionCount int,
+	status string,
+) string {
+	var lines []string
+	lines = append(lines,
+		headingStyle.Render("Authored Artifact"),
+	)
+	lines = append(lines, "")
+	lines = append(lines,
+		annotationLabelStyle.Render("Type: ")+
+			artifactType,
+	)
+	lines = append(lines,
+		annotationLabelStyle.Render("Schema: ")+
+			schemaDef+" ("+schemaVersion+")",
+	)
+	lines = append(lines,
+		annotationLabelStyle.Render("Sections: ")+
+			fmt.Sprintf("%d", sectionCount),
+	)
+
+	statusStr := status
+	statusRender := faintStyle.Render(statusStr)
+	if status == "valid" {
+		statusRender = successStyle.Render(statusStr)
+	} else if status == "invalid" {
+		statusRender = warningStyle.Render(statusStr)
+	}
+	lines = append(lines,
+		annotationLabelStyle.Render("Status: ")+
+			statusRender,
+	)
+
+	content := strings.Join(lines, "\n")
+	return stepBarStyle.Render(content)
+}
+
+// RenderAuthoringProgress returns a styled progress
+// indicator for the authoring flow.
+func RenderAuthoringProgress(
+	completed int,
+	total int,
+) string {
+	pct := 0
+	if total > 0 {
+		pct = (completed * 100) / total
+	}
+
+	barWidth := 20
+	filled := (pct * barWidth) / 100
+	if filled > barWidth {
+		filled = barWidth
+	}
+
+	bar := strings.Repeat("█", filled) +
+		strings.Repeat("░", barWidth-filled)
+
+	return fmt.Sprintf(
+		"%s %s %d%%",
+		faintStyle.Render("Progress:"),
+		successStyle.Render(bar),
+		pct,
+	)
+}
+
 // min returns the smaller of two ints.
 func min(a, b int) int {
 	if a < b {

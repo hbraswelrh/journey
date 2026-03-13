@@ -80,6 +80,14 @@ type Session struct {
 	// TeamMemberCount is the number of members in the
 	// configured team.
 	TeamMemberCount int
+
+	// AuthoringArtifactType is the artifact type being
+	// authored, if any.
+	AuthoringArtifactType string
+
+	// AuthoringProgress tracks the authoring progress
+	// (e.g., "2/4 steps").
+	AuthoringProgress string
 }
 
 // SetRoleProfile stores role discovery results in the session.
@@ -226,6 +234,27 @@ func (s *Session) GetTeamMemberCount() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.TeamMemberCount
+}
+
+// SetAuthoringState stores the current authoring state in
+// the session.
+func (s *Session) SetAuthoringState(
+	artifactType string,
+	progress string,
+) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.AuthoringArtifactType = artifactType
+	s.AuthoringProgress = progress
+}
+
+// GetAuthoringState returns the current authoring artifact
+// type and progress.
+func (s *Session) GetAuthoringState() (string, string) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.AuthoringArtifactType, s.AuthoringProgress
 }
 
 // IsFallback returns whether the session is currently operating

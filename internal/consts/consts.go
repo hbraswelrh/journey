@@ -217,3 +217,67 @@ var ArtifactFlowDescriptions = map[[2]int]string{
 	{LayerRiskPolicy, LayerEvaluation}: "Policy drives " +
 		"evaluation log assessments",
 }
+
+// AuthoringOutputDir is the default subdirectory for
+// authored artifact output.
+const AuthoringOutputDir = "artifacts"
+
+// DefaultArtifactFormat is the default output format for
+// authored artifacts.
+const DefaultArtifactFormat = "yaml"
+
+// Artifact section name constants for guided authoring.
+const (
+	SectionMetadata       = "metadata"
+	SectionScope          = "scope"
+	SectionCapabilities   = "capabilities"
+	SectionThreats        = "threats"
+	SectionControls       = "controls"
+	SectionGuidanceItems  = "guidance_items"
+	SectionPolicyCriteria = "policy_criteria"
+	SectionMappings       = "mappings"
+	SectionEvaluations    = "evaluations"
+)
+
+// Validation status values for authored artifacts.
+const (
+	ValidationStatusNotValidated = "not_validated"
+	ValidationStatusPartial      = "partial"
+	ValidationStatusValid        = "valid"
+	ValidationStatusInvalid      = "invalid"
+)
+
+// ArtifactTypeSections maps each artifact type to its
+// ordered list of authoring sections.
+var ArtifactTypeSections = map[string][]string{
+	ArtifactGuidanceCatalog: {
+		SectionMetadata,
+		SectionScope,
+		SectionGuidanceItems,
+	},
+	ArtifactControlCatalog: {
+		SectionMetadata,
+		SectionScope,
+		SectionControls,
+	},
+	ArtifactThreatCatalog: {
+		SectionMetadata,
+		SectionScope,
+		SectionCapabilities,
+		SectionThreats,
+	},
+	ArtifactPolicy: {
+		SectionMetadata,
+		SectionScope,
+		SectionPolicyCriteria,
+	},
+	ArtifactMappingDocument: {
+		SectionMetadata,
+		SectionMappings,
+	},
+	ArtifactEvaluationLog: {
+		SectionMetadata,
+		SectionScope,
+		SectionEvaluations,
+	},
+}
