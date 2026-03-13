@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"charm.land/huh/v2"
 	lipgloss "charm.land/lipgloss/v2"
@@ -238,13 +239,322 @@ func main() {
 		))
 	}
 
-	// Demo mode: continue with team collaboration and
-	// guided authoring demonstrations.
 	if demoMode {
+		// Demo mode: run team and authoring flows
+		// with predefined inputs.
 		runDemoTeamAndAuthoring(
 			result.Session, tutorialsDir,
 		)
+		return
 	}
+
+	// Interactive mode: present main menu.
+	prompter := cfg.RolePrompter
+	if prompter == nil {
+		prompter = &huhPrompter{}
+	}
+	runMainMenu(
+		ctx, prompter, result.Session,
+		tutorialsDir, cfg,
+	)
+}
+
+// runMainMenu presents the interactive main menu after
+// setup completes. Users can start tutorials, configure
+// teams, author artifacts, or exit.
+func runMainMenu(
+	ctx context.Context,
+	prompter cli.FreeTextPrompter,
+	sess *session.Session,
+	tutorialsDir string,
+	cfg *cli.SetupConfig,
+) {
+	for {
+		fmt.Println()
+		choice, err := prompter.Ask(
+			"What would you like to do?",
+			[]string{
+				"Start a tutorial",
+				"Configure team collaboration",
+				"Author a Gemara artifact",
+				"Update MCP server",
+				"Exit",
+			},
+		)
+		if err != nil {
+			fmt.Fprintf(
+				os.Stderr, "\nError: %v\n", err,
+			)
+			return
+		}
+
+		switch choice {
+		case 0:
+			runTutorialFlow(prompter, sess, tutorialsDir)
+		case 1:
+			runTeamFlow(prompter, sess, tutorialsDir)
+		case 2:
+			runAuthoringFlow(
+				prompter, sess, tutorialsDir,
+			)
+		case 3:
+			runMCPUpdate(ctx, cfg, sess)
+		default:
+			fmt.Println()
+			fmt.Println(cli.RenderSuccess(
+				"Session complete. Goodbye!",
+			))
+			return
+		}
+	}
+}
+
+// runTutorialFlow displays the user's learning path and
+// offers to start a tutorial step.
+func runTutorialFlow(
+	prompter cli.FreeTextPrompter,
+	sess *session.Session,
+	tutorialsDir string,
+) {
+	if sess.GetRoleName() == "" {
+		fmt.Println(cli.RenderWarning(
+			"No role configured. Run setup first.",
+		))
+		return
+	}
+
+	if sess.LearningPathSteps == 0 {
+		fmt.Println(cli.RenderNote(
+			"No tutorials matched your role and " +
+				"activities. Try different keywords.",
+		))
+		return
+	}
+
+	lipgloss.Println(cli.RenderSessionRoleInfo(
+		sess.GetRoleName(),
+		sess.LearningPathSteps,
+	))
+
+	fmt.Println()
+	fmt.Println(cli.RenderNote(
+		"Tutorial content is delivered through the " +
+			"Gemara tutorials in " + tutorialsDir + ". " +
+			"Follow the learning path steps above " +
+			"in order.",
+	))
+}
+
+// runTeamFlow runs the interactive team collaboration
+// setup.
+func runTeamFlow(
+	prompter cli.FreeTextPrompter,
+	sess *session.Session,
+	tutorialsDir string,
+) {
+	teamCfg := &cli.TeamPromptConfig{
+		Prompter:      prompter,
+		TutorialsDir:  tutorialsDir,
+		SchemaVersion: sess.SchemaVersion,
+		TeamConfigDir: filepath.Join(
+			homeConfigDir(), consts.MCPInstallDir,
+			"teams",
+		),
+	}
+
+	teamResult, err := cli.RunTeamSetup(
+		teamCfg, os.Stdout,
+	)
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"\nTeam setup error: %v\n", err,
+		)
+		return
+	}
+
+	if teamResult.Team != nil {
+		sess.SetTeamInfo(
+			teamResult.Team.Name,
+			len(teamResult.Team.Members),
+		)
+	}
+}
+
+// runAuthoringFlow runs the interactive guided authoring
+// flow.
+func runAuthoringFlow(
+	prompter cli.FreeTextPrompter,
+	sess *session.Session,
+	tutorialsDir string,
+) {
+	outputDir := filepath.Join(
+		".", consts.AuthoringOutputDir,
+	)
+
+	authorCfg := &cli.AuthorPromptConfig{
+		Prompter:      prompter,
+		Session:       sess,
+		SchemaVersion: sess.SchemaVersion,
+		OutputDir:     outputDir,
+		OutputFormat:  consts.DefaultArtifactFormat,
+		RoleName:      sess.GetRoleName(),
+		Keywords:      sess.ActivityKeywords,
+	}
+
+	_, err := cli.RunGuidedAuthoring(
+		authorCfg, os.Stdout,
+	)
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"\nAuthoring error: %v\n", err,
+		)
+	}
+}
+
+// runMCPUpdate checks for and offers to install MCP server
+// updates.
+func runMCPUpdate(
+	ctx context.Context,
+	cfg *cli.SetupConfig,
+	sess *session.Session,
+) {
+	if cfg.Installer == nil {
+		fmt.Println(cli.RenderWarning(
+			"MCP installer not available.",
+		))
+		return
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Println(cli.RenderWarning(
+			"Could not determine home directory.",
+		))
+		return
+	}
+	installDir := filepath.Join(
+		homeDir, ".local", "share", consts.MCPInstallDir,
+	)
+
+	update, err := cfg.Installer.CheckForUpdate(
+		ctx, installDir,
+	)
+	if err != nil {
+		fmt.Println(cli.RenderWarning(
+			"Update check failed: " + err.Error(),
+		))
+		return
+	}
+
+	if !update.UpdateAvailable {
+		if update.Installed != nil {
+			fmt.Println(cli.RenderSuccess(fmt.Sprintf(
+				"MCP server is up to date (%s, "+
+					"commit %s)",
+				update.Installed.Tag,
+				truncateSHAStr(
+					update.Installed.CommitSHA,
+				),
+			)))
+		} else {
+			fmt.Println(cli.RenderNote(
+				"No installed MCP server found. " +
+					"Use 'Build from source' during " +
+					"setup to install.",
+			))
+		}
+		return
+	}
+
+	fmt.Println()
+	fmt.Println(cli.RenderStatus(fmt.Sprintf(
+		"Update available: %s (commit %s) -> "+
+			"%s (commit %s)",
+		update.Installed.Tag,
+		truncateSHAStr(update.Installed.CommitSHA),
+		update.Latest.Tag,
+		truncateSHAStr(update.Latest.CommitSHA),
+	)))
+
+	choice, err := cfg.Prompter.Ask(
+		"Update gemara-mcp?",
+		[]string{"Yes, update now", "Skip"},
+	)
+	if err != nil || choice != 0 {
+		return
+	}
+
+	// Perform update via the setup flow's update logic.
+	fmt.Println(cli.RenderStatus(
+		"Updating MCP server...",
+	))
+	// Re-use checkAndOfferUpdate indirectly — just
+	// trigger a fresh build at the latest SHA.
+	method := mcp.CloneHTTPS
+	if cfg.SSHChecker != nil {
+		method = mcp.DetectCloneMethod(
+			ctx, cfg.SSHChecker,
+		)
+	}
+	binaryPath, buildErr := cfg.Installer.CloneAndBuild(
+		ctx, method, update.Latest, installDir,
+	)
+	if buildErr != nil {
+		fmt.Println(cli.RenderWarning(
+			"Update failed: " + buildErr.Error(),
+		))
+		return
+	}
+
+	// Save metadata.
+	installed := &mcp.InstalledRelease{
+		Tag:        update.Latest.Tag,
+		CommitSHA:  update.Latest.CommitSHA,
+		Prerelease: update.Latest.Prerelease,
+		InstalledAt: time.Now().UTC().Format(
+			time.RFC3339,
+		),
+		BinaryPath: binaryPath,
+	}
+	_ = mcp.SaveInstalledRelease(installDir, installed)
+
+	// Update MCP config.
+	if cfg.ConfigPath != "" {
+		config, readErr := mcp.ReadOpenCodeConfig(
+			cfg.ConfigPath,
+		)
+		if readErr == nil {
+			mcp.EnsureMCPEntry(config, binaryPath)
+			_ = mcp.WriteOpenCodeConfig(
+				cfg.ConfigPath, config,
+			)
+		}
+	}
+
+	fmt.Println(cli.RenderSuccess(fmt.Sprintf(
+		"Updated to %s (commit %s)",
+		update.Latest.Tag,
+		truncateSHAStr(update.Latest.CommitSHA),
+	)))
+}
+
+// homeConfigDir returns a safe config directory path.
+func homeConfigDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "."
+	}
+	return filepath.Join(home, ".config")
+}
+
+// truncateSHAStr truncates a SHA to 12 chars for display.
+func truncateSHAStr(sha string) string {
+	if len(sha) > 12 {
+		return sha[:12]
+	}
+	return sha
 }
 
 // runDemoTeamAndAuthoring runs the US5 team collaboration

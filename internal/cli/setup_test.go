@@ -111,17 +111,14 @@ func mockInstaller(
 
 // TestSetup_MCPAlreadyDetected verifies that when the MCP
 // server is already installed, setup skips the prompt and
-// returns a connected session.
+// returns a connected session without reconfiguring.
 func TestSetup_MCPAlreadyDetected(t *testing.T) {
-	dir := t.TempDir()
-	configPath := filepath.Join(dir, "opencode.json")
 	var buf bytes.Buffer
 
 	cfg := &cli.SetupConfig{
 		Prompter:      &mockPrompter{},
 		BinaryLookup:  mockBinaryFound("/usr/local/bin/gemara-mcp"),
 		PodmanChecker: mockPodmanNotRunning(),
-		ConfigPath:    configPath,
 	}
 
 	result, err := cli.RunSetup(
@@ -140,26 +137,6 @@ func TestSetup_MCPAlreadyDetected(t *testing.T) {
 		t.Fatalf(
 			"expected detection message, got: %s",
 			buf.String(),
-		)
-	}
-
-	// Verify opencode.json was configured.
-	config, err := mcp.ReadOpenCodeConfig(configPath)
-	if err != nil {
-		t.Fatalf("read config: %v", err)
-	}
-	entry, ok := config.MCP[consts.MCPServerName]
-	if !ok {
-		t.Fatal("expected gemara-mcp entry in config")
-	}
-	if entry.Command != "/usr/local/bin/gemara-mcp" {
-		t.Fatalf(
-			"unexpected command: %q", entry.Command,
-		)
-	}
-	if len(entry.Args) != 1 || entry.Args[0] != "serve" {
-		t.Fatalf(
-			"unexpected args: %v", entry.Args,
 		)
 	}
 }

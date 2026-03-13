@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "gemara-mcp": {
+      "command": "/Users/hbraswel/.local/share/pacman/gemara-mcp/bin/gemara-mcp",
+      "args": [
+        "serve"
+      ]
+    }
+  }
+}
