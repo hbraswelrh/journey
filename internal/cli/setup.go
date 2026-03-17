@@ -171,6 +171,7 @@ func RunSetup(
 				roleResult.Profile.
 					UniqueLayerNumbers(),
 				pathSteps,
+				len(roleResult.Profile.Recommendations),
 			)
 		}
 	}

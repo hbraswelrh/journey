@@ -63,7 +63,7 @@
 
 - [x] T015 [US1] Modify `RunRoleDiscovery` in `internal/cli/role_prompt.go` to call `roles.ArtifactRecommendations(profile)` after `ResolveLayerMappings` returns and populate `profile.Recommendations`
 - [x] T016 [US1] Add artifact recommendation rendering to `RunRoleDiscovery` in `internal/cli/role_prompt.go`: after displaying resolved layers, render each recommendation with artifact type, description, and authoring approach (wizard name or "Collaborative authoring with MCP resources")
-- [ ] T017 [US1] Update `RenderSessionStatus` in `internal/cli/styles.go` (or equivalent rendering function) to include the count of recommended artifact types in the session summary
+- [x] T017 [US1] Update `RenderSessionStatus` in `internal/cli/styles.go` (or equivalent rendering function) to include the count of recommended artifact types in the session summary
 - [x] T018 [US1] Verify tests from T013-T014 pass and run `make test` to confirm no regressions
 
 **Checkpoint**: User Story 1 is fully functional — users can identify activities and see artifact recommendations.
@@ -160,17 +160,17 @@
 
 **Purpose**: Final validation, UX polish, cleanup, and cross-cutting improvements
 
-- [ ] T041 Run `make lint` and fix any linting issues across all modified files
-- [ ] T042 Run `make fmt` to ensure all files are formatted with `goimports`
+- [x] T041 Run `make lint` and fix any linting issues across all modified files
+- [x] T042 Run `make fmt` to ensure all files are formatted with `goimports`
 - [x] T043 Verify SPDX license headers on all new files: `internal/cli/handoff.go`, `internal/cli/handoff_test.go`, `docs/adrs/ADR-0003-version-selection-deferral.md`
 - [x] T044 Run full `make test` and verify zero failures across the entire test suite
 - [x] T045 Run `make build` and verify the binary builds with zero errors
 - [x] T046 [P] Run `./pacman --doctor` and verify it still functions correctly with no changes to its output or behavior (FR-017)
 - [ ] T047 [P] Verify quickstart.md scenario: launch Pac-Man, confirm no version prompt, confirm artifact recommendations display, complete a tutorial, confirm handoff summary directs to OpenCode with gemara-mcp tools/resources listed
 - [ ] T048 [P] Verify edge case: run setup with no network and no cache, confirm graceful degradation with warning message
-- [ ] T049 Review all terminal output across every flow (activity identification, tutorial navigation, handoff summary) for consistent visual styling, clear spacing, scannable format, and accessibility for non-technical users (FR-018). Fix any rough edges in rendering functions in `internal/cli/styles.go` and `internal/cli/handoff.go`
-- [ ] T050 Review all modified files to confirm no MCP authoring wizard replication (FR-010 compliance check)
-- [ ] T051 Verify all handoff summaries reference OpenCode by name, list gemara-mcp tools/resources/prompts, and provide actionable next steps for each artifact type (FR-019)
+- [x] T049 Review all terminal output across every flow (activity identification, tutorial navigation, handoff summary) for consistent visual styling, clear spacing, scannable format, and accessibility for non-technical users (FR-018). Fix any rough edges in rendering functions in `internal/cli/styles.go` and `internal/cli/handoff.go`
+- [x] T050 Review all modified files to confirm no MCP authoring wizard replication (FR-010 compliance check)
+- [x] T051 Verify all handoff summaries reference OpenCode by name, list gemara-mcp tools/resources/prompts, and provide actionable next steps for each artifact type (FR-019)
 
 ---
 

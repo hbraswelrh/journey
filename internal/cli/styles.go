@@ -5,11 +5,14 @@ package cli
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	lipgloss "charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/compat"
 	"charm.land/lipgloss/v2/table"
+	"github.com/charmbracelet/glamour"
+	"golang.org/x/term"
 
 	"github.com/hbraswelrh/pacman/internal/consts"
 	"github.com/hbraswelrh/pacman/internal/team"
@@ -59,6 +62,10 @@ var (
 	colorOrange = compat.AdaptiveColor{
 		Light: lipgloss.Color("#CC6600"),
 		Dark:  lipgloss.Color("#FF8C00"),
+	}
+	colorDanger = compat.AdaptiveColor{
+		Light: lipgloss.Color("#CC3333"),
+		Dark:  lipgloss.Color("#FF5555"),
 	}
 )
 
@@ -132,9 +139,17 @@ var (
 			Foreground(colorOrange).
 			Bold(true)
 
-	orangeStyle = lipgloss.NewStyle().
-			Foreground(colorOrange).
-			Bold(true)
+	dangerStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(colorDanger)
+
+	// codeBlockStyle provides visual distinction for
+	// YAML previews, commands, and file paths.
+	codeBlockStyle = lipgloss.NewStyle().
+			BorderStyle(lipgloss.RoundedBorder()).
+			BorderForeground(colorSubtle).
+			Padding(0, 1).
+			MarginLeft(2)
 
 	// stepBarStyle uses a left-side colored border only.
 	// No box outline — just a vertical accent bar with
@@ -150,6 +165,73 @@ var (
 			MarginLeft(2).
 			MarginBottom(1)
 )
+
+// Activity flow styles — optimized for both TTY and
+// OpenCode rendering. Uses high-contrast colors that
+// render cleanly in both contexts.
+var (
+	// activityHeaderStyle is for major flow step headers
+	// (e.g., "Step 1: Role Discovery").
+	activityHeaderStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(colorWhite).
+				Background(colorPrimary).
+				Padding(0, 2)
+
+	// activityStepStyle is for inline step indicators
+	// (e.g., "1/4").
+	activityStepStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(colorCyan)
+
+	// activityBodyStyle wraps guided content in a clean
+	// left-border card.
+	activityBodyStyle = lipgloss.NewStyle().
+				BorderStyle(lipgloss.ThickBorder()).
+				BorderLeft(true).
+				BorderRight(false).
+				BorderTop(false).
+				BorderBottom(false).
+				BorderForeground(colorCyan).
+				PaddingLeft(2).
+				MarginLeft(1).
+				MarginBottom(1)
+
+	// activityHighlightStyle is for key terms and
+	// values the user should focus on.
+	activityHighlightStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(colorSuccess)
+
+	// activityPromptStyle styles the question prompt
+	// in non-interactive mode.
+	activityPromptStyle = lipgloss.NewStyle().
+				Foreground(colorPrimary).
+				Bold(true)
+)
+
+// RenderFlowStep renders a major step header for the
+// guided flow (e.g., "Role Discovery", "Activity
+// Probing").
+func RenderFlowStep(
+	step int,
+	total int,
+	title string,
+) string {
+	indicator := activityStepStyle.Render(
+		fmt.Sprintf("(%d/%d)", step, total),
+	)
+	header := activityHeaderStyle.Render(
+		" " + title + " ",
+	)
+	return header + "  " + indicator
+}
+
+// RenderActivityBody wraps guided content in a styled
+// card with a left accent border.
+func RenderActivityBody(content string) string {
+	return activityBodyStyle.Render(content)
+}
 
 // LayerNames maps Gemara layer numbers to display names.
 // Centralized here for use by all TUI components.
@@ -171,21 +253,33 @@ func RenderBanner() string {
 	return "\n" + banner + "\n"
 }
 
-// RenderDivider returns a styled horizontal divider.
+// RenderDivider returns a styled horizontal divider that
+// adapts to the terminal width.
 func RenderDivider() string {
+	width := terminalWidth()
+	if width > 4 {
+		width -= 4 // margins
+	}
+	if width > 80 {
+		width = 80
+	}
+	if width < 20 {
+		width = 20
+	}
 	return sectionDivider.Render(
-		strings.Repeat("─", 52),
+		strings.Repeat("─", width),
 	)
 }
 
 // RenderMCPToolsPanel returns a styled panel showing
-// the available MCP tools in a table layout.
+// the available MCP capabilities in a table layout,
+// organized by MCP protocol category.
 func RenderMCPToolsPanel() string {
 	heading := headingStyle.Render(
 		"Gemara MCP Server",
 	)
 	intro := subtleStyle.Render(
-		"The MCP server unlocks these tools:",
+		"The MCP server provides these capabilities:",
 	)
 
 	headerStyle := lipgloss.NewStyle().
@@ -211,18 +305,33 @@ func RenderMCPToolsPanel() string {
 				return faintStyle
 			},
 		).
-		Headers("Tool", "Description").
+		Headers("Category", "Name", "Description").
 		Row(
-			consts.ToolGetLexicon,
-			"Lexicon lookups",
-		).
-		Row(
+			"Tool",
 			consts.ToolValidateArtifact,
 			"Schema validation",
 		).
 		Row(
-			consts.ToolGetSchemaDocs,
+			"Resource",
+			consts.ResourceLexicon,
+			"Lexicon lookups",
+		).
+		Row(
+			"Resource",
+			consts.ResourceSchemaDefinitions,
 			"Schema docs reference",
+		).
+		Row(
+			"Prompt",
+			consts.WizardThreatAssessment,
+			"Threat assessment wizard "+
+				"(artifact mode)",
+		).
+		Row(
+			"Prompt",
+			consts.WizardControlCatalog,
+			"Control catalog wizard "+
+				"(artifact mode)",
 		)
 
 	return lipgloss.JoinVertical(
@@ -276,6 +385,7 @@ func RenderSessionStatus(
 func RenderSessionRoleInfo(
 	roleName string,
 	pathSteps int,
+	recommendedArtifacts int,
 ) string {
 	if roleName == "" {
 		return ""
@@ -289,11 +399,26 @@ func RenderSessionRoleInfo(
 		fmt.Sprintf("%d steps", pathSteps),
 	)
 
+	lines := []string{
+		rLabel + " " + rValue,
+		pLabel + " " + pValue,
+	}
+
+	if recommendedArtifacts > 0 {
+		aLabel := faintStyle.Render(
+			"  Recommended artifacts:",
+		)
+		aValue := successStyle.Render(
+			fmt.Sprintf("%d types", recommendedArtifacts),
+		)
+		lines = append(lines, aLabel+" "+aValue)
+	}
+
+	lines = append(lines, "")
+
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		rLabel+" "+rValue,
-		pLabel+" "+pValue,
-		"",
+		lines...,
 	)
 }
 
@@ -320,14 +445,15 @@ func RenderVersionOption(
 
 // RenderNote formats a note message.
 func RenderNote(msg string) string {
-	prefix := subtleStyle.Render("Note:")
-	return prefix + " " + faintStyle.Render(msg)
+	prefix := subtleStyle.Render("ℹ Note:")
+	return prefix + " " + subtleStyle.Render(msg)
 }
 
-// RenderWarning formats a warning message.
+// RenderWarning formats a warning message with styled body.
 func RenderWarning(msg string) string {
-	prefix := warningStyle.Render("Warning:")
-	return prefix + " " + msg
+	prefix := warningStyle.Render("⚠ Warning:")
+	return prefix + " " + warningStyle.
+		UnsetBold().Render(msg)
 }
 
 // RenderSuccess formats a success message.
@@ -490,7 +616,7 @@ var driftModifiedStyle = lipgloss.NewStyle().
 
 // driftRemovedStyle styles removed drift indicators.
 var driftRemovedStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("#FF4444")).
+	Foreground(colorDanger).
 	Bold(true)
 
 // RenderContentBlock displays a styled content block card
@@ -1180,10 +1306,34 @@ func RenderTutorialSection(
 	return stepBarStyle.Render(content)
 }
 
-// min returns the smaller of two ints.
-func min(a, b int) int {
-	if a < b {
-		return a
+// RenderMarkdown renders markdown content with terminal-
+// native formatting using glamour. Falls back to plain
+// text if rendering fails.
+func RenderMarkdown(content string) string {
+	width := terminalWidth() - 8 // margins + padding
+	if width < 40 {
+		width = 40
 	}
-	return b
+	r, err := glamour.NewTermRenderer(
+		glamour.WithAutoStyle(),
+		glamour.WithWordWrap(width),
+	)
+	if err != nil {
+		return content
+	}
+	rendered, err := r.Render(content)
+	if err != nil {
+		return content
+	}
+	return strings.TrimSpace(rendered)
+}
+
+// terminalWidth returns the current terminal width, or 80
+// as a safe default if detection fails.
+func terminalWidth() int {
+	w, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil || w <= 0 {
+		return 80
+	}
+	return w
 }

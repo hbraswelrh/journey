@@ -2,11 +2,13 @@
 
 // Package session manages Pac-Man session state, tracking MCP
 // connection status, schema version selection, fallback mode,
-// and available tools.
+// and available capabilities (tools, resources, prompts).
 package session
 
 import (
 	"sync"
+
+	"github.com/hbraswelrh/pacman/internal/consts"
 )
 
 // MCPStatus represents the MCP server connection state for
@@ -24,12 +26,35 @@ const (
 	MCPDisconnected
 )
 
-// AvailableTools tracks which MCP tools are accessible in the
-// current session.
-type AvailableTools struct {
-	GetLexicon       bool
+// AvailableCapabilities tracks which MCP capabilities are
+// accessible in the current session, organized by MCP
+// protocol category.
+type AvailableCapabilities struct {
+	// Tools tracks callable MCP tools.
+	Tools AvailableToolSet
+	// Resources tracks readable MCP resources.
+	Resources AvailableResourceSet
+	// Prompts tracks available MCP prompts (wizards).
+	Prompts AvailablePromptSet
+}
+
+// AvailableToolSet tracks which MCP tools are accessible.
+type AvailableToolSet struct {
 	ValidateArtifact bool
-	GetSchemaDocs    bool
+}
+
+// AvailableResourceSet tracks which MCP resources are
+// accessible.
+type AvailableResourceSet struct {
+	Lexicon           bool
+	SchemaDefinitions bool
+}
+
+// AvailablePromptSet tracks which MCP prompts are
+// accessible. Prompts are only available in artifact mode.
+type AvailablePromptSet struct {
+	ThreatAssessment bool
+	ControlCatalog   bool
 }
 
 // Session holds the state for a Pac-Man session.
@@ -47,8 +72,14 @@ type Session struct {
 	// without the MCP server.
 	FallbackMode bool
 
-	// Tools tracks which MCP tools are available.
-	Tools AvailableTools
+	// ServerMode is the MCP server operating mode
+	// ("advisory" or "artifact"). Empty when MCP is not
+	// installed.
+	ServerMode string
+
+	// Capabilities tracks which MCP capabilities are
+	// available, organized by protocol category.
+	Capabilities AvailableCapabilities
 
 	// DegradedCapabilities lists capabilities that are
 	// unavailable or degraded in the current session.
@@ -69,6 +100,11 @@ type Session struct {
 	// LearningPathSteps is the number of steps in the
 	// generated learning path.
 	LearningPathSteps int
+
+	// RecommendedArtifacts is the number of artifact types
+	// recommended for this user based on their resolved
+	// layers.
+	RecommendedArtifacts int
 
 	// ContentBlocksCount is the number of content blocks
 	// extracted from tutorials.
@@ -100,6 +136,7 @@ func (s *Session) SetRoleProfile(
 	keywords []string,
 	layers []int,
 	pathSteps int,
+	recommendedArtifacts int,
 ) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -108,6 +145,7 @@ func (s *Session) SetRoleProfile(
 	s.ActivityKeywords = keywords
 	s.ResolvedLayers = layers
 	s.LearningPathSteps = pathSteps
+	s.RecommendedArtifacts = recommendedArtifacts
 }
 
 // GetRoleName returns the session's identified role name.
@@ -134,17 +172,36 @@ func (s *Session) GetContentBlocksCount() int {
 }
 
 // NewSessionWithMCP creates a session with an active MCP
-// connection. All three tools are marked as available.
-func NewSessionWithMCP(schemaVersion string) *Session {
-	return &Session{
-		mcpStatus:     MCPConnected,
-		SchemaVersion: schemaVersion,
-		FallbackMode:  false,
-		Tools: AvailableTools{
-			GetLexicon:       true,
+// connection. Capabilities are set based on the server mode.
+func NewSessionWithMCP(
+	schemaVersion string,
+	mode string,
+) *Session {
+	if mode == "" {
+		mode = consts.MCPModeDefault
+	}
+	caps := AvailableCapabilities{
+		Tools: AvailableToolSet{
 			ValidateArtifact: true,
-			GetSchemaDocs:    true,
 		},
+		Resources: AvailableResourceSet{
+			Lexicon:           true,
+			SchemaDefinitions: true,
+		},
+	}
+	// Prompts only available in artifact mode.
+	if mode == consts.MCPModeArtifact {
+		caps.Prompts = AvailablePromptSet{
+			ThreatAssessment: true,
+			ControlCatalog:   true,
+		}
+	}
+	return &Session{
+		mcpStatus:          MCPConnected,
+		SchemaVersion:      schemaVersion,
+		FallbackMode:       false,
+		ServerMode:         mode,
+		Capabilities:       caps,
 		CompletedTutorials: make(map[string]bool),
 	}
 }
@@ -153,22 +210,21 @@ func NewSessionWithMCP(schemaVersion string) *Session {
 // Local alternatives are used for all capabilities.
 func NewSessionWithoutMCP(schemaVersion string) *Session {
 	return &Session{
-		mcpStatus:     MCPNotInstalled,
-		SchemaVersion: schemaVersion,
-		FallbackMode:  true,
-		Tools: AvailableTools{
-			GetLexicon:       false,
-			ValidateArtifact: false,
-			GetSchemaDocs:    false,
-		},
+		mcpStatus:          MCPNotInstalled,
+		SchemaVersion:      schemaVersion,
+		FallbackMode:       true,
+		ServerMode:         "",
+		Capabilities:       AvailableCapabilities{},
 		CompletedTutorials: make(map[string]bool),
 		DegradedCapabilities: []string{
-			"Lexicon lookups use bundled data (may not " +
-				"reflect latest upstream terms)",
+			"Lexicon lookups use bundled data " +
+				"(may not reflect latest upstream terms)",
 			"Schema validation uses local cue vet " +
 				"(requires CUE CLI installed)",
-			"Schema documentation limited to locally " +
-				"cached content",
+			"Schema documentation limited to " +
+				"locally cached content",
+			"Guided creation wizards unavailable " +
+				"(requires MCP server in artifact mode)",
 		},
 	}
 }
@@ -190,17 +246,49 @@ func (s *Session) HandleDisconnection() {
 
 	s.mcpStatus = MCPDisconnected
 	s.FallbackMode = true
-	s.Tools = AvailableTools{
-		GetLexicon:       false,
-		ValidateArtifact: false,
-		GetSchemaDocs:    false,
-	}
+	s.Capabilities = AvailableCapabilities{}
 	s.DegradedCapabilities = []string{
-		"MCP server disconnected; using local fallbacks",
+		"MCP server disconnected; using local " +
+			"fallbacks",
 		"Lexicon lookups use bundled data",
 		"Schema validation uses local cue vet",
-		"Schema documentation limited to cached content",
+		"Schema documentation limited to cached " +
+			"content",
+		"Guided creation wizards unavailable",
 	}
+}
+
+// HandlePartialFailure updates individual capability flags
+// when a specific MCP resource or tool fails without a full
+// disconnection. The capability parameter identifies which
+// capability failed: "lexicon", "schema_definitions", or
+// "validate_artifact".
+func (s *Session) HandlePartialFailure(
+	capability string,
+) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	var msg string
+	switch capability {
+	case "lexicon":
+		s.Capabilities.Resources.Lexicon = false
+		msg = "Lexicon lookups use bundled data " +
+			"(MCP resource unavailable)"
+	case "schema_definitions":
+		s.Capabilities.Resources.SchemaDefinitions = false
+		msg = "Schema documentation limited to " +
+			"cached content (MCP resource unavailable)"
+	case "validate_artifact":
+		s.Capabilities.Tools.ValidateArtifact = false
+		msg = "Schema validation uses local cue vet " +
+			"(MCP tool unavailable)"
+	default:
+		return
+	}
+	s.DegradedCapabilities = append(
+		s.DegradedCapabilities, msg,
+	)
 }
 
 // HandleReconnection restores the session to full MCP
@@ -211,10 +299,20 @@ func (s *Session) HandleReconnection() {
 
 	s.mcpStatus = MCPConnected
 	s.FallbackMode = false
-	s.Tools = AvailableTools{
-		GetLexicon:       true,
-		ValidateArtifact: true,
-		GetSchemaDocs:    true,
+	s.Capabilities = AvailableCapabilities{
+		Tools: AvailableToolSet{
+			ValidateArtifact: true,
+		},
+		Resources: AvailableResourceSet{
+			Lexicon:           true,
+			SchemaDefinitions: true,
+		},
+	}
+	if s.ServerMode == consts.MCPModeArtifact {
+		s.Capabilities.Prompts = AvailablePromptSet{
+			ThreatAssessment: true,
+			ControlCatalog:   true,
+		}
 	}
 	s.DegradedCapabilities = nil
 }
@@ -290,4 +388,28 @@ func (s *Session) IsFallback() bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.FallbackMode
+}
+
+// GetServerMode returns the MCP server's operating mode.
+func (s *Session) GetServerMode() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.ServerMode
+}
+
+// IsArtifactMode returns true if the MCP server is running
+// in artifact mode (wizards available).
+func (s *Session) IsArtifactMode() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.ServerMode == consts.MCPModeArtifact
+}
+
+// HasPrompts returns true if MCP prompts (wizards) are
+// available in the current session.
+func (s *Session) HasPrompts() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.Capabilities.Prompts.ThreatAssessment ||
+		s.Capabilities.Prompts.ControlCatalog
 }

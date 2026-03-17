@@ -620,6 +620,7 @@ func legacyMain() { //nolint:unused
 		lipgloss.Println(cli.RenderSessionRoleInfo(
 			result.Session.GetRoleName(),
 			result.Session.LearningPathSteps,
+			result.Session.RecommendedArtifacts,
 		))
 	}
 
@@ -1240,6 +1241,7 @@ func runDemoTeamAndAuthoring(
 			lipgloss.Println(cli.RenderSessionRoleInfo(
 				sess.GetRoleName(),
 				sess.LearningPathSteps,
+				sess.RecommendedArtifacts,
 			))
 		}
 	}
