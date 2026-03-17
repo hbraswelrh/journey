@@ -17,10 +17,10 @@
 
 **Purpose**: Add new constants and shared types that multiple user stories depend on
 
-- [ ] T001 Add `ArtifactDescriptions` map with one-sentence descriptions for all 6 artifact types in `internal/consts/consts.go`
-- [ ] T002 Add `ArtifactWizards` map linking ThreatCatalog to `threat_assessment` and ControlCatalog to `control_catalog` in `internal/consts/consts.go`
-- [ ] T003 Add `ApproachWizard` and `ApproachCollaborative` authoring approach constants in `internal/consts/consts.go`
-- [ ] T004 Add `DefaultPreparationChecklists` map with per-artifact-type preparation items in `internal/consts/consts.go`
+- [x] T001 Add `ArtifactDescriptions` map with one-sentence descriptions for all 6 artifact types in `internal/consts/consts.go`
+- [x] T002 Add `ArtifactWizards` map linking ThreatCatalog to `threat_assessment` and ControlCatalog to `control_catalog` in `internal/consts/consts.go`
+- [x] T003 Add `ApproachWizard` and `ApproachCollaborative` authoring approach constants in `internal/consts/consts.go`
+- [x] T004 Add `DefaultPreparationChecklists` map with per-artifact-type preparation items in `internal/consts/consts.go`
 
 ---
 
@@ -32,17 +32,17 @@
 
 ### Tests
 
-- [ ] T005 [P] Write failing tests for `ArtifactRecommendation` type and `ArtifactRecommendations` function in `internal/roles/activities_test.go`: test with profile having strong L2 layers (expects ThreatCatalog + ControlCatalog), inferred L1 (expects GuidanceCatalog), empty layers (expects empty slice), L4 layer (expects no recommendations since L4 has no artifacts), and deduplication across layers
-- [ ] T006 [P] Write failing tests for `AutoSelectLatest` function in `internal/schema/selector_test.go`: test with valid releases (expects latest tag set on session), empty releases (expects `ErrNoVersionAvailable`), cache fallback when fetcher fails, and experimental schema detection in returned `SelectionResult`
-- [ ] T007 [P] Write failing tests for `HandoffSummary` struct, `BuildHandoffSummary`, and `RenderHandoffSummary` in `internal/cli/handoff_test.go`: test with L2 step (expects ThreatCatalog + wizard + MCPResources populated), L1 step (expects GuidanceCatalog + no wizard), L4 step (expects empty artifact type), MCP configured vs not configured, version mismatch warning, render output contains "OpenCode" and "gemara-mcp" references, and render output lists available tools/resources/prompts
+- [x] T005 [P] Write failing tests for `ArtifactRecommendation` type and `ArtifactRecommendations` function in `internal/roles/activities_test.go`: test with profile having strong L2 layers (expects ThreatCatalog + ControlCatalog), inferred L1 (expects GuidanceCatalog), empty layers (expects empty slice), L4 layer (expects no recommendations since L4 has no artifacts), and deduplication across layers
+- [x] T006 [P] Write failing tests for `AutoSelectLatest` function in `internal/schema/selector_test.go`: test with valid releases (expects latest tag set on session), empty releases (expects `ErrNoVersionAvailable`), cache fallback when fetcher fails, and experimental schema detection in returned `SelectionResult`
+- [x] T007 [P] Write failing tests for `HandoffSummary` struct, `BuildHandoffSummary`, and `RenderHandoffSummary` in `internal/cli/handoff_test.go`: test with L2 step (expects ThreatCatalog + wizard + MCPResources populated), L1 step (expects GuidanceCatalog + no wizard), L4 step (expects empty artifact type), MCP configured vs not configured, version mismatch warning, render output contains "OpenCode" and "gemara-mcp" references, and render output lists available tools/resources/prompts
 
 ### Implementation
 
-- [ ] T008 [P] Add `ArtifactRecommendation` struct and `ArtifactRecommendations` function to `internal/roles/activities.go` per data-model.md and contracts/cli-flow.md: iterate `ResolvedLayers`, look up `consts.LayerArtifacts`, construct recommendations with descriptions from `consts.ArtifactDescriptions`, deduplicate by artifact type keeping highest confidence
-- [ ] T009 [P] Add `AutoSelectLatest` function to `internal/schema/selector.go` per contracts/cli-flow.md: wrap `RefreshOrCache` + `DetermineVersions` + `SelectVersion(SelectionLatest, sess, nil, nil)`, return `*SelectionResult`
-- [ ] T010 [P] Create `internal/cli/handoff.go` with `HandoffSummary` struct (including `MCPResources`, `MCPTools`, `MCPConfigured` fields), `BuildHandoffSummary`, and `RenderHandoffSummary` functions per data-model.md and contracts/cli-flow.md: use existing `stepBarStyle`, `annotationLabelStyle`, `codeBlockStyle`, and `RenderWarning` from `styles.go`. Handoff must direct users to OpenCode with gemara-mcp, listing available tools, resources, and prompts. All output must be sleek and accessible for non-technical audiences (FR-018)
-- [ ] T011 Add `Recommendations` field (`[]ArtifactRecommendation`) to `ActivityProfile` struct in `internal/roles/activities.go`
-- [ ] T012 Verify all tests from T005-T007 pass with `make test`
+- [x] T008 [P] Add `ArtifactRecommendation` struct and `ArtifactRecommendations` function to `internal/roles/activities.go` per data-model.md and contracts/cli-flow.md: iterate `ResolvedLayers`, look up `consts.LayerArtifacts`, construct recommendations with descriptions from `consts.ArtifactDescriptions`, deduplicate by artifact type keeping highest confidence
+- [x] T009 [P] Add `AutoSelectLatest` function to `internal/schema/selector.go` per contracts/cli-flow.md: wrap `RefreshOrCache` + `DetermineVersions` + `SelectVersion(SelectionLatest, sess, nil, nil)`, return `*SelectionResult`
+- [x] T010 [P] Create `internal/cli/handoff.go` with `HandoffSummary` struct (including `MCPResources`, `MCPTools`, `MCPConfigured` fields), `BuildHandoffSummary`, and `RenderHandoffSummary` functions per data-model.md and contracts/cli-flow.md: use existing `stepBarStyle`, `annotationLabelStyle`, `codeBlockStyle`, and `RenderWarning` from `styles.go`. Handoff must direct users to OpenCode with gemara-mcp, listing available tools, resources, and prompts. All output must be sleek and accessible for non-technical audiences (FR-018)
+- [x] T011 Add `Recommendations` field (`[]ArtifactRecommendation`) to `ActivityProfile` struct in `internal/roles/activities.go`
+- [x] T012 Verify all tests from T005-T007 pass with `make test`
 
 **Checkpoint**: Foundation ready — all new types and functions exist and are tested. User story implementation can now begin.
 
@@ -61,10 +61,10 @@
 
 ### Implementation
 
-- [ ] T015 [US1] Modify `RunRoleDiscovery` in `internal/cli/role_prompt.go` to call `roles.ArtifactRecommendations(profile)` after `ResolveLayerMappings` returns and populate `profile.Recommendations`
-- [ ] T016 [US1] Add artifact recommendation rendering to `RunRoleDiscovery` in `internal/cli/role_prompt.go`: after displaying resolved layers, render each recommendation with artifact type, description, and authoring approach (wizard name or "Collaborative authoring with MCP resources")
+- [x] T015 [US1] Modify `RunRoleDiscovery` in `internal/cli/role_prompt.go` to call `roles.ArtifactRecommendations(profile)` after `ResolveLayerMappings` returns and populate `profile.Recommendations`
+- [x] T016 [US1] Add artifact recommendation rendering to `RunRoleDiscovery` in `internal/cli/role_prompt.go`: after displaying resolved layers, render each recommendation with artifact type, description, and authoring approach (wizard name or "Collaborative authoring with MCP resources")
 - [ ] T017 [US1] Update `RenderSessionStatus` in `internal/cli/styles.go` (or equivalent rendering function) to include the count of recommended artifact types in the session summary
-- [ ] T018 [US1] Verify tests from T013-T014 pass and run `make test` to confirm no regressions
+- [x] T018 [US1] Verify tests from T013-T014 pass and run `make test` to confirm no regressions
 
 **Checkpoint**: User Story 1 is fully functional — users can identify activities and see artifact recommendations.
 
@@ -78,15 +78,15 @@
 
 ### Tests
 
-- [ ] T019 Write failing test in `internal/cli/setup_test.go` verifying that `RunSetup` with a `VersionFetcher` configured calls `AutoSelectLatest` instead of `RunVersionSelection` and sets `Session.SchemaVersion` to the latest release tag
-- [ ] T020 [P] Write failing test in `internal/cli/setup_test.go` verifying that when `AutoSelectLatest` fails (network + no cache), the setup flow continues with `SchemaVersion` empty and displays a warning
+- [x] T019 Write failing test in `internal/cli/setup_test.go` verifying that `RunSetup` with a `VersionFetcher` configured calls `AutoSelectLatest` instead of `RunVersionSelection` and sets `Session.SchemaVersion` to the latest release tag
+- [x] T020 [P] Write failing test in `internal/cli/setup_test.go` verifying that when `AutoSelectLatest` fails (network + no cache), the setup flow continues with `SchemaVersion` empty and displays a warning
 
 ### Implementation
 
-- [ ] T021 [US3] Replace the `RunVersionSelection` call in `RunSetup` in `internal/cli/setup.go` with a call to `schema.AutoSelectLatest(ctx, cfg.VersionFetcher, cfg.VersionCachePath, result.Session)`. Add a code comment referencing ADR-0003 explaining the bypass.
-- [ ] T022 [US3] Add version display output after auto-selection in `internal/cli/setup.go`: show the selected version tag, whether it was from cache, and any experimental schema warnings from the `SelectionResult`
-- [ ] T023 [US3] Handle `AutoSelectLatest` error in `internal/cli/setup.go`: on failure, log a warning ("Schema version could not be resolved; proceeding without version constraint"), set `Session.SchemaVersion` to empty, and continue setup
-- [ ] T024 [US3] Verify tests from T019-T020 pass and run `make test` to confirm no regressions
+- [x] T021 [US3] Replace the `RunVersionSelection` call in `RunSetup` in `internal/cli/setup.go` with a call to `schema.AutoSelectLatest(ctx, cfg.VersionFetcher, cfg.VersionCachePath, result.Session)`. Add a code comment referencing ADR-0003 explaining the bypass.
+- [x] T022 [US3] Add version display output after auto-selection in `internal/cli/setup.go`: show the selected version tag, whether it was from cache, and any experimental schema warnings from the `SelectionResult`
+- [x] T023 [US3] Handle `AutoSelectLatest` error in `internal/cli/setup.go`: on failure, log a warning ("Schema version could not be resolved; proceeding without version constraint"), set `Session.SchemaVersion` to empty, and continue setup
+- [x] T024 [US3] Verify tests from T019-T020 pass and run `make test` to confirm no regressions
 
 **Checkpoint**: User Story 3 is fully functional — version auto-selects with no prompt.
 
@@ -104,10 +104,10 @@
 
 ### Implementation
 
-- [ ] T026 [US2] Add `Session` and `SelectionResult` fields to `TutorialPlayerConfig` (or equivalent config struct) in `internal/cli/tutorial_prompt.go` so the tutorial player has access to session state and version selection results for building handoff summaries
-- [ ] T027 [US2] Modify the tutorial completion handler in `internal/cli/tutorial_prompt.go` (the `navComplete` case): after rendering the existing "Completed: <title>" success message, call `BuildHandoffSummary(step, cfg.Session, cfg.SelectionResult)` and `RenderHandoffSummary(summary, out)`
-- [ ] T028 [US2] Update the caller of `RunTutorialPlayer` in `cmd/pacman/main.go` to pass the `Session` and `SelectionResult` through the config
-- [ ] T029 [US2] Verify test from T025 passes and run `make test` to confirm no regressions
+- [x] T026 [US2] Add `Session` and `SelectionResult` fields to `TutorialPlayerConfig` (or equivalent config struct) in `internal/cli/tutorial_prompt.go` so the tutorial player has access to session state and version selection results for building handoff summaries
+- [x] T027 [US2] Modify the tutorial completion handler in `internal/cli/tutorial_prompt.go` (the `navComplete` case): after rendering the existing "Completed: <title>" success message, call `BuildHandoffSummary(step, cfg.Session, cfg.SelectionResult)` and `RenderHandoffSummary(summary, out)`
+- [x] T028 [US2] Update the caller of `RunTutorialPlayer` in `cmd/pacman/main.go` to pass the `Session` and `SelectionResult` through the config
+- [x] T029 [US2] Verify test from T025 passes and run `make test` to confirm no regressions
 
 **Checkpoint**: User Story 2 is fully functional — tutorials end with a handoff summary directing users to OpenCode with the gemara-mcp server.
 
@@ -121,15 +121,15 @@
 
 ### Tests
 
-- [ ] T030 Write failing test in `internal/cli/handoff_test.go` verifying `RenderHandoffSummary` output includes "OpenCode", "gemara-mcp", the wizard prompt name, and lists `validate_gemara_artifact`, `gemara://lexicon`, and `gemara://schema/definitions` when `MCPConfigured` is true
-- [ ] T031 [P] Write failing test in `internal/cli/handoff_test.go` verifying `RenderHandoffSummary` output includes `./pacman --doctor` reference, `opencode.json` setup instructions, and `cue vet` command when `MCPConfigured` is false
+- [x] T030 Write failing test in `internal/cli/handoff_test.go` verifying `RenderHandoffSummary` output includes "OpenCode", "gemara-mcp", the wizard prompt name, and lists `validate_gemara_artifact`, `gemara://lexicon`, and `gemara://schema/definitions` when `MCPConfigured` is true
+- [x] T031 [P] Write failing test in `internal/cli/handoff_test.go` verifying `RenderHandoffSummary` output includes `./pacman --doctor` reference, `opencode.json` setup instructions, and `cue vet` command when `MCPConfigured` is false
 
 ### Implementation
 
-- [ ] T032 [US4] Enhance `RenderHandoffSummary` in `internal/cli/handoff.go` to render the configured path: show "Available in OpenCode" section listing tools, resources, and prompts from the `HandoffSummary` fields; show instructions to launch `opencode` and use the wizard prompt with the gemara-mcp server
-- [ ] T033 [US4] Enhance `RenderHandoffSummary` in `internal/cli/handoff.go` to render the not-configured path: show a clear note that gemara-mcp is not yet configured, reference `./pacman --doctor` for environment verification, explain how to configure `opencode.json`, and show `cue vet -c -d '<SchemaDef>' github.com/gemaraproj/gemara@latest artifact.yaml` as a manual validation alternative
-- [ ] T034 [US4] Add version mismatch warning rendering to `RenderHandoffSummary` in `internal/cli/handoff.go`: when `VersionMismatch` is true, render a `RenderWarning` noting the discrepancy and recommending post-authoring validation
-- [ ] T035 [US4] Verify tests from T030-T031 pass and run `make test` to confirm no regressions
+- [x] T032 [US4] Enhance `RenderHandoffSummary` in `internal/cli/handoff.go` to render the configured path: show "Available in OpenCode" section listing tools, resources, and prompts from the `HandoffSummary` fields; show instructions to launch `opencode` and use the wizard prompt with the gemara-mcp server
+- [x] T033 [US4] Enhance `RenderHandoffSummary` in `internal/cli/handoff.go` to render the not-configured path: show a clear note that gemara-mcp is not yet configured, reference `./pacman --doctor` for environment verification, explain how to configure `opencode.json`, and show `cue vet -c -d '<SchemaDef>' github.com/gemaraproj/gemara@latest artifact.yaml` as a manual validation alternative
+- [x] T034 [US4] Add version mismatch warning rendering to `RenderHandoffSummary` in `internal/cli/handoff.go`: when `VersionMismatch` is true, render a `RenderWarning` noting the discrepancy and recommending post-authoring validation
+- [x] T035 [US4] Verify tests from T030-T031 pass and run `make test` to confirm no regressions
 
 **Checkpoint**: User Story 4 is fully functional — handoff summary directs to OpenCode with gemara-mcp, adapts to configuration state and version.
 
@@ -143,14 +143,14 @@
 
 ### Tests
 
-- [ ] T036 Write failing test in `internal/cli/version_prompt_test.go` verifying that `RunVersionSelection` still compiles, accepts valid config, and functions correctly when called directly (proving it is preserved and functional, not broken by the bypass)
+- [x] T036 Write failing test in `internal/cli/version_prompt_test.go` verifying that `RunVersionSelection` still compiles, accepts valid config, and functions correctly when called directly (proving it is preserved and functional, not broken by the bypass)
 
 ### Implementation
 
-- [ ] T037 [US5] Add a bypass comment header to `RunVersionSelection` in `internal/cli/version_prompt.go`: document that this function is intentionally bypassed in the active flow per ADR-0003, retained for planned future re-enablement, and can be re-enabled by replacing the `AutoSelectLatest` call in `setup.go` with `RunVersionSelection`
-- [ ] T038 [US5] Remove or disable the "Switch schema version" menu option in `cmd/pacman/main.go` (if one exists in the main menu): add a comment noting the deferral per ADR-0003
-- [ ] T039 [US5] Create `docs/adrs/ADR-0003-version-selection-deferral.md` per research.md section R5: Context (friction during onboarding, Pac-Man's tutorial focus), Decision (auto-select latest, preserve code), Consequences (simpler onboarding, re-enablement path)
-- [ ] T040 [US5] Verify test from T036 passes and run `make test` to confirm no regressions
+- [x] T037 [US5] Add a bypass comment header to `RunVersionSelection` in `internal/cli/version_prompt.go`: document that this function is intentionally bypassed in the active flow per ADR-0003, retained for planned future re-enablement, and can be re-enabled by replacing the `AutoSelectLatest` call in `setup.go` with `RunVersionSelection`
+- [x] T038 [US5] Remove or disable the "Switch schema version" menu option in `cmd/pacman/main.go` (if one exists in the main menu): add a comment noting the deferral per ADR-0003 — N/A: no version switch menu option exists
+- [x] T039 [US5] Create `docs/adrs/ADR-0003-version-selection-deferral.md` per research.md section R5: Context (friction during onboarding, Pac-Man's tutorial focus), Decision (auto-select latest, preserve code), Consequences (simpler onboarding, re-enablement path)
+- [x] T040 [US5] Verify test from T036 passes and run `make test` to confirm no regressions
 
 **Checkpoint**: User Story 5 is complete — version switching is cleanly deferred with documentation.
 
@@ -162,10 +162,10 @@
 
 - [ ] T041 Run `make lint` and fix any linting issues across all modified files
 - [ ] T042 Run `make fmt` to ensure all files are formatted with `goimports`
-- [ ] T043 Verify SPDX license headers on all new files: `internal/cli/handoff.go`, `internal/cli/handoff_test.go`, `docs/adrs/ADR-0003-version-selection-deferral.md`
-- [ ] T044 Run full `make test` and verify zero failures across the entire test suite
-- [ ] T045 Run `make build` and verify the binary builds with zero errors
-- [ ] T046 [P] Run `./pacman --doctor` and verify it still functions correctly with no changes to its output or behavior (FR-017)
+- [x] T043 Verify SPDX license headers on all new files: `internal/cli/handoff.go`, `internal/cli/handoff_test.go`, `docs/adrs/ADR-0003-version-selection-deferral.md`
+- [x] T044 Run full `make test` and verify zero failures across the entire test suite
+- [x] T045 Run `make build` and verify the binary builds with zero errors
+- [x] T046 [P] Run `./pacman --doctor` and verify it still functions correctly with no changes to its output or behavior (FR-017)
 - [ ] T047 [P] Verify quickstart.md scenario: launch Pac-Man, confirm no version prompt, confirm artifact recommendations display, complete a tutorial, confirm handoff summary directs to OpenCode with gemara-mcp tools/resources listed
 - [ ] T048 [P] Verify edge case: run setup with no network and no cache, confirm graceful degradation with warning message
 - [ ] T049 Review all terminal output across every flow (activity identification, tutorial navigation, handoff summary) for consistent visual styling, clear spacing, scannable format, and accessibility for non-technical users (FR-018). Fix any rough edges in rendering functions in `internal/cli/styles.go` and `internal/cli/handoff.go`

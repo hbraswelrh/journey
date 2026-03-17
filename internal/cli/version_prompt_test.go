@@ -12,9 +12,59 @@ import (
 	"time"
 
 	"github.com/hbraswelrh/pacman/internal/cli"
+	"github.com/hbraswelrh/pacman/internal/consts"
+	"github.com/hbraswelrh/pacman/internal/mcp"
 	"github.com/hbraswelrh/pacman/internal/schema"
 	"github.com/hbraswelrh/pacman/internal/session"
 )
+
+// versionMockTransport implements mcp.Transport for version
+// prompt tests.
+type versionMockTransport struct {
+	readResourceResp []byte
+	readResourceErr  error
+}
+
+func (m *versionMockTransport) Connect(
+	_ context.Context,
+) error {
+	return nil
+}
+
+func (m *versionMockTransport) Close() error {
+	return nil
+}
+
+func (m *versionMockTransport) Ping(
+	_ context.Context,
+) error {
+	return nil
+}
+
+func (m *versionMockTransport) Call(
+	_ context.Context,
+	_ string,
+	_ map[string]any,
+) ([]byte, error) {
+	// Return version info for compatibility checks.
+	return []byte(
+		`{"server_version":"1.0.0",` +
+			`"schema_version":"v0.19.0"}`,
+	), nil
+}
+
+func (m *versionMockTransport) ReadResource(
+	_ context.Context,
+	_ string,
+) ([]byte, error) {
+	return m.readResourceResp, m.readResourceErr
+}
+
+func (m *versionMockTransport) ListPrompts(
+	_ context.Context,
+) ([]byte, error) {
+	return nil, nil
+}
 
 // testReleaseFetcher returns a fetcher that produces a fixed
 // release list. v0.20.0 is Latest (Experimental base),
@@ -218,6 +268,108 @@ func TestVersionPrompt_OfflineWithCache(t *testing.T) {
 	}
 }
 
+// TestVersionPrompt_MCPSchemaDocsRead verifies that when
+// MCP is connected and a version is selected, the system
+// reads schema docs for the selected version and shows
+// a confirmation message.
+func TestVersionPrompt_MCPSchemaDocsRead(t *testing.T) {
+	var buf bytes.Buffer
+	sess := session.NewSessionWithMCP(
+		"", consts.MCPModeArtifact,
+	)
+
+	transport := &versionMockTransport{
+		readResourceResp: []byte(
+			`{"definitions": {"#ControlCatalog": {}}}`,
+		),
+	}
+	client := mcp.NewClient(
+		transport, mcp.DefaultClientConfig(),
+	)
+	if err := client.Connect(
+		context.Background(),
+	); err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+
+	cfg := &cli.VersionPromptConfig{
+		Prompter: &mockPrompter{
+			choices: []int{0}, // Select Stable
+		},
+		Fetcher:   testReleaseFetcher(),
+		CachePath: filepath.Join(t.TempDir(), "rel.json"),
+		Session:   sess,
+		MCPClient: client,
+	}
+
+	err := cli.RunVersionSelection(
+		context.Background(), cfg, &buf,
+	)
+	if err != nil {
+		t.Fatalf("RunVersionSelection failed: %v", err)
+	}
+
+	output := buf.String()
+
+	// Should mention schema docs verification.
+	if !strings.Contains(output, "schema documentation") &&
+		!strings.Contains(output, "Schema documentation") {
+		t.Fatalf(
+			"expected schema docs message, got: %s",
+			output,
+		)
+	}
+}
+
+// TestVersionPrompt_MCPSchemaDocsReadFailure verifies that
+// when schema docs read fails, a warning is shown but the
+// flow continues.
+func TestVersionPrompt_MCPSchemaDocsReadFailure(
+	t *testing.T,
+) {
+	var buf bytes.Buffer
+	sess := session.NewSessionWithMCP(
+		"", consts.MCPModeArtifact,
+	)
+
+	transport := &versionMockTransport{
+		readResourceErr: errors.New("resource unavailable"),
+	}
+	client := mcp.NewClient(
+		transport, mcp.DefaultClientConfig(),
+	)
+	if err := client.Connect(
+		context.Background(),
+	); err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+
+	cfg := &cli.VersionPromptConfig{
+		Prompter: &mockPrompter{
+			choices: []int{0}, // Select Stable
+		},
+		Fetcher:   testReleaseFetcher(),
+		CachePath: filepath.Join(t.TempDir(), "rel.json"),
+		Session:   sess,
+		MCPClient: client,
+	}
+
+	err := cli.RunVersionSelection(
+		context.Background(), cfg, &buf,
+	)
+	if err != nil {
+		t.Fatalf("RunVersionSelection failed: %v", err)
+	}
+
+	// Should still succeed (non-fatal).
+	if sess.SchemaVersion != "v0.19.0" {
+		t.Fatalf(
+			"expected v0.19.0, got %s",
+			sess.SchemaVersion,
+		)
+	}
+}
+
 // TestVersionPrompt_Integration verifies the full flow from
 // MCP setup (declined) through version selection.
 func TestVersionPrompt_Integration(t *testing.T) {
@@ -273,6 +425,44 @@ func TestVersionPrompt_Integration(t *testing.T) {
 		t.Fatalf(
 			"expected experimental warning, got: %s",
 			output,
+		)
+	}
+}
+
+// T036: RunVersionSelection still compiles and functions
+// correctly when called directly. This proves the function
+// is preserved and functional despite being bypassed in the
+// active setup flow (ADR-0003).
+func TestVersionPrompt_PreservedAndFunctional(
+	t *testing.T,
+) {
+	var buf bytes.Buffer
+	sess := session.NewSessionWithoutMCP("")
+
+	cfg := &cli.VersionPromptConfig{
+		Prompter: &mockPrompter{
+			choices: []int{1}, // Select Latest
+		},
+		Fetcher:   testReleaseFetcher(),
+		CachePath: filepath.Join(t.TempDir(), "rel.json"),
+		Session:   sess,
+	}
+
+	err := cli.RunVersionSelection(
+		context.Background(), cfg, &buf,
+	)
+	if err != nil {
+		t.Fatalf(
+			"RunVersionSelection should still work "+
+				"when called directly: %v", err,
+		)
+	}
+
+	// Session should have latest version selected.
+	if sess.SchemaVersion != "v0.20.0" {
+		t.Fatalf(
+			"expected session version v0.20.0, got %s",
+			sess.SchemaVersion,
 		)
 	}
 }
