@@ -196,6 +196,57 @@ func SelectVersion(
 	return result, nil
 }
 
+// ReleaseFetcherFn is a function that fetches releases from
+// upstream. Used by AutoSelectLatest to decouple from the
+// concrete HTTP fetcher.
+type ReleaseFetcherFn = func(
+	ctx context.Context,
+) ([]Release, error)
+
+// AutoSelectLatest automatically resolves the latest Gemara
+// release and applies it to the session without user
+// interaction. It wraps RefreshOrCache, DetermineVersions,
+// and SelectVersion(SelectionLatest) into a single call.
+//
+// This function is used in the setup flow to bypass the
+// interactive version selection prompt. See ADR-0003 for
+// the rationale behind this design decision.
+func AutoSelectLatest(
+	ctx context.Context,
+	fetcher ReleaseFetcherFn,
+	cachePath string,
+	sess *session.Session,
+) (*SelectionResult, error) {
+	cached, err := RefreshOrCache(ctx, fetcher, cachePath)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"auto-select latest: %w", err,
+		)
+	}
+
+	choice, err := DetermineVersions(cached.Releases)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"auto-select latest: %w", err,
+		)
+	}
+
+	result, err := SelectVersion(
+		choice,
+		SelectionLatest,
+		sess,
+		nil, // no MCP client (skip compat check)
+		nil, // no confirmer (not a mid-session switch)
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"auto-select latest: %w", err,
+		)
+	}
+
+	return result, nil
+}
+
 // experimentalSchemas returns a sorted list of schema names
 // marked Experimental in the given status map.
 func experimentalSchemas(

@@ -148,6 +148,36 @@ type ActivityProfile struct {
 	UserDescription string
 	// Role is the identified role for this profile.
 	Role *Role
+	// Recommendations are artifact types recommended for
+	// this user based on their resolved layers. Populated
+	// by calling ArtifactRecommendations after layer
+	// resolution.
+	Recommendations []ArtifactRecommendation
+}
+
+// ArtifactRecommendation represents a recommended artifact
+// type for the user based on their resolved Gemara layers.
+type ArtifactRecommendation struct {
+	// ArtifactType is the artifact type identifier
+	// (e.g., "ThreatCatalog").
+	ArtifactType string
+	// SchemaDef is the CUE schema definition
+	// (e.g., "#ThreatCatalog").
+	SchemaDef string
+	// Description is a one-sentence user-facing
+	// description of the artifact type.
+	Description string
+	// Layer is the Gemara layer number (1-7).
+	Layer int
+	// Confidence is Inferred or Strong, from the layer
+	// mapping that produced this recommendation.
+	Confidence Confidence
+	// MCPWizard is the MCP wizard prompt name, or empty
+	// if no wizard is available for this type.
+	MCPWizard string
+	// AuthoringApproach is "wizard" or "collaborative",
+	// derived from MCPWizard presence.
+	AuthoringApproach string
 }
 
 // ExtractKeywords identifies domain keywords from a free-text
@@ -377,4 +407,81 @@ func (p *ActivityProfile) UniqueLayerNumbers() []int {
 	}
 	sort.Ints(layers)
 	return layers
+}
+
+// AllKeywords returns all unique keywords from all resolved
+// layers in the profile.
+func (p *ActivityProfile) AllKeywords() []string {
+	seen := make(map[string]bool)
+	var all []string
+	for _, lm := range p.ResolvedLayers {
+		for _, kw := range lm.Keywords {
+			if !seen[kw] {
+				seen[kw] = true
+				all = append(all, kw)
+			}
+		}
+	}
+	return all
+}
+
+// artifactSchemaMap maps artifact type identifiers to their
+// CUE schema definition names. This duplicates the mapping
+// in authoring/model.go to avoid a circular import.
+var artifactSchemaMap = map[string]string{
+	consts.ArtifactGuidanceCatalog: consts.SchemaGuidanceCatalog,
+	consts.ArtifactControlCatalog:  consts.SchemaControlCatalog,
+	consts.ArtifactThreatCatalog:   consts.SchemaThreatCatalog,
+	consts.ArtifactPolicy:          consts.SchemaPolicy,
+	consts.ArtifactMappingDocument: consts.SchemaMappingDocument,
+	consts.ArtifactEvaluationLog:   consts.SchemaEvaluationLog,
+}
+
+// ArtifactRecommendations builds a list of recommended
+// artifact types from an activity profile's resolved layers.
+// Recommendations are ordered by confidence (Strong first),
+// then by layer number. Duplicate artifact types across
+// layers are deduplicated, keeping the highest confidence.
+func ArtifactRecommendations(
+	profile *ActivityProfile,
+) []ArtifactRecommendation {
+	if profile == nil || len(profile.ResolvedLayers) == 0 {
+		return nil
+	}
+
+	// Collect recommendations, tracking seen types for
+	// deduplication.
+	seen := make(map[string]bool)
+	var recs []ArtifactRecommendation
+
+	// Process layers in their existing order (already
+	// sorted by confidence then layer number from
+	// ResolveLayerMappings).
+	for _, lm := range profile.ResolvedLayers {
+		artifacts := consts.LayerArtifacts[lm.Layer]
+		for _, artType := range artifacts {
+			if seen[artType] {
+				continue
+			}
+			seen[artType] = true
+
+			wizard := consts.ArtifactWizards[artType]
+			approach := consts.ApproachCollaborative
+			if wizard != "" {
+				approach = consts.ApproachWizard
+			}
+
+			recs = append(recs, ArtifactRecommendation{
+				ArtifactType:      artType,
+				SchemaDef:         artifactSchemaMap[artType],
+				Description:       consts.ArtifactDescriptions[artType],
+				Layer:             lm.Layer,
+				Confidence:        lm.Confidence,
+				MCPWizard:         wizard,
+				AuthoringApproach: approach,
+			})
+		}
+	}
+
+	return recs
 }

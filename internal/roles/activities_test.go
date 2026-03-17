@@ -531,3 +531,237 @@ func layersEqual(a, b []int) bool {
 	}
 	return true
 }
+
+// T005: ArtifactRecommendations returns recommendations for
+// strong L2 layers.
+func TestArtifactRecommendations_StrongL2(t *testing.T) {
+	t.Parallel()
+
+	profile := &ActivityProfile{
+		ResolvedLayers: []LayerMapping{
+			{
+				Layer:      consts.LayerThreatsControls,
+				Confidence: ConfidenceStrong,
+				Keywords:   []string{"threat modeling"},
+			},
+		},
+	}
+
+	recs := ArtifactRecommendations(profile)
+
+	if len(recs) != 2 {
+		t.Fatalf(
+			"expected 2 recommendations for L2, "+
+				"got %d", len(recs),
+		)
+	}
+
+	types := make(map[string]bool)
+	for _, r := range recs {
+		types[r.ArtifactType] = true
+	}
+
+	if !types[consts.ArtifactThreatCatalog] {
+		t.Error("expected ThreatCatalog recommendation")
+	}
+	if !types[consts.ArtifactControlCatalog] {
+		t.Error("expected ControlCatalog recommendation")
+	}
+
+	// Verify descriptions are populated.
+	for _, r := range recs {
+		if r.Description == "" {
+			t.Errorf(
+				"expected description for %s",
+				r.ArtifactType,
+			)
+		}
+		if r.SchemaDef == "" {
+			t.Errorf(
+				"expected schema def for %s",
+				r.ArtifactType,
+			)
+		}
+	}
+}
+
+// T005: ArtifactRecommendations returns recommendations for
+// inferred L1 layers.
+func TestArtifactRecommendations_InferredL1(t *testing.T) {
+	t.Parallel()
+
+	profile := &ActivityProfile{
+		ResolvedLayers: []LayerMapping{
+			{
+				Layer:      consts.LayerGuidance,
+				Confidence: ConfidenceInferred,
+				Keywords:   []string{"nist"},
+			},
+		},
+	}
+
+	recs := ArtifactRecommendations(profile)
+
+	if len(recs) != 1 {
+		t.Fatalf(
+			"expected 1 recommendation for L1, "+
+				"got %d", len(recs),
+		)
+	}
+
+	if recs[0].ArtifactType != consts.ArtifactGuidanceCatalog {
+		t.Errorf(
+			"expected GuidanceCatalog, got %s",
+			recs[0].ArtifactType,
+		)
+	}
+	if recs[0].Confidence != ConfidenceInferred {
+		t.Error("expected inferred confidence")
+	}
+	if recs[0].MCPWizard != "" {
+		t.Errorf(
+			"expected no wizard for GuidanceCatalog, "+
+				"got %s", recs[0].MCPWizard,
+		)
+	}
+	if recs[0].AuthoringApproach != consts.ApproachCollaborative {
+		t.Errorf(
+			"expected collaborative approach, got %s",
+			recs[0].AuthoringApproach,
+		)
+	}
+}
+
+// T005: ArtifactRecommendations returns empty for empty layers.
+func TestArtifactRecommendations_EmptyLayers(t *testing.T) {
+	t.Parallel()
+
+	profile := &ActivityProfile{
+		ResolvedLayers: []LayerMapping{},
+	}
+
+	recs := ArtifactRecommendations(profile)
+
+	if len(recs) != 0 {
+		t.Fatalf(
+			"expected 0 recommendations for empty "+
+				"layers, got %d", len(recs),
+		)
+	}
+}
+
+// T005: ArtifactRecommendations returns empty for L4 (no
+// artifacts defined).
+func TestArtifactRecommendations_L4NoArtifacts(
+	t *testing.T,
+) {
+	t.Parallel()
+
+	profile := &ActivityProfile{
+		ResolvedLayers: []LayerMapping{
+			{
+				Layer:      consts.LayerSensitiveActivity,
+				Confidence: ConfidenceStrong,
+				Keywords:   []string{"pipeline security"},
+			},
+		},
+	}
+
+	recs := ArtifactRecommendations(profile)
+
+	if len(recs) != 0 {
+		t.Fatalf(
+			"expected 0 recommendations for L4, "+
+				"got %d", len(recs),
+		)
+	}
+}
+
+// T005: ArtifactRecommendations deduplicates across layers,
+// keeping the highest confidence.
+func TestArtifactRecommendations_Deduplication(
+	t *testing.T,
+) {
+	t.Parallel()
+
+	// L2 has ThreatCatalog+ControlCatalog. If same artifact
+	// appeared in two layers, only one should appear.
+	profile := &ActivityProfile{
+		ResolvedLayers: []LayerMapping{
+			{
+				Layer:      consts.LayerThreatsControls,
+				Confidence: ConfidenceStrong,
+				Keywords:   []string{"threat modeling"},
+			},
+			{
+				Layer:      consts.LayerGuidance,
+				Confidence: ConfidenceInferred,
+				Keywords:   []string{"nist"},
+			},
+		},
+	}
+
+	recs := ArtifactRecommendations(profile)
+
+	// L2 = ThreatCatalog + ControlCatalog, L1 =
+	// GuidanceCatalog → 3 unique types.
+	if len(recs) != 3 {
+		t.Fatalf(
+			"expected 3 unique recommendations, "+
+				"got %d", len(recs),
+		)
+	}
+
+	// Verify strong confidence comes first.
+	if recs[0].Confidence != ConfidenceStrong {
+		t.Error(
+			"expected strong confidence first in " +
+				"sorted order",
+		)
+	}
+}
+
+// T005: ArtifactRecommendations sets MCPWizard for types
+// that have wizards.
+func TestArtifactRecommendations_WizardMapping(
+	t *testing.T,
+) {
+	t.Parallel()
+
+	profile := &ActivityProfile{
+		ResolvedLayers: []LayerMapping{
+			{
+				Layer:      consts.LayerThreatsControls,
+				Confidence: ConfidenceStrong,
+				Keywords:   []string{"threat modeling"},
+			},
+		},
+	}
+
+	recs := ArtifactRecommendations(profile)
+
+	for _, r := range recs {
+		switch r.ArtifactType {
+		case consts.ArtifactThreatCatalog:
+			if r.MCPWizard != consts.WizardThreatAssessment {
+				t.Errorf(
+					"expected threat_assessment wizard, "+
+						"got %s", r.MCPWizard,
+				)
+			}
+			if r.AuthoringApproach != consts.ApproachWizard {
+				t.Errorf(
+					"expected wizard approach, got %s",
+					r.AuthoringApproach,
+				)
+			}
+		case consts.ArtifactControlCatalog:
+			if r.MCPWizard != consts.WizardControlCatalog {
+				t.Errorf(
+					"expected control_catalog wizard, "+
+						"got %s", r.MCPWizard,
+				)
+			}
+		}
+	}
+}

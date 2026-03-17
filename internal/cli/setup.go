@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/hbraswelrh/pacman/internal/consts"
 	"github.com/hbraswelrh/pacman/internal/mcp"
+	"github.com/hbraswelrh/pacman/internal/schema"
 	"github.com/hbraswelrh/pacman/internal/session"
 	"github.com/hbraswelrh/pacman/internal/tutorials"
 )
@@ -20,6 +22,9 @@ type UserPrompter interface {
 	// Ask presents a question with options and returns the
 	// selected option index.
 	Ask(question string, options []string) (int, error)
+	// AskText presents a question and returns free-text
+	// input from the user.
+	AskText(question string) (string, error)
 }
 
 // SetupConfig holds the dependencies for the setup flow.
@@ -85,20 +90,46 @@ func RunSetup(
 		return nil, err
 	}
 
-	// Run version selection if configured.
+	// Auto-select the latest schema version without user
+	// interaction. The interactive RunVersionSelection
+	// prompt is intentionally bypassed here. See
+	// ADR-0003 for rationale. To re-enable version
+	// selection, replace this block with a call to
+	// RunVersionSelection.
 	if cfg.VersionFetcher != nil {
-		vCfg := &VersionPromptConfig{
-			Prompter:  cfg.Prompter,
-			Fetcher:   cfg.VersionFetcher,
-			CachePath: cfg.VersionCachePath,
-			Session:   result.Session,
-		}
-		if err := RunVersionSelection(
-			ctx, vCfg, out,
-		); err != nil {
-			return nil, fmt.Errorf(
-				"version selection: %w", err,
-			)
+		selRes, err := schema.AutoSelectLatest(
+			ctx,
+			cfg.VersionFetcher,
+			cfg.VersionCachePath,
+			result.Session,
+		)
+		if err != nil {
+			// Non-fatal: proceed without a version
+			// constraint and warn the user.
+			fmt.Fprintln(out, RenderWarning(
+				"Schema version could not be "+
+					"resolved; proceeding without "+
+					"version constraint.",
+			))
+		} else {
+			fmt.Fprintln(out, RenderSuccess(
+				fmt.Sprintf(
+					"Schema version: %s (latest)",
+					selRes.SelectedTag,
+				),
+			))
+			if len(selRes.ExperimentalSchemas) > 0 {
+				fmt.Fprintln(out, RenderNote(
+					fmt.Sprintf(
+						"The following schemas are "+
+							"experimental: %s",
+						strings.Join(
+							selRes.ExperimentalSchemas,
+							", ",
+						),
+					),
+				))
+			}
 		}
 	}
 
@@ -207,21 +238,50 @@ func runMCPSetup(
 			),
 		))
 
-		sess := session.NewSessionWithMCP("")
+		// Determine mode from existing config.
+		mode := consts.MCPModeDefault
+		binaryPath := detection.BinaryPath
+		existingConfig, readErr := mcp.ReadOpenCodeConfig(
+			cfg.ConfigPath,
+		)
+		if readErr == nil {
+			if entry, ok := existingConfig.MCP[consts.MCPServerName]; ok {
+				mode = mcp.ParseMCPMode(entry)
+				if binaryPath == "" {
+					binaryPath = mcp.MCPBinaryPath(
+						entry,
+					)
+				}
+			}
+		}
+
+		// Show how to update/rebuild from source.
+		if binaryPath != "" {
+			renderUpdateGuidance(out, binaryPath)
+		}
+
+		sess := session.NewSessionWithMCP("", mode)
 		return &SetupResult{
 			Session: sess,
 		}, nil
 	}
 
-	// Step 2: Explain and offer installation.
-	fmt.Fprintln(out, RenderMCPToolsPanel())
+	// Step 2: Offer setup.
+	fmt.Fprintln(out, subtleStyle.Render(
+		"The Gemara MCP server must be installed "+
+			"from source. If you have already "+
+			"built it, provide the path to the "+
+			"binary.",
+	))
+	fmt.Fprintln(out)
 
 	choice, err := cfg.Prompter.Ask(
-		"How would you like to install the Gemara MCP server?",
+		"How would you like to set up the Gemara "+
+			"MCP server?",
 		[]string{
-			"Build from source (recommended)",
-			"Run via Podman",
-			"Skip installation",
+			"Build from source (clone and build)",
+			"I already have it — provide the path",
+			"Skip for now",
 		},
 	)
 	if err != nil {
@@ -233,12 +293,72 @@ func runMCPSetup(
 		// Build from source.
 		return handleSourceBuild(ctx, cfg, out)
 	case 1:
-		// Podman.
-		return handlePodmanInstall(ctx, cfg, out)
+		// User has an existing build.
+		return handleExistingBinary(cfg, out)
 	default:
 		// Declined.
 		return handleDecline(out)
 	}
+}
+
+func handleExistingBinary(
+	cfg *SetupConfig,
+	out io.Writer,
+) (*SetupResult, error) {
+	binaryPath, err := cfg.Prompter.AskText(
+		"Path to gemara-mcp binary " +
+			"(e.g., /path/to/gemara-mcp/bin/gemara-mcp):",
+	)
+	if err != nil {
+		return nil, fmt.Errorf("prompt path: %w", err)
+	}
+	binaryPath = strings.TrimSpace(binaryPath)
+	if binaryPath == "" {
+		return handleDecline(out)
+	}
+
+	fmt.Fprintln(out, RenderSuccess(
+		"Using existing binary: "+binaryPath,
+	))
+
+	// Prompt for server mode.
+	mode, err := promptServerMode(cfg.Prompter, out)
+	if err != nil {
+		return nil, err
+	}
+
+	// Show config preview and write.
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, headingStyle.Render(
+		"MCP Configuration",
+	))
+	fmt.Fprintln(out)
+	configPreview := fmt.Sprintf(
+		"command: %s\nargs:    [serve, --mode, %s]",
+		binaryPath, mode,
+	)
+	fmt.Fprintln(out, codeBlockStyle.Render(
+		configPreview,
+	))
+	fmt.Fprintln(out)
+
+	if err := configureMCPEntry(
+		cfg.ConfigPath, binaryPath, mode,
+	); err != nil {
+		return nil, err
+	}
+	fmt.Fprintln(out, RenderSuccess(
+		"MCP configuration updated",
+	))
+
+	// Show update guidance.
+	renderUpdateGuidance(out, binaryPath)
+
+	sess := session.NewSessionWithMCP("", mode)
+	return &SetupResult{
+		Session:      sess,
+		MCPInstalled: true,
+	}, nil
 }
 
 func handleSourceBuild(
@@ -321,6 +441,12 @@ func handleSourceBuild(
 		))
 	}
 
+	// Prompt for server mode.
+	mode, err := promptServerMode(cfg.Prompter, out)
+	if err != nil {
+		return nil, err
+	}
+
 	// Show the user the absolute path and ask for
 	// confirmation before writing MCP config.
 	fmt.Fprintln(out)
@@ -332,8 +458,15 @@ func handleSourceBuild(
 		"The following MCP server config will be "+
 			"written:",
 	))
-	fmt.Fprintf(out, "\n  command: %s\n", binaryPath)
-	fmt.Fprintf(out, "  args:    [serve]\n\n")
+	configPreview := fmt.Sprintf(
+		"command: %s\nargs:    [serve, --mode, %s]",
+		binaryPath, mode,
+	)
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, codeBlockStyle.Render(
+		configPreview,
+	))
+	fmt.Fprintln(out)
 
 	confirmChoice, err := cfg.Prompter.Ask(
 		"Write this MCP configuration?",
@@ -355,7 +488,7 @@ func handleSourceBuild(
 		))
 	} else {
 		if err := configureMCPEntry(
-			cfg.ConfigPath, binaryPath,
+			cfg.ConfigPath, binaryPath, mode,
 		); err != nil {
 			return nil, err
 		}
@@ -364,82 +497,11 @@ func handleSourceBuild(
 		))
 	}
 
-	sess := session.NewSessionWithMCP("")
+	sess := session.NewSessionWithMCP("", mode)
 	return &SetupResult{
 		Session:      sess,
 		MCPInstalled: true,
 	}, nil
-}
-
-func handlePodmanInstall(
-	ctx context.Context,
-	cfg *SetupConfig,
-	out io.Writer,
-) (*SetupResult, error) {
-	fmt.Fprintln(out, RenderStatus(
-		"Starting container...",
-	))
-
-	if err := cfg.Installer.InstallPodman(ctx); err != nil {
-		return nil, fmt.Errorf("container install: %w", err)
-	}
-
-	fmt.Fprintln(out, RenderSuccess(
-		"Container running",
-	))
-
-	// Detect container runtime (podman or docker).
-	runtime := detectContainerRuntime(cfg)
-
-	// Configure MCP entry for container-based server.
-	config, err := mcp.ReadOpenCodeConfig(cfg.ConfigPath)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"read config: %w", err,
-		)
-	}
-	mcp.EnsureMCPEntryPodman(config, runtime)
-
-	fmt.Fprintln(out)
-	fmt.Fprintln(out, headingStyle.Render(
-		"MCP Configuration",
-	))
-	fmt.Fprintln(out)
-	fmt.Fprintln(out, subtleStyle.Render(
-		"The following MCP server config will be "+
-			"written:",
-	))
-	fmt.Fprintf(out, "\n  command: %s\n", runtime)
-	fmt.Fprintf(out,
-		"  args:    [run, --rm, -i, %s, serve]\n\n",
-		consts.MCPPodmanImage,
-	)
-
-	if err := mcp.WriteOpenCodeConfig(
-		cfg.ConfigPath, config,
-	); err != nil {
-		return nil, fmt.Errorf(
-			"write config: %w", err,
-		)
-	}
-	fmt.Fprintln(out, RenderSuccess(
-		"MCP configuration updated",
-	))
-
-	sess := session.NewSessionWithMCP("")
-	return &SetupResult{
-		Session:      sess,
-		MCPInstalled: true,
-	}, nil
-}
-
-// detectContainerRuntime returns "podman" if podman is
-// available, otherwise "docker".
-func detectContainerRuntime(cfg *SetupConfig) string {
-	if _, err := cfg.BinaryLookup("podman"); err == nil {
-		return "podman"
-	}
-	return "docker"
 }
 
 func handleDecline(out io.Writer) (*SetupResult, error) {
@@ -470,15 +532,121 @@ func handleDecline(out io.Writer) (*SetupResult, error) {
 	}, nil
 }
 
+// promptServerMode asks the user to select the MCP server
+// operating mode (advisory or artifact).
+func promptServerMode(
+	prompter UserPrompter,
+	out io.Writer,
+) (string, error) {
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, headingStyle.Render(
+		"Server Mode",
+	))
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, subtleStyle.Render(
+		"The Gemara MCP server supports two "+
+			"operating modes:",
+	))
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, subtleStyle.Render(
+		"  Artifact — Advisory plus guided "+
+			"creation wizards (tools + resources "+
+			"+ prompts)",
+	))
+	fmt.Fprintln(out, subtleStyle.Render(
+		"  Advisory — Read-only analysis and "+
+			"validation (tools + resources only)",
+	))
+	fmt.Fprintln(out)
+
+	choice, err := prompter.Ask(
+		"Select server mode:",
+		[]string{
+			"Artifact (recommended, full capabilities)",
+			"Advisory (read-only, no wizards)",
+		},
+	)
+	if err != nil {
+		return "", fmt.Errorf(
+			"prompt server mode: %w", err,
+		)
+	}
+
+	if choice == 1 {
+		fmt.Fprintln(out, RenderNote(
+			"Advisory mode selected. The "+
+				"threat_assessment and "+
+				"control_catalog prompts will not "+
+				"be available. You can change the "+
+				"mode later in opencode.json.",
+		))
+		return consts.MCPModeAdvisory, nil
+	}
+	return consts.MCPModeArtifact, nil
+}
+
+// renderUpdateGuidance shows the user how to keep their
+// gemara-mcp build up to date from upstream source.
+func renderUpdateGuidance(out io.Writer, binaryPath string) {
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, headingStyle.Render(
+		"Keeping gemara-mcp Up to Date",
+	))
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, subtleStyle.Render(
+		"To rebuild after upstream changes:"),
+	)
+	fmt.Fprintln(out)
+
+	// Infer the repo directory from the binary path
+	// (typically .../gemara-mcp/bin/gemara-mcp).
+	repoDir := inferRepoDir(binaryPath)
+
+	updateCmds := fmt.Sprintf(
+		"cd %s\n"+
+			"git fetch origin\n"+
+			"git checkout main\n"+
+			"git pull origin main\n"+
+			"make build",
+		repoDir,
+	)
+	fmt.Fprintln(out, codeBlockStyle.Render(updateCmds))
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, faintStyle.Render(
+		"Run ./pacman --doctor to verify your "+
+			"environment after rebuilding.",
+	))
+}
+
+// inferRepoDir attempts to determine the gemara-mcp
+// repository directory from the binary path. If the path
+// ends in /bin/gemara-mcp, returns the parent of /bin.
+// Otherwise returns the directory containing the binary.
+func inferRepoDir(binaryPath string) string {
+	// Common case: /path/to/gemara-mcp/bin/gemara-mcp
+	if strings.HasSuffix(binaryPath, "/bin/gemara-mcp") {
+		return strings.TrimSuffix(
+			binaryPath, "/bin/gemara-mcp",
+		)
+	}
+	// Fallback: directory containing the binary.
+	idx := strings.LastIndex(binaryPath, "/")
+	if idx > 0 {
+		return binaryPath[:idx]
+	}
+	return "."
+}
+
 func configureMCPEntry(
 	configPath string,
 	binaryPath string,
+	mode string,
 ) error {
 	config, err := mcp.ReadOpenCodeConfig(configPath)
 	if err != nil {
 		return fmt.Errorf("read opencode config: %w", err)
 	}
-	mcp.EnsureMCPEntry(config, binaryPath)
+	mcp.EnsureMCPEntry(config, binaryPath, mode)
 	if err := mcp.WriteOpenCodeConfig(
 		configPath, config,
 	); err != nil {

@@ -133,6 +133,16 @@ func RunRoleDiscovery(
 		)
 	}
 
+	// Populate artifact recommendations from resolved
+	// layers and display them.
+	profile.Recommendations =
+		roles.ArtifactRecommendations(profile)
+	if len(profile.Recommendations) > 0 {
+		displayArtifactRecommendations(
+			profile.Recommendations, out,
+		)
+	}
+
 	return &RolePromptResult{
 		Profile:           profile,
 		Tutorials:         loadedTutorials,
@@ -156,9 +166,15 @@ func runRoleSelection(
 
 	options := make([]string, 0, len(allRoles)+1)
 	for _, r := range allRoles {
-		options = append(options, r.Name)
+		label := r.Name
+		if r.Description != "" {
+			label += " — " + r.Description
+		}
+		options = append(options, label)
 	}
-	options = append(options, consts.RoleCustom)
+	options = append(options,
+		consts.RoleCustom+" — Define your own role",
+	)
 
 	idx, err := cfg.Prompter.Ask(
 		"Select your role:", options,
@@ -401,6 +417,51 @@ func displayResolvedLayers(
 		fmt.Fprintln(out, line)
 	}
 	fmt.Fprintln(out)
+}
+
+// displayArtifactRecommendations renders the recommended
+// artifact types for the user's resolved layers. Each
+// recommendation shows the artifact type, a user-facing
+// description, and the authoring approach (MCP wizard or
+// collaborative). Designed to be accessible for all
+// audiences including non-technical stakeholders.
+func displayArtifactRecommendations(
+	recs []roles.ArtifactRecommendation,
+	out io.Writer,
+) {
+	fmt.Fprintln(out, headingStyle.Render(
+		"Recommended Artifact Outputs",
+	))
+	fmt.Fprintln(out)
+
+	for _, rec := range recs {
+		// Artifact type name with description.
+		fmt.Fprintf(out, "  • %s\n",
+			annotationLabelStyle.Render(rec.ArtifactType),
+		)
+		fmt.Fprintf(out, "    %s\n",
+			subtleStyle.Render(rec.Description),
+		)
+
+		// Authoring approach.
+		if rec.MCPWizard != "" {
+			fmt.Fprintf(out, "    %s %s\n",
+				successStyle.Render("→"),
+				faintStyle.Render(
+					"MCP Wizard: "+rec.MCPWizard,
+				),
+			)
+		} else {
+			fmt.Fprintf(out, "    %s %s\n",
+				successStyle.Render("→"),
+				faintStyle.Render(
+					"Collaborative authoring with "+
+						"MCP resources",
+				),
+			)
+		}
+		fmt.Fprintln(out)
+	}
 }
 
 // RenderRoleHeader returns the styled role discovery header

@@ -33,8 +33,18 @@ type VersionPromptConfig struct {
 	MCPClient *mcp.Client
 }
 
-// RunVersionSelection executes the schema version selection
-// flow:
+// RunVersionSelection executes the interactive schema version
+// selection flow. This function is intentionally BYPASSED in
+// the active setup flow per ADR-0003. The setup flow uses
+// schema.AutoSelectLatest instead, which selects the latest
+// release without user interaction.
+//
+// This function is retained for planned future re-enablement.
+// To re-enable interactive version selection, replace the
+// AutoSelectLatest call in setup.go with a call to
+// RunVersionSelection.
+//
+// Flow when active:
 //  1. Fetch or load cached releases.
 //  2. Determine Stable and Latest versions.
 //  3. Prompt the user to choose.
@@ -128,6 +138,27 @@ func RunVersionSelection(
 	fmt.Fprintln(out, RenderSuccess(
 		"Selected schema version: "+result.SelectedTag,
 	))
+
+	// Step 4b: Verify schema docs for selected version.
+	if cfg.MCPClient != nil {
+		_, docsErr := cfg.MCPClient.GetSchemaDocsForVersion(
+			ctx, result.SelectedTag,
+		)
+		if docsErr != nil {
+			fmt.Fprintln(out, RenderNote(
+				"Schema documentation could not be "+
+					"loaded from the MCP server for "+
+					result.SelectedTag+
+					". Cached documentation will be "+
+					"used if available.",
+			))
+		} else {
+			fmt.Fprintln(out, RenderSuccess(
+				"Schema documentation available for "+
+					result.SelectedTag,
+			))
+		}
+	}
 
 	// Step 5: Warnings.
 	if len(result.ExperimentalSchemas) > 0 {

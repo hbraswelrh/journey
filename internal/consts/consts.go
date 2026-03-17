@@ -56,15 +56,53 @@ const WizardThreatAssessment = "threat_assessment"
 // control catalog wizard.
 const WizardControlCatalog = "control_catalog"
 
-// MCP tool names as defined by the Gemara MCP server.
+// MCP server operating modes. Advisory is read-only analysis
+// and validation; artifact adds guided creation wizards.
 const (
-	ToolGetLexicon       = "get_lexicon"
-	ToolValidateArtifact = "validate_gemara_artifact"
-	ToolGetSchemaDocs    = "get_schema_docs"
+	MCPModeAdvisory = "advisory"
+	MCPModeArtifact = "artifact"
 )
 
+// MCPModeDefault is the default server mode when none is
+// specified.
+const MCPModeDefault = MCPModeArtifact
+
+// MCPModeFlag is the command-line flag name for selecting
+// the server mode.
+const MCPModeFlag = "--mode"
+
+// MCP tool names as defined by the Gemara MCP server.
+// Only validate_gemara_artifact is a callable tool;
+// lexicon and schema docs are accessed as MCP resources.
+const (
+	ToolValidateArtifact = "validate_gemara_artifact"
+)
+
+// MCP resource URIs as defined by the Gemara MCP server.
+const (
+	ResourceLexicon           = "gemara://lexicon"
+	ResourceSchemaDefinitions = "gemara://schema/definitions"
+)
+
+// GemaraCloneHTTPS is the HTTPS clone URL for the upstream
+// Gemara repository.
+const GemaraCloneHTTPS = "https://github.com/gemaraproj/gemara.git"
+
+// GemaraCloneSSH is the SSH clone URL for the upstream
+// Gemara repository.
+const GemaraCloneSSH = "git@github.com:gemaraproj/gemara.git"
+
+// GemaraTutorialsSubdir is the subdirectory within the
+// Gemara repository that contains the tutorials.
+const GemaraTutorialsSubdir = "docs/tutorials"
+
+// DefaultGemaraDir is the default local directory where
+// the Gemara repository is cloned for tutorial access.
+const DefaultGemaraDir = ".local/share/pacman/gemara"
+
 // DefaultTutorialsDir is the default path to the Gemara
-// tutorials directory.
+// tutorials directory, resolved at runtime from the home
+// directory and DefaultGemaraDir.
 const DefaultTutorialsDir = "~/github/openssf/gemara/gemara/docs/tutorials"
 
 // DefaultOutputFormat is the default output format for
@@ -295,5 +333,94 @@ var ArtifactTypeSections = map[string][]string{
 		SectionMetadata,
 		SectionScope,
 		SectionEvaluations,
+	},
+}
+
+// Authoring approach constants describe how a user creates
+// an artifact after completing a tutorial. Wizard means an
+// MCP wizard prompt guides them step-by-step; collaborative
+// means they author with MCP resources (lexicon, schema
+// docs) and validation support.
+const (
+	ApproachWizard        = "wizard"
+	ApproachCollaborative = "collaborative"
+)
+
+// ArtifactDescriptions maps each artifact type to a
+// one-sentence user-facing description suitable for
+// display to all audiences including non-technical
+// stakeholders.
+var ArtifactDescriptions = map[string]string{
+	ArtifactGuidanceCatalog: "A structured catalog of " +
+		"standards, best practices, and regulatory " +
+		"requirements that your organization follows.",
+	ArtifactControlCatalog: "A catalog of security " +
+		"controls that mitigate identified threats, " +
+		"with assessment requirements and evidence " +
+		"criteria.",
+	ArtifactThreatCatalog: "A catalog of threats to a " +
+		"specific component, organized by capability, " +
+		"with severity and likelihood assessments.",
+	ArtifactPolicy: "An organizational policy document " +
+		"defining adherence requirements, timelines, " +
+		"and scope for a set of controls.",
+	ArtifactMappingDocument: "A cross-reference document " +
+		"that maps controls to guidance items, " +
+		"establishing traceability between layers.",
+	ArtifactEvaluationLog: "An assessment log recording " +
+		"control evaluations, evidence collected, and " +
+		"compliance findings.",
+}
+
+// ArtifactWizards maps artifact types that have MCP wizard
+// prompts to their prompt names. Artifact types not in this
+// map use collaborative authoring with MCP resources.
+var ArtifactWizards = map[string]string{
+	ArtifactThreatCatalog:  WizardThreatAssessment,
+	ArtifactControlCatalog: WizardControlCatalog,
+}
+
+// DefaultPreparationChecklists maps each artifact type to
+// a list of items the user should have ready before
+// beginning authoring in OpenCode with the gemara-mcp
+// server.
+var DefaultPreparationChecklists = map[string][]string{
+	ArtifactThreatCatalog: {
+		"Identify the component or system to assess",
+		"Determine scope boundaries (what is in/out)",
+		"Decide whether to import from an existing " +
+			"catalog (e.g., FINOS CCC Core)",
+		"Consider MITRE ATT&CK alignment preference",
+	},
+	ArtifactControlCatalog: {
+		"Identify the component or system to protect",
+		"Select the guideline framework(s) to align with",
+		"Determine scope boundaries",
+		"Decide whether to import from an existing catalog",
+	},
+	ArtifactGuidanceCatalog: {
+		"Identify the standard, regulation, or best " +
+			"practice to codify",
+		"Determine scope and applicability",
+		"Gather source material (regulatory text, " +
+			"standard sections)",
+	},
+	ArtifactPolicy: {
+		"Identify the controls this policy governs",
+		"Define the adherence timeline",
+		"Determine compliance scope (teams, systems, " +
+			"regions)",
+		"Establish non-compliance handling procedures",
+	},
+	ArtifactMappingDocument: {
+		"Identify source and target catalogs to map",
+		"Determine relationship types (implements, " +
+			"equivalent, subsumes)",
+		"Gather entry references for both catalogs",
+	},
+	ArtifactEvaluationLog: {
+		"Identify the controls to evaluate",
+		"Gather evidence and assessment materials",
+		"Determine evaluation criteria and scoring",
 	},
 }

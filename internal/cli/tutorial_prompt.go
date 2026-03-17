@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/hbraswelrh/pacman/internal/blocks"
+	"github.com/hbraswelrh/pacman/internal/schema"
+	"github.com/hbraswelrh/pacman/internal/session"
 	"github.com/hbraswelrh/pacman/internal/tutorials"
 )
 
@@ -25,6 +27,14 @@ type TutorialPromptConfig struct {
 	// Keywords are the user's activity keywords for
 	// content block retrieval.
 	Keywords []string
+	// Session is the current session state, used for
+	// building handoff summaries after tutorial
+	// completion.
+	Session *session.Session
+	// SelectionResult holds version selection metadata
+	// for handoff summary rendering (experimental
+	// schemas, compatibility warnings).
+	SelectionResult *schema.SelectionResult
 }
 
 // TutorialPromptResult holds the outcome of a tutorial
@@ -94,7 +104,7 @@ func selectStep(
 		"Your Tutorials",
 	))
 	if cfg.RoleName != "" {
-		fmt.Fprintln(out, " "+orangeStyle.Render(
+		fmt.Fprintln(out, " "+roleInfoStyle.Render(
 			"("+cfg.RoleName+")",
 		))
 	}
@@ -182,6 +192,32 @@ func runTutorialStep(
 		}
 	}
 
+	// Show focus sections if the user's activities match
+	// specific sections within this tutorial.
+	if len(step.PrimarySections) > 0 {
+		fmt.Fprintln(out)
+		fmt.Fprintln(out, subtleStyle.Render(
+			"Based on your activities, your focus "+
+				"sections are:",
+		))
+		for _, s := range step.PrimarySections {
+			fmt.Fprintf(out, "  %s %s\n",
+				successStyle.Render("★"),
+				s,
+			)
+		}
+		otherCount := len(sections) -
+			len(step.PrimarySections)
+		if otherCount > 0 {
+			fmt.Fprintln(out, faintStyle.Render(
+				fmt.Sprintf(
+					"  + %d additional sections",
+					otherCount,
+				),
+			))
+		}
+	}
+
 	// Extract content blocks for inline hints.
 	tutBlocks := blocks.ExtractBlocks(
 		step.Tutorial,
@@ -205,6 +241,20 @@ func runTutorialStep(
 			section.Heading, intro,
 			sectionIdx, total,
 		))
+
+		// Show relevance badge for sections that match
+		// the user's stated activities.
+		if score, ok := step.SectionRelevance[section.Heading]; ok && score > 0 {
+			matchedKW := findMatchingKeywords(
+				section.Heading, cfg.Keywords,
+			)
+			if len(matchedKW) > 0 {
+				fmt.Fprintln(out, successStyle.Render(
+					"  ★ Matches your activity: "+
+						strings.Join(matchedKW, ", "),
+				))
+			}
+		}
 
 		// Generate and ask a focused question.
 		question := generateSectionQuestion(
@@ -301,6 +351,19 @@ func runTutorialStep(
 					step.Tutorial.Title,
 				),
 			))
+
+			// Render handoff summary directing the
+			// user to OpenCode with gemara-mcp for
+			// authoring.
+			if cfg.Session != nil {
+				summary := BuildHandoffSummary(
+					&step,
+					cfg.Session,
+					cfg.SelectionResult,
+				)
+				RenderHandoffSummary(summary, out)
+			}
+
 			return true, nil
 		case navBack:
 			return false, nil
@@ -657,10 +720,8 @@ func renderSectionIntro(
 	)
 	lines = append(lines, "")
 	if intro != "" {
-		for _, line := range strings.Split(intro, "\n") {
-			lines = append(lines,
-				strings.TrimSpace(line))
-		}
+		rendered := RenderMarkdown(intro)
+		lines = append(lines, rendered)
 	}
 
 	return stepBarStyle.Render(
@@ -676,9 +737,8 @@ func renderSectionDetail(
 ) string {
 	var lines []string
 
-	for _, line := range strings.Split(detail, "\n") {
-		lines = append(lines, strings.TrimSpace(line))
-	}
+	rendered := RenderMarkdown(detail)
+	lines = append(lines, rendered)
 
 	if roleName != "" {
 		lines = append(lines, "")
@@ -968,17 +1028,28 @@ func resolveNavAction(
 	}
 }
 
-// renderLayerName returns a short layer label.
-func renderLayerName(layer int) string {
-	names := map[int]string{
-		1: "Guidance",
-		2: "Threats & Controls",
-		3: "Risk & Policy",
-		4: "Sensitive Activities",
-		5: "Evaluation",
-		6: "Data Collection",
-		7: "Reporting",
+// findMatchingKeywords returns keywords that match a
+// section heading (case-insensitive substring match).
+func findMatchingKeywords(
+	heading string,
+	keywords []string,
+) []string {
+	lower := strings.ToLower(heading)
+	var matched []string
+	for _, kw := range keywords {
+		if strings.Contains(
+			lower, strings.ToLower(kw),
+		) {
+			matched = append(matched, kw)
+		}
 	}
+	return matched
+}
+
+// renderLayerName returns a short layer label using the
+// centralized LayerNames map from styles.go.
+func renderLayerName(layer int) string {
+	names := LayerNames
 	if name, ok := names[layer]; ok {
 		return fmt.Sprintf("L%d %s", layer, name)
 	}

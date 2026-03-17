@@ -3,16 +3,20 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"charm.land/huh/v2"
 	lipgloss "charm.land/lipgloss/v2"
+	"golang.org/x/term"
 
 	"github.com/hbraswelrh/pacman/internal/cli"
 	"github.com/hbraswelrh/pacman/internal/consts"
@@ -23,9 +27,153 @@ import (
 	"github.com/hbraswelrh/pacman/internal/tutorials"
 )
 
+// isInteractiveTTY returns true if both stdin and stdout
+// are connected to a terminal. When running inside
+// OpenCode or a pipe, this returns false.
+func isInteractiveTTY() bool {
+	return term.IsTerminal(int(os.Stdin.Fd())) &&
+		term.IsTerminal(int(os.Stdout.Fd()))
+}
+
+// plainPrompter implements cli.FreeTextPrompter using
+// simple numbered menus and line-based input. Used when
+// no TTY is detected (e.g., running inside OpenCode).
+type plainPrompter struct {
+	reader *bufio.Reader
+}
+
+func newPlainPrompter() *plainPrompter {
+	return &plainPrompter{
+		reader: bufio.NewReader(os.Stdin),
+	}
+}
+
+func (p *plainPrompter) Ask(
+	question string,
+	options []string,
+) (int, error) {
+	fmt.Println()
+	fmt.Println(question)
+	for i, opt := range options {
+		fmt.Printf("  [%d] %s\n", i+1, opt)
+	}
+	fmt.Print("Enter number: ")
+
+	line, err := p.reader.ReadString('\n')
+	if err != nil {
+		return 0, fmt.Errorf("read input: %w", err)
+	}
+	line = strings.TrimSpace(line)
+	n, err := strconv.Atoi(line)
+	if err != nil || n < 1 || n > len(options) {
+		return 0, fmt.Errorf(
+			"invalid choice: %q (enter 1-%d)",
+			line, len(options),
+		)
+	}
+	return n - 1, nil
+}
+
+func (p *plainPrompter) AskText(
+	question string,
+) (string, error) {
+	fmt.Println()
+	fmt.Print(question + " ")
+
+	line, err := p.reader.ReadString('\n')
+	if err != nil {
+		return "", fmt.Errorf("read input: %w", err)
+	}
+	return strings.TrimSpace(line), nil
+}
+
+func (p *plainPrompter) AskMultiSelect(
+	question string,
+	options []string,
+	defaults []int,
+) ([]int, error) {
+	fmt.Println()
+	fmt.Println(question)
+	for i, opt := range options {
+		marker := " "
+		for _, d := range defaults {
+			if d == i {
+				marker = "*"
+				break
+			}
+		}
+		fmt.Printf("  [%s] %d. %s\n", marker, i+1, opt)
+	}
+	fmt.Print(
+		"Enter numbers separated by commas " +
+			"(or press Enter for defaults): ",
+	)
+
+	line, err := p.reader.ReadString('\n')
+	if err != nil {
+		return nil, fmt.Errorf("read input: %w", err)
+	}
+	line = strings.TrimSpace(line)
+	if line == "" {
+		return defaults, nil
+	}
+
+	var selected []int
+	for _, part := range strings.Split(line, ",") {
+		part = strings.TrimSpace(part)
+		n, err := strconv.Atoi(part)
+		if err != nil || n < 1 || n > len(options) {
+			continue
+		}
+		selected = append(selected, n-1)
+	}
+	return selected, nil
+}
+
+func (p *plainPrompter) AskConfirm(
+	question string,
+) (bool, error) {
+	fmt.Println()
+	fmt.Print(question + " (y/n): ")
+
+	line, err := p.reader.ReadString('\n')
+	if err != nil {
+		return false, fmt.Errorf("read input: %w", err)
+	}
+	line = strings.TrimSpace(strings.ToLower(line))
+	return line == "y" || line == "yes", nil
+}
+
+func (p *plainPrompter) AskTextWithDefault(
+	question string,
+	defaultValue string,
+) (string, error) {
+	fmt.Println()
+	prompt := question
+	if defaultValue != "" {
+		prompt += " [" + defaultValue + "]"
+	}
+	fmt.Print(prompt + ": ")
+
+	line, err := p.reader.ReadString('\n')
+	if err != nil {
+		return "", fmt.Errorf("read input: %w", err)
+	}
+	line = strings.TrimSpace(line)
+	if line == "" {
+		return defaultValue, nil
+	}
+	return line, nil
+}
+
 // huhPrompter implements cli.FreeTextPrompter using the
-// charmbracelet/huh interactive widgets.
+// charmbracelet/huh interactive widgets with the Charm
+// theme for a polished appearance. Requires a TTY.
 type huhPrompter struct{}
+
+// pacmanTheme wraps the Charm theme for consistent styling
+// across all interactive widgets.
+var pacmanTheme huh.Theme = huh.ThemeFunc(huh.ThemeCharm)
 
 func (p *huhPrompter) Ask(
 	question string,
@@ -42,6 +190,7 @@ func (p *huhPrompter) Ask(
 		Title(question).
 		Options(opts...).
 		Value(&selected).
+		WithTheme(pacmanTheme).
 		Run()
 	if err != nil {
 		return 0, fmt.Errorf("prompt: %w", err)
@@ -58,6 +207,7 @@ func (p *huhPrompter) AskText(
 	err := huh.NewInput().
 		Title(question).
 		Value(&answer).
+		WithTheme(pacmanTheme).
 		Run()
 	if err != nil {
 		return "", fmt.Errorf("prompt: %w", err)
@@ -87,7 +237,7 @@ func (p *huhPrompter) AskMultiSelect(
 		ms.Value(&defaults)
 	}
 
-	if err := ms.Run(); err != nil {
+	if err := ms.WithTheme(pacmanTheme).Run(); err != nil {
 		return nil, fmt.Errorf("prompt: %w", err)
 	}
 
@@ -105,6 +255,7 @@ func (p *huhPrompter) AskConfirm(
 	err := huh.NewConfirm().
 		Title(question).
 		Value(&confirmed).
+		WithTheme(pacmanTheme).
 		Run()
 	if err != nil {
 		return false, fmt.Errorf("prompt: %w", err)
@@ -122,6 +273,7 @@ func (p *huhPrompter) AskTextWithDefault(
 	err := huh.NewInput().
 		Title(question).
 		Value(&answer).
+		WithTheme(pacmanTheme).
 		Run()
 	if err != nil {
 		return "", fmt.Errorf("prompt: %w", err)
@@ -217,23 +369,116 @@ func (d *demoPrompter) AskTextWithDefault(
 }
 
 func main() {
-	ctx := context.Background()
-
 	// Parse flags.
-	tutorialsDir := consts.DefaultTutorialsDir
-	demoMode := false
+	doctorMode := false
+	helpMode := false
 
 	for i := 1; i < len(os.Args); i++ {
 		switch os.Args[i] {
-		case "--tutorials":
-			if i+1 < len(os.Args) {
-				tutorialsDir = os.Args[i+1]
-				i++
-			}
-		case "--demo":
-			demoMode = true
+		case "--doctor":
+			doctorMode = true
+		case "--help", "-h":
+			helpMode = true
 		}
 	}
+
+	if helpMode {
+		printUsage()
+		return
+	}
+
+	configPath := filepath.Join(
+		".", consts.OpenCodeConfigFile,
+	)
+
+	if doctorMode {
+		doctorCfg := cli.DefaultDoctorConfig(configPath)
+		ok := cli.RunDoctor(doctorCfg, os.Stdout)
+		if !ok {
+			os.Exit(1)
+		}
+		return
+	}
+
+	// Default: show usage.
+	printUsage()
+}
+
+func printUsage() {
+	lipgloss.Println(cli.RenderBanner())
+	fmt.Println(
+		"Pac-Man verifies your environment for " +
+			"Gemara tutorials.",
+	)
+	fmt.Println(
+		"The tutorial experience is delivered " +
+			"through OpenCode.",
+	)
+	fmt.Println()
+	fmt.Println("Usage:")
+	fmt.Println(
+		"  ./pacman --doctor    " +
+			"Check environment readiness",
+	)
+	fmt.Println(
+		"  ./pacman --help      " +
+			"Show this help message",
+	)
+	fmt.Println()
+	fmt.Println("Getting started:")
+	fmt.Println(
+		"  1. Run ./pacman --doctor to verify " +
+			"your setup",
+	)
+	fmt.Println(
+		"  2. Start OpenCode: opencode",
+	)
+	fmt.Println(
+		"  3. Tell OpenCode your role and what " +
+			"you want to do",
+	)
+	fmt.Println()
+	fmt.Println("Example prompts for OpenCode:")
+	fmt.Println(
+		"  \"I'm a Security Engineer working on " +
+			"CI/CD pipeline security.\"",
+	)
+	fmt.Println(
+		"  \"I'm a Policy Author and need to " +
+			"create an adherence policy.\"",
+	)
+	fmt.Println(
+		"  \"Run the threat_assessment prompt " +
+			"for my web application.\"",
+	)
+	fmt.Println()
+}
+
+// --- Legacy interactive functions below ---
+// These are retained for the test suite and may be removed
+// in a future cleanup. The runtime entry point (main)
+// only uses --doctor and --help.
+
+// legacyUnused suppresses "unused" lint warnings for
+// variables referenced only by the retained legacy
+// functions.
+var _ = func() {
+	_ = context.Background
+	_ = http.DefaultClient
+	_ = schema.FetchReleases
+	_ = tutorials.ExpandTutorialsDir
+}
+
+func legacyMain() { //nolint:unused
+	ctx := context.Background()
+	tutorialsDir := consts.DefaultTutorialsDir
+	demoMode := false
+	doctorMode := false
+	forceInteractive := false
+	_ = demoMode
+	_ = doctorMode
+	_ = forceInteractive
+	_ = ctx
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -242,6 +487,12 @@ func main() {
 		)
 		os.Exit(1)
 	}
+
+	// Resolve tutorials directory — expand ~ and check
+	// managed clone location.
+	tutorialsDir = tutorials.ExpandTutorialsDir(
+		tutorialsDir, homeDir,
+	)
 
 	cachePath := filepath.Join(
 		homeDir,
@@ -272,6 +523,16 @@ func main() {
 		return schema.FetchReleases(
 			fetchCtx, httpClient,
 		)
+	}
+
+	// Doctor mode: check environment and exit.
+	if doctorMode {
+		doctorCfg := cli.DefaultDoctorConfig(configPath)
+		ok := cli.RunDoctor(doctorCfg, os.Stdout)
+		if !ok {
+			os.Exit(1)
+		}
+		return
 	}
 
 	var cfg *cli.SetupConfig
@@ -306,7 +567,22 @@ func main() {
 			TutorialsDir: tutorialsDir,
 		}
 	} else {
-		prompter := &huhPrompter{}
+		// Detect whether we have a TTY for interactive
+		// huh widgets, or fall back to plain prompts
+		// (e.g., when running inside OpenCode).
+		var prompter cli.FreeTextPrompter
+		if forceInteractive || isInteractiveTTY() {
+			prompter = &huhPrompter{}
+		} else {
+			fmt.Println(cli.RenderNote(
+				"No interactive terminal detected. " +
+					"Using simple text prompts. " +
+					"For the full interactive " +
+					"experience, run ./pacman " +
+					"directly in a terminal.",
+			))
+			prompter = newPlainPrompter()
+		}
 		cfg = &cli.SetupConfig{
 			Prompter:      prompter,
 			BinaryLookup:  mcp.DefaultBinaryLookup,
@@ -382,12 +658,13 @@ func runMainMenu(
 		choice, err := prompter.Ask(
 			"What would you like to do?",
 			[]string{
-				"Start a tutorial",
-				"Launch a wizard (MCP-assisted)",
-				"Configure team collaboration",
-				"Author a Gemara artifact",
-				"Update MCP server",
-				"Exit",
+				"  Start a tutorial",
+				"  Launch a wizard (MCP-assisted)",
+				"  Configure team collaboration",
+				"  Author a Gemara artifact",
+				"  Update MCP server",
+				"  Check environment (doctor)",
+				"  Exit",
 			},
 		)
 		if err != nil {
@@ -410,6 +687,11 @@ func runMainMenu(
 			)
 		case 4:
 			runMCPUpdate(ctx, cfg, sess)
+		case 5:
+			doctorCfg := cli.DefaultDoctorConfig(
+				cfg.ConfigPath,
+			)
+			cli.RunDoctor(doctorCfg, os.Stdout)
 		default:
 			fmt.Println()
 			fmt.Println(cli.RenderSuccess(
@@ -434,13 +716,55 @@ func runTutorialFlow(
 		return
 	}
 
-	// Load tutorials and regenerate the learning path.
+	// Load tutorials — fetch from upstream if not found.
 	tuts, err := tutorials.LoadTutorials(tutorialsDir)
 	if err != nil {
-		fmt.Println(cli.RenderWarning(
-			"Could not load tutorials: " + err.Error(),
+		fmt.Println(cli.RenderNote(
+			"Tutorials not found locally. " +
+				"Fetching from upstream Gemara " +
+				"repository...",
 		))
-		return
+		homeDir, homeErr := os.UserHomeDir()
+		if homeErr != nil {
+			fmt.Println(cli.RenderWarning(
+				"Could not determine home " +
+					"directory: " + homeErr.Error(),
+			))
+			return
+		}
+		fetchResult, fetchErr := tutorials.ResolveTutorialsDir(
+			&tutorials.FetchConfig{
+				HomeDir: homeDir,
+			},
+		)
+		if fetchErr != nil {
+			fmt.Println(cli.RenderWarning(
+				"Could not fetch tutorials: " +
+					fetchErr.Error(),
+			))
+			return
+		}
+		if fetchResult.Cloned {
+			fmt.Println(cli.RenderSuccess(
+				"Cloned Gemara repository to " +
+					fetchResult.TutorialsDir,
+			))
+		} else if fetchResult.Updated {
+			fmt.Println(cli.RenderSuccess(
+				"Updated tutorials from upstream",
+			))
+		}
+		tutorialsDir = fetchResult.TutorialsDir
+		tuts, err = tutorials.LoadTutorials(
+			tutorialsDir,
+		)
+		if err != nil {
+			fmt.Println(cli.RenderWarning(
+				"Could not load tutorials after " +
+					"fetch: " + err.Error(),
+			))
+			return
+		}
 	}
 
 	// Build a minimal activity profile for path
@@ -465,6 +789,7 @@ func runTutorialFlow(
 		TutorialsDir: tutorialsDir,
 		RoleName:     sess.GetRoleName(),
 		Keywords:     sess.ActivityKeywords,
+		Session:      sess,
 	}
 
 	result, err := cli.RunTutorialPlayer(
@@ -518,6 +843,7 @@ func runWizardFlow(
 	wizCfg := &cli.WizardPromptConfig{
 		Prompter:     wizPrompter,
 		MCPAvailable: !sess.IsFallback(),
+		ServerMode:   sess.GetServerMode(),
 		RoleName:     sess.GetRoleName(),
 	}
 
@@ -705,13 +1031,19 @@ func runMCPUpdate(
 	}
 	_ = mcp.SaveInstalledRelease(installDir, installed)
 
-	// Update MCP config.
+	// Update MCP config, preserving existing mode.
 	if cfg.ConfigPath != "" {
 		config, readErr := mcp.ReadOpenCodeConfig(
 			cfg.ConfigPath,
 		)
 		if readErr == nil {
-			mcp.EnsureMCPEntry(config, binaryPath)
+			mode := consts.MCPModeDefault
+			if entry, ok := config.MCP[consts.MCPServerName]; ok {
+				mode = mcp.ParseMCPMode(entry)
+			}
+			mcp.EnsureMCPEntry(
+				config, binaryPath, mode,
+			)
 			_ = mcp.WriteOpenCodeConfig(
 				cfg.ConfigPath, config,
 			)

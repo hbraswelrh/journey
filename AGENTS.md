@@ -1,78 +1,347 @@
-# Pac-Man Project Context
+# Pac-Man — Gemara Tutorial Engine
 
-Pac-Man is a role-based tutorial engine for the Gemara GRC
-schema project. It guides users through Gemara tutorials based
-on their job role and daily activities.
+Pac-Man is a role-based tutorial engine for the
+[Gemara](https://github.com/gemaraproj/gemara) GRC schema
+project. It tailors Gemara tutorials to the user's job role
+and daily activities.
+
+## How to Use Pac-Man
+
+Pac-Man is used through **OpenCode** with the **gemara-mcp
+server**. There is no interactive TUI — OpenCode is the
+interface.
+
+### Setup
+
+1. Run `./pacman --doctor` to verify your environment
+2. Start OpenCode: `opencode`
+3. Tell OpenCode your role and what you want to do
+
+### Getting Started Prompts
+
+Tell OpenCode something like:
+
+- "I'm a Security Engineer working on CI/CD pipeline
+  security. Help me get started with Gemara."
+- "I'm a Policy Author and I need to create an adherence
+  policy for our deployment pipeline."
+- "I'm a Compliance Officer preparing for an audit. Which
+  Gemara tutorials should I follow?"
+- "I'm a Developer and I want to understand how threat
+  catalogs affect my CI/CD workflow."
+
+OpenCode will use the role and activity information below
+to route you to the right tutorials and artifacts.
+
+## Two Paths: Learn or Author
+
+Once in OpenCode with the gemara-mcp server connected,
+the user can take either path — or both:
+
+### Path 1: Follow a Tutorial
+
+The user wants to **learn** how Gemara works for their
+role. OpenCode reads the upstream tutorials and presents
+them section by section, tailored to the user's activities.
+
+**How it works:**
+1. User states their role and activities
+2. OpenCode maps activities to Gemara layers (see table
+   below)
+3. OpenCode reads the relevant tutorial files from the
+   Gemara repository
+4. OpenCode walks through each section, explaining:
+   - **Why** this matters for the user's role
+   - **How** they will use this in their daily work
+   - **What** they will learn and produce
+5. Sections matching the user's activity keywords are
+   highlighted as focus areas
+6. At any point, the user can switch to Path 2 to start
+   authoring
+
+**Example prompts:**
+- "Walk me through the threat assessment tutorial."
+- "I'm a Policy Author — which tutorial sections are
+  most relevant to my adherence timeline work?"
+- "Show me the Guidance Catalog tutorial, focusing on
+  the NIST-related sections."
+
+### Path 2: Author Gemara Content
+
+The user wants to **create** Gemara artifacts (threat
+catalogs, control catalogs, policies, etc.) using the
+gemara-mcp server's tools and wizard prompts.
+
+**How it works:**
+1. User states what they want to create
+2. OpenCode uses the appropriate gemara-mcp capability:
+   - **Threat Catalog** → use the `threat_assessment`
+     MCP prompt for a guided wizard experience
+   - **Control Catalog** → use the `control_catalog`
+     MCP prompt for a guided wizard experience
+   - **Policy, Guidance Catalog, Evaluation Log** →
+     author collaboratively using `gemara://lexicon`
+     for terminology, `gemara://schema/definitions`
+     for schema reference, and
+     `validate_gemara_artifact` for validation
+3. The wizard prompts can import from external catalogs
+   (e.g., FINOS CCC Core) for pre-built capabilities
+   and threats
+4. After authoring, validate the artifact using
+   `validate_gemara_artifact` with the appropriate
+   schema definition
+
+**Example prompts:**
+- "Create a threat catalog for my CI/CD pipeline using
+  the threat_assessment wizard."
+- "Run the control_catalog prompt for my web
+  application. Import controls from FINOS CCC Core."
+- "Help me write a Policy artifact for our deployment
+  pipeline. Validate it against the #Policy schema."
+- "I have an existing threat catalog — validate it
+  using the MCP server."
+
+### Combining Both Paths
+
+Users often learn through a tutorial and then immediately
+apply what they learned by authoring an artifact. For
+example:
+
+1. "Walk me through the threat assessment tutorial."
+   (Path 1 — learn)
+2. "Now create a threat catalog for my CI/CD pipeline
+   using the wizard." (Path 2 — author)
+3. "Validate the artifact I just created." (Path 2 —
+   validate)
+
+OpenCode should support this seamless transition.
+
+## Role-Based Tutorial Routing
+
+### Roles and Their Gemara Layers
+
+| Role | Layers | Focus |
+|------|--------|-------|
+| Security Engineer | L2 (Threats & Controls), L1 (Guidance) | Threat modeling, control design, secure architecture |
+| Compliance Officer | L3 (Risk & Policy), L1 (Guidance), L5 (Evaluation) | Regulatory alignment, evidence, audit prep |
+| CISO/Security Leader | L3 (Risk & Policy), L1 (Guidance) | Risk appetite, policy, scope definition |
+| Developer | L2 (Threats & Controls), L4 (Sensitive Activities) | CI/CD, dependency management, SDLC |
+| Platform Engineer | L2 (Threats & Controls), L4 (Sensitive Activities) | Pipeline security, infrastructure controls |
+| Policy Author | L3 (Risk & Policy) | Policy creation, adherence timelines |
+| Auditor | L5 (Evaluation), L3 (Risk & Policy) | Assessments, evidence collection, evaluation logs |
+
+### Activity Keywords → Gemara Layers
+
+When the user describes their activities, map keywords to
+layers:
+
+**Layer 1 (Guidance)**: EU CRA, NIST, OWASP, HIPAA, GDPR,
+PCI, ISO, best practices, standards, regulatory, codify,
+formalize best practices, machine-readable format
+
+**Layer 2 (Threats & Controls)**: SDLC, threat modeling,
+penetration testing, secure architecture review, CI/CD,
+dependency management, upstream open-source, custom
+controls, OSPS Baseline, FINOS CCC, control catalog,
+threat assessment
+
+**Layer 3 (Risk & Policy)**: create policy, timeline for
+adherence, scope definition, audit interviews, assessment
+plans, adherence requirements, risk appetite,
+non-compliance handling, compliance scope
+
+**Layer 4 (Sensitive Activities)**: pipeline security,
+deployment pipeline
+
+**Layer 5 (Evaluation)**: evaluation, audit, assessment,
+evaluation log, control evaluation
+
+**Ambiguous** (clarify with user): evidence collection
+(L1 or L3), adherence (L1 or L3)
+
+### Tutorial Content
+
+Tutorials are sourced from the upstream Gemara repository:
+`gemaraproj/gemara` → `docs/tutorials/` on the `main`
+branch.
+
+| Directory | Layer | Content |
+|-----------|-------|---------|
+| `docs/tutorials/guidance/` | L1 | Guidance Catalog authoring |
+| `docs/tutorials/controls/` | L2 | Control and Threat Catalog authoring |
+| `docs/tutorials/policy/` | L3 | Policy authoring |
+
+Additional tailored tutorials are in this repository:
+`docs/tutorials/tailored-policy-writing.md` (L3).
+
+When guiding a user through tutorials, read the relevant
+tutorial files and present the content section by section,
+highlighting sections that match the user's stated
+activities.
+
+### Tailoring the Experience
+
+For each tutorial section, explain:
+- **Why** this matters for the user's specific role
+- **How** they will use this in their daily work
+- **What** they will learn and produce
+
+If the user mentioned specific activities (e.g., "CI/CD
+pipeline management"), highlight tutorial sections that
+match those keywords and mark them as focus areas.
+
+## Gemara MCP Server Integration
+
+The gemara-mcp server provides capabilities that enhance
+tutorials and authoring. OpenCode connects to it
+automatically when configured in `opencode.json`.
+
+### Installing the MCP Server
+
+The gemara-mcp server must be built from source:
+
+```bash
+git clone https://github.com/gemaraproj/gemara-mcp.git
+cd gemara-mcp
+git checkout main
+make build
+```
+
+### Configuring OpenCode
+
+After building, add the server to `opencode.json` in
+your project directory:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "gemara-mcp": {
+      "type": "local",
+      "command": [
+        "/path/to/gemara-mcp/bin/gemara-mcp",
+        "serve", "--mode", "artifact"
+      ],
+      "enabled": true
+    }
+  }
+}
+```
+
+Replace `/path/to/gemara-mcp` with the actual path where
+you cloned and built the server.
+
+When you start `opencode`, it reads this config and
+launches the gemara-mcp server automatically as a
+background process. All MCP capabilities are then
+available in your OpenCode session.
+
+Use `./pacman --doctor` to verify the configuration is
+correct before starting OpenCode.
+
+### MCP Capabilities
+
+| Category | Name | Use |
+|----------|------|-----|
+| Tool | `validate_gemara_artifact` | Validate YAML against CUE schema |
+| Resource | `gemara://lexicon` | Gemara term definitions (34+ terms) |
+| Resource | `gemara://schema/definitions` | CUE schema documentation |
+| Prompt | `threat_assessment` | Interactive Threat Catalog wizard |
+| Prompt | `control_catalog` | Interactive Control Catalog wizard |
+
+### Using Wizard Prompts
+
+When a user wants to create a Threat Catalog or Control
+Catalog, use the MCP prompts:
+
+- `threat_assessment` — guides through threat
+  identification, capability mapping, and YAML generation
+- `control_catalog` — guides through control definition,
+  assessment requirements, and YAML generation
+
+These prompts can import from external catalogs like
+FINOS CCC Core for pre-built capabilities and threats.
+
+### Using the Validation Tool
+
+After authoring any artifact, validate it:
+- Use `validate_gemara_artifact` with the YAML content
+  and the appropriate schema definition (e.g., `#Policy`,
+  `#ThreatCatalog`, `#ControlCatalog`)
+
+### Using Resources
+
+- Read `gemara://lexicon` to ensure all terminology aligns
+  with the canonical Gemara vocabulary
+- Read `gemara://schema/definitions` for schema reference
+  during authoring
+
+## Gemara Seven-Layer Model
+
+| Layer | Name | Purpose |
+|-------|------|---------|
+| 1 | Guidance | Standards, best practices, regulatory requirements |
+| 2 | Threats & Controls | Threat catalogs, control catalogs |
+| 3 | Risk & Policy | Organizational policy, assessment plans, adherence |
+| 4 | Sensitive Activities | Deployment pipelines, CI/CD, operational activities |
+| 5 | Evaluation | Assessment logs, control evaluations, evidence |
+| 6 | Results | Aggregated evaluation results |
+| 7 | Communication | Reporting and stakeholder communication |
+
+## Artifact Types
+
+| Type | Schema | Layer |
+|------|--------|-------|
+| Guidance Catalog | `#GuidanceCatalog` | L1 |
+| Control Catalog | `#ControlCatalog` | L2 |
+| Threat Catalog | `#ThreatCatalog` | L2 |
+| Policy | `#Policy` | L3 |
+| Mapping Document | `#MappingDocument` | L2-L3 |
+| Evaluation Log | `#EvaluationLog` | L5 |
 
 ## Project Structure
 
-- `cmd/pacman/` — Binary entry point
-- `internal/consts/` — Centralized constants (no magic strings)
-- `internal/mcp/` — MCP server detection, installation,
-  client, version compatibility, OpenCode config management
-- `internal/fallback/` — Local fallback (bundled lexicon, local
-  CUE validation, cached schema docs)
-- `internal/session/` — Session state management
-- `internal/schema/` — Schema release fetching and version
-  selection
-- `internal/roles/` — Role identification, activity probing,
-  custom profiles
+- `cmd/pacman/` — CLI entry point (`--doctor`, `--help`)
+- `internal/consts/` — Centralized constants
+- `internal/roles/` — Role definitions, activity-to-layer
+  mapping, keyword extraction
 - `internal/tutorials/` — Tutorial loading, learning path
-  generation
-- `internal/blocks/` — Content block extraction, drift
-  detection, retrieval
-- `internal/team/` — Team configuration, handoff detection,
-  collaboration view
-- `internal/authoring/` — Guided Gemara content authoring,
-  validation, YAML/JSON output
-- `internal/cli/` — CLI commands, setup flows, TUI rendering
-- `specs/` — Feature specifications, plans, and task lists
+  generation, section relevance scoring
+- `internal/blocks/` — Content block extraction
+- `internal/authoring/` — Artifact authoring engine
+- `internal/mcp/` — MCP client, config management
+- `internal/session/` — Session state
+- `internal/cli/` — Doctor command, styles
+- `specs/` — Feature specifications
+- `docs/tutorials/` — Tailored tutorial content
 - `docs/adrs/` — Architecture Decision Records
 
 ## Governance
 
-The authoritative source of project rules is the constitution
-at `.specify/memory/constitution.md`. All code must conform to
-it. Key rules:
+The authoritative source of project rules is the
+constitution at `.specify/memory/constitution.md`.
 
-- **Go 1.26.1**, formatted with `goimports`, linted with
-  `golangci-lint` (`.golangci.yml`)
-- **SPDX headers** on all source files:
-  `// SPDX-License-Identifier: Apache-2.0`
-- **Line length** limited to 99 characters
-- **No magic strings** — all constants in
-  `internal/consts/consts.go`
+- **Go 1.26.1**, formatted with `goimports`
+- **SPDX headers** on all source files
+- **No magic strings** — constants in `internal/consts/`
 - **TDD** — write failing tests before implementation
-- **Conventional Commits** — `feat:`, `fix:`, `docs:`, etc.
-- **Makefile** is the single entry point — use `make build`,
-  `make test`, `make lint`, not raw `go` commands
-- **Gemara lexicon** terms must be used consistently in all
-  user-facing output
-
-## MCP Server Integration
-
-When the Gemara MCP server (`gemara-mcp`) is available, use it
-for lexicon lookups (`get_lexicon`), artifact validation
-(`validate_gemara_artifact`), and schema documentation
-(`get_schema_docs`). When unavailable, fall back to local
-equivalents in `internal/fallback/`.
+- **Conventional Commits**
+- **Makefile** is the single entry point
 
 ## Schema Validation
 
-All output artifacts must pass `cue vet -c -d '#<SchemaType>'`
-against the pinned Gemara schema version. Use the schema
-definition constants from `internal/consts/consts.go`.
+All output artifacts must pass:
+```
+cue vet -c -d '#<SchemaType>' \
+  github.com/gemaraproj/gemara@latest \
+  artifact.yaml
+```
 
-## When Searching for Code
+Or use the `validate_gemara_artifact` MCP tool.
 
-- Constants and magic strings: `internal/consts/consts.go`
-- MCP-related logic: `internal/mcp/`
-- Fallback behavior: `internal/fallback/`
-- Session state: `internal/session/`
-- Schema version selection: `internal/schema/`
-- Role and activity logic: `internal/roles/`
-- Tutorial loading and paths: `internal/tutorials/`
-- Content block extraction: `internal/blocks/`
-- Team collaboration: `internal/team/`
-- Guided authoring: `internal/authoring/`
-- CLI flows: `internal/cli/`
+## Active Technologies
+- Go 1.26.1, formatted with `goimports` + `charm.land/huh/v2` (TUI prompts), (002-tutorial-guide-focus)
+- File-based caching (`~/.config/pacman/` for (002-tutorial-guide-focus)
+
+## Recent Changes
+- 002-tutorial-guide-focus: Added Go 1.26.1, formatted with `goimports` + `charm.land/huh/v2` (TUI prompts),

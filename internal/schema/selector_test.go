@@ -4,6 +4,7 @@ package schema_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -42,6 +43,19 @@ func (m *mockTransport) Call(
 	_ map[string]any,
 ) ([]byte, error) {
 	return m.callResp, m.callErr
+}
+
+func (m *mockTransport) ReadResource(
+	_ context.Context,
+	_ string,
+) ([]byte, error) {
+	return nil, nil
+}
+
+func (m *mockTransport) ListPrompts(
+	_ context.Context,
+) ([]byte, error) {
+	return nil, nil
 }
 
 // testReleases returns a standard release list for selector
@@ -257,7 +271,7 @@ func TestSelectVersion_Latest_MCPCompatCheck(
 		t.Fatalf("DetermineVersions failed: %v", err)
 	}
 
-	sess := session.NewSessionWithMCP("")
+	sess := session.NewSessionWithMCP("", "")
 
 	// Create a mock MCP client that returns a mismatch.
 	transport := &mockTransport{
@@ -375,6 +389,155 @@ func TestSelectVersion_MidSession_RequiresConfirmation(
 		t.Fatalf(
 			"expected previous version v0.18.0, got %s",
 			result.PreviousVersion,
+		)
+	}
+}
+
+// T006: AutoSelectLatest sets session to latest version.
+func TestAutoSelectLatest_SetsLatest(t *testing.T) {
+	releases := testReleases()
+
+	fetcher := func(
+		_ context.Context,
+	) ([]schema.Release, error) {
+		return releases, nil
+	}
+
+	sess := session.NewSessionWithoutMCP("")
+	cachePath := t.TempDir() + "/releases.json"
+
+	result, err := schema.AutoSelectLatest(
+		t.Context(), fetcher, cachePath, sess,
+	)
+	if err != nil {
+		t.Fatalf("AutoSelectLatest failed: %v", err)
+	}
+
+	if sess.SchemaVersion != "v0.20.0" {
+		t.Fatalf(
+			"expected session version v0.20.0, got %s",
+			sess.SchemaVersion,
+		)
+	}
+	if result.SelectedTag != "v0.20.0" {
+		t.Fatalf(
+			"expected result tag v0.20.0, got %s",
+			result.SelectedTag,
+		)
+	}
+}
+
+// T006: AutoSelectLatest returns error for empty releases.
+func TestAutoSelectLatest_EmptyReleases(t *testing.T) {
+	fetcher := func(
+		_ context.Context,
+	) ([]schema.Release, error) {
+		return nil, nil
+	}
+
+	sess := session.NewSessionWithoutMCP("")
+	cachePath := t.TempDir() + "/releases.json"
+
+	_, err := schema.AutoSelectLatest(
+		t.Context(), fetcher, cachePath, sess,
+	)
+	if err == nil {
+		t.Fatal(
+			"expected error for empty releases",
+		)
+	}
+}
+
+// T006: AutoSelectLatest detects experimental schemas.
+func TestAutoSelectLatest_ExperimentalSchemas(
+	t *testing.T,
+) {
+	releases := testReleases()
+
+	fetcher := func(
+		_ context.Context,
+	) ([]schema.Release, error) {
+		return releases, nil
+	}
+
+	sess := session.NewSessionWithoutMCP("")
+	cachePath := t.TempDir() + "/releases.json"
+
+	result, err := schema.AutoSelectLatest(
+		t.Context(), fetcher, cachePath, sess,
+	)
+	if err != nil {
+		t.Fatalf("AutoSelectLatest failed: %v", err)
+	}
+
+	// v0.20.0 has Experimental base.
+	if len(result.ExperimentalSchemas) == 0 {
+		t.Fatal(
+			"expected experimental schemas to be " +
+				"detected",
+		)
+	}
+
+	found := false
+	for _, name := range result.ExperimentalSchemas {
+		if name == "base" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf(
+			"expected 'base' in experimental schemas, "+
+				"got %v",
+			result.ExperimentalSchemas,
+		)
+	}
+}
+
+// T006: AutoSelectLatest falls back to cache when fetcher
+// fails.
+func TestAutoSelectLatest_CacheFallback(t *testing.T) {
+	releases := testReleases()
+
+	// First, populate the cache.
+	cachePath := t.TempDir() + "/releases.json"
+	err := schema.WriteCache(
+		cachePath, releases, time.Now(),
+	)
+	if err != nil {
+		t.Fatalf("WriteCache failed: %v", err)
+	}
+
+	// Fetcher that always fails.
+	failFetcher := func(
+		_ context.Context,
+	) ([]schema.Release, error) {
+		return nil, fmt.Errorf("network unreachable")
+	}
+
+	sess := session.NewSessionWithoutMCP("")
+
+	result, err := schema.AutoSelectLatest(
+		t.Context(), failFetcher, cachePath, sess,
+	)
+	if err != nil {
+		t.Fatalf(
+			"expected cache fallback, got error: %v",
+			err,
+		)
+	}
+
+	if sess.SchemaVersion != "v0.20.0" {
+		t.Fatalf(
+			"expected session version v0.20.0 from "+
+				"cache, got %s",
+			sess.SchemaVersion,
+		)
+	}
+	if result.SelectedTag != "v0.20.0" {
+		t.Fatalf(
+			"expected result tag v0.20.0, got %s",
+			result.SelectedTag,
 		)
 	}
 }
