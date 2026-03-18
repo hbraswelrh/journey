@@ -14,7 +14,9 @@ type CUERunner func(
 	args ...string,
 ) ([]byte, error)
 
-// ValidateLocal validates a Gemara artifact against the
+// ValidateLocal is the fallback for the
+// validate_gemara_artifact MCP tool when the server is
+// unavailable. It validates a Gemara artifact against the
 // specified schema type using local cue vet. The artifact
 // content is passed as a temporary file.
 func ValidateLocal(

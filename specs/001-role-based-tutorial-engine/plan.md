@@ -13,9 +13,11 @@ system detects whether the Gemara MCP server is installed,
 offers installation from source or via Podman if it is not, and
 configures the MCP client connection. If the user declines, the
 system falls back to local CUE tooling and bundled lexicon data.
-The MCP server provides three tools (`get_lexicon`,
-`validate_gemara_artifact`, `get_schema_docs`) that enhance
-every subsequent feature.
+The MCP server provides the `validate_gemara_artifact` tool,
+`gemara://lexicon` and `gemara://schema/definitions` resources,
+and — in artifact mode — the `threat_assessment` and
+`control_catalog` prompts that enhance every subsequent
+feature.
 
 This plan covers the implementation of US1 acceptance scenarios
 1-6 and the functional requirements that directly support them:
@@ -153,10 +155,12 @@ into `internal/`.
   running. Return detection result with method (binary/Podman/
   not found).
 - `internal/mcp/client.go`: MCP client that connects to the
-  detected server, performs health checks, and invokes the
-  three tools (`get_lexicon`, `validate_gemara_artifact`,
-  `get_schema_docs`). Must handle connection timeouts and
-  mid-session disconnection gracefully.
+  detected server, performs health checks, calls the
+  `validate_gemara_artifact` tool, reads the
+  `gemara://lexicon` and `gemara://schema/definitions`
+  resources, and lists available prompts. Must handle
+  connection timeouts and mid-session disconnection
+  gracefully.
 - Tests: MCP server found via binary, found via Podman, not
   found, found but unresponsive, disconnects mid-session.
 

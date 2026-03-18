@@ -42,6 +42,15 @@ type PathStep struct {
 	// VersionMismatch is set when the tutorial's schema
 	// version differs from the selected version.
 	VersionMismatch *VersionMismatch
+	// SectionRelevance maps section headings to relevance
+	// scores based on the user's activity keywords.
+	// Sections with score > 0 match the user's stated
+	// activities.
+	SectionRelevance map[string]int
+	// PrimarySections lists section headings that are
+	// most relevant to the user's stated activities,
+	// ordered by relevance score descending.
+	PrimarySections []string
 }
 
 // StepNavInfo provides navigation context for a path step,
@@ -139,8 +148,21 @@ func GeneratePath(
 	})
 
 	// Build path steps with tailored annotations.
+	allKeywords := profile.AllKeywords()
 	steps := make([]PathStep, len(scored))
 	for i, s := range scored {
+		// Compute section-level relevance using the
+		// user's activity keywords.
+		layerKW := keywordsForLayer(
+			s.tutorial.Layer, profile,
+		)
+		sectionScores := ScoreSections(
+			s.tutorial.Sections, layerKW,
+		)
+		primarySects := PrimarySections(
+			s.tutorial.Sections, allKeywords,
+		)
+
 		steps[i] = PathStep{
 			Tutorial: s.tutorial,
 			Layer:    s.tutorial.Layer,
@@ -151,9 +173,11 @@ func GeneratePath(
 				s.tutorial, profile,
 			),
 			WhatAnnotation: generateWhatAnnotation(
-				s.tutorial,
+				s.tutorial, primarySects,
 			),
-			VersionMismatch: s.mismatch,
+			VersionMismatch:  s.mismatch,
+			SectionRelevance: sectionScores,
+			PrimarySections:  primarySects,
 		}
 
 		// Add prerequisites: earlier steps in the same
@@ -296,17 +320,106 @@ func generateHowAnnotation(
 }
 
 // generateWhatAnnotation creates a "What you will learn"
-// summary.
-func generateWhatAnnotation(tut Tutorial) string {
-	if len(tut.Sections) > 0 {
+// summary, highlighting sections relevant to the user's
+// activities when keywords are available.
+func generateWhatAnnotation(
+	tut Tutorial,
+	primarySections []string,
+) string {
+	if len(tut.Sections) == 0 {
 		return fmt.Sprintf(
-			"Covers: %s.",
-			strings.Join(tut.Sections, ", "),
+			"Learn the core concepts of %s.",
+			tut.Title,
 		)
 	}
+
+	if len(primarySections) > 0 {
+		// Build the "also covers" list by excluding
+		// primary sections.
+		primarySet := make(map[string]bool)
+		for _, s := range primarySections {
+			primarySet[s] = true
+		}
+		var others []string
+		for _, s := range tut.Sections {
+			if !primarySet[s] {
+				others = append(others, s)
+			}
+		}
+		result := fmt.Sprintf(
+			"Focus on: %s.",
+			strings.Join(primarySections, ", "),
+		)
+		if len(others) > 0 {
+			result += fmt.Sprintf(
+				" Also covers: %s.",
+				strings.Join(others, ", "),
+			)
+		}
+		return result
+	}
+
 	return fmt.Sprintf(
-		"Learn the core concepts of %s.", tut.Title,
+		"Covers: %s.",
+		strings.Join(tut.Sections, ", "),
 	)
+}
+
+// ScoreSections assigns relevance scores to tutorial
+// sections based on keyword matching against section
+// headings. Each keyword that appears as a substring in
+// a section heading (case-insensitive) adds 2 to the
+// section's score.
+func ScoreSections(
+	sections []string,
+	keywords []string,
+) map[string]int {
+	scores := make(map[string]int)
+	for _, section := range sections {
+		lower := strings.ToLower(section)
+		for _, kw := range keywords {
+			if strings.Contains(
+				lower,
+				strings.ToLower(kw),
+			) {
+				scores[section] += 2
+			}
+		}
+	}
+	return scores
+}
+
+// PrimarySections returns sections with non-zero relevance
+// scores, ordered by score descending.
+func PrimarySections(
+	sections []string,
+	keywords []string,
+) []string {
+	scores := ScoreSections(sections, keywords)
+
+	type scored struct {
+		name  string
+		score int
+	}
+	var matched []scored
+	for _, s := range sections {
+		if scores[s] > 0 {
+			matched = append(matched, scored{
+				name:  s,
+				score: scores[s],
+			})
+		}
+	}
+
+	sort.Slice(matched, func(i, j int) bool {
+		return matched[i].score > matched[j].score
+	})
+
+	result := make([]string, len(matched))
+	for i, m := range matched {
+		result[i] = m.name
+	}
+	return result
 }
 
 // keywordsForLayer returns the profile keywords that map to

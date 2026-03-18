@@ -312,6 +312,77 @@ setup (or decline), and proceed with appropriate capabilities.
 
 ---
 
+## Phase 8 — MCP Protocol Alignment (spec delta)
+
+These tasks were added after the spec was updated to align
+with the actual gemara-mcp server architecture (advisory and
+artifact modes, MCP tools vs resources vs prompts).
+
+### Mode Selection Prompt (AS7, FR-036)
+
+- [x] T055 [US1] Write failing test
+  `internal/cli/setup_test.go`: after source build completes,
+  user is prompted to select server mode (advisory or
+  artifact); default is artifact
+- [x] T056 [US1] Write failing test
+  `internal/cli/setup_test.go`: user selects advisory mode;
+  session records advisory mode; user is informed prompts are
+  unavailable
+- [x] T057 [P] [US1] Implement mode selection prompt in
+  `internal/cli/setup.go`: after successful installation
+  (source or Podman), prompt user to select advisory or
+  artifact mode before writing `opencode.json`
+- [x] T058 [US1] Write failing test
+  `internal/cli/setup_test.go`: Podman install also prompts
+  for mode selection
+
+### MCP Panel Terminology (FR-037)
+
+- [x] T059 [US1] Verify `RenderMCPToolsPanel()` in
+  `internal/cli/styles.go` uses correct MCP protocol
+  terminology — tool, resource, prompt categories with
+  proper names
+- [x] T060 [US1] Write test
+  `internal/cli/setup_test.go`: setup explanation panel
+  contains `validate_gemara_artifact` (tool),
+  `gemara://lexicon` (resource),
+  `gemara://schema/definitions` (resource),
+  `threat_assessment` (prompt), `control_catalog` (prompt)
+
+### Partial MCP Availability (edge case)
+
+- [x] T061 [US1] Write failing test
+  `internal/session/session_test.go`: resource read fails but
+  tool call succeeds; session shows partial capabilities
+  (validate available, lexicon degraded)
+- [x] T062 [US1] Implement `HandlePartialFailure` method in
+  `internal/session/session.go`: update individual capability
+  flags without full disconnection
+
+### Advisory Mode Wizard Redirect (edge case)
+
+- [x] T063 [US1] Write failing test
+  `internal/cli/wizard_prompt_test.go`: user in advisory mode
+  attempts wizard; system offers to reconfigure to artifact
+  mode (update `opencode.json` and restart)
+- [x] T064 [US1] Implement mode reconfiguration offer in
+  `RunWizardLauncher` — offer to update `--mode` flag in
+  `opencode.json` when user is in advisory mode
+
+### Deprecated Constant Cleanup
+
+- [x] T065 [US1] Remove deprecated `ToolGetLexicon` and
+  `ToolGetSchemaDocs` from `internal/consts/consts.go`; update
+  all remaining references in `internal/cli/styles.go` and
+  `internal/cli/setup_test.go` to use `ResourceLexicon` and
+  `ResourceSchemaDefinitions`
+
+**Checkpoint**: US1 fully aligned with updated spec including
+mode selection, MCP protocol categories, partial failure
+handling, and advisory mode wizard redirect.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

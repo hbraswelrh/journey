@@ -155,6 +155,93 @@ func TestExtractBlocksEmptySection(t *testing.T) {
 	}
 }
 
+// Tailored Policy Writing tutorial extracts 11 blocks
+// with correct categories.
+func TestExtractBlocks_TailoredPolicyWriting(
+	t *testing.T,
+) {
+	t.Parallel()
+
+	tuts := loadTestTuts(t)
+	tut := findTutorial(tuts, "Tailored Policy Writing")
+	if tut == nil {
+		t.Fatal("Tailored Policy Writing not found")
+	}
+
+	sections, err := tutorials.ParseSections(
+		tut.FilePath,
+	)
+	if err != nil {
+		t.Fatalf("parse sections: %v", err)
+	}
+
+	blocks := ExtractBlocks(*tut, sections, "v0.20.0")
+
+	if len(blocks) != 11 {
+		t.Fatalf(
+			"expected 11 blocks, got %d", len(blocks),
+		)
+	}
+
+	// Verify category assignments for key sections.
+	catMap := make(map[string]BlockCategory)
+	for _, b := range blocks {
+		catMap[b.SourceSection] = b.Category
+	}
+
+	// "Metadata and Naming Conventions" should be
+	// NamingConv (contains "naming" and "convention").
+	if catMap["Metadata and Naming Conventions"] !=
+		NamingConv {
+		t.Errorf(
+			"Metadata and Naming Conventions: "+
+				"expected NamingConv, got %s",
+			catMap["Metadata and Naming Conventions"],
+		)
+	}
+
+	// "RACI Contacts Structure" should be SchemaStruct
+	// (contains "structure").
+	if catMap["RACI Contacts Structure"] !=
+		SchemaStruct {
+		t.Errorf(
+			"RACI Contacts Structure: expected "+
+				"SchemaStruct, got %s",
+			catMap["RACI Contacts Structure"],
+		)
+	}
+
+	// "CUE Validation" should be ValidationStep.
+	if catMap["CUE Validation"] != ValidationStep {
+		t.Errorf(
+			"CUE Validation: expected "+
+				"ValidationStep, got %s",
+			catMap["CUE Validation"],
+		)
+	}
+
+	// "Cross-References to Other Layers" should be
+	// CrossRef.
+	if catMap["Cross-References to Other Layers"] !=
+		CrossRef {
+		t.Errorf(
+			"Cross-References: expected "+
+				"CrossRef, got %s",
+			catMap["Cross-References to Other Layers"],
+		)
+	}
+
+	// All blocks should have Layer 3.
+	for _, b := range blocks {
+		if b.Layer != 3 {
+			t.Errorf(
+				"block %q: expected layer 3, got %d",
+				b.SourceSection, b.Layer,
+			)
+		}
+	}
+}
+
 // T312: ExtractAll processes multiple tutorials and returns
 // manifest.
 func TestExtractAll(t *testing.T) {

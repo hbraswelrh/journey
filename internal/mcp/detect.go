@@ -33,6 +33,10 @@ type DetectionResult struct {
 	// BinaryPath is the resolved path to the binary (if
 	// Method == MethodBinary).
 	BinaryPath string
+	// Mode is the configured server mode, extracted from
+	// the opencode.json config if available. Empty string
+	// means not determined during detection.
+	Mode string
 }
 
 // BinaryLookup abstracts PATH-based binary lookup for testing.

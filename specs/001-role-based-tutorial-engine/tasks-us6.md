@@ -373,6 +373,46 @@ artifact that passes `cue vet` validation.
 
 ---
 
+## Phase 6 — MCP Wizard Delegation (spec delta, AS4/AS5)
+
+These tasks were added after the spec was updated to support
+MCP prompt-assisted authoring (FR-038). When the MCP server
+is in artifact mode, the system offers MCP wizards as an
+alternative to the built-in guided authoring flow for
+ThreatCatalog and ControlCatalog.
+
+- [x] T551 [US6] Write failing test
+  `internal/cli/author_prompt_test.go`: when session is in
+  artifact mode and user selects ThreatCatalog, system
+  offers choice between MCP `threat_assessment` wizard and
+  built-in authoring flow
+- [x] T552 [US6] Write failing test
+  `internal/cli/author_prompt_test.go`: when session is in
+  artifact mode and user selects ControlCatalog, system
+  offers choice between MCP `control_catalog` wizard and
+  built-in authoring flow
+- [x] T553 [US6] Write failing test
+  `internal/cli/author_prompt_test.go`: when session is in
+  advisory mode, ThreatCatalog authoring uses only built-in
+  flow (no wizard offer)
+- [x] T554 [US6] Write failing test
+  `internal/cli/author_prompt_test.go`: for GuidanceCatalog
+  (no corresponding MCP prompt), built-in flow is always
+  used regardless of mode
+- [x] T555 [P] [US6] Implement wizard-vs-builtin choice in
+  `RunGuidedAuthoring` in `internal/cli/author_prompt.go`:
+  check if artifact type has a corresponding MCP prompt and
+  session is in artifact mode; if so, offer choice; delegate
+  to `RunWizardLauncher` if wizard selected
+- [x] T556 [US6] Verify `make build`, `make test`,
+  `make lint` pass with zero errors and zero warnings
+
+**Checkpoint**: US6 fully aligned with updated spec. Users in
+artifact mode can choose between MCP wizard and built-in
+authoring for ThreatCatalog and ControlCatalog.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

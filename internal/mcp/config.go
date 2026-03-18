@@ -14,18 +14,20 @@ import (
 // structure, focused on the MCP server entries.
 type OpenCodeConfig struct {
 	Schema string                      `json:"$schema,omitempty"`
-	MCP    map[string]OpenCodeMCPEntry `json:"mcpServers,omitempty"`
+	MCP    map[string]OpenCodeMCPEntry `json:"mcp,omitempty"`
 	// Extra preserves unknown top-level fields during
 	// read-modify-write.
 	Extra map[string]json.RawMessage `json:"-"`
 }
 
 // OpenCodeMCPEntry represents a single MCP server entry in
-// the OpenCode configuration. The format follows the MCP
-// client specification with separate command and args fields.
+// the OpenCode configuration. The format follows the OpenCode
+// MCP specification where command is an array containing the
+// binary path and all arguments.
 type OpenCodeMCPEntry struct {
-	Command string   `json:"command"`
-	Args    []string `json:"args,omitempty"`
+	Type    string   `json:"type"`
+	Command []string `json:"command"`
+	Enabled *bool    `json:"enabled,omitempty"`
 }
 
 // ReadOpenCodeConfig reads and parses the OpenCode
@@ -72,33 +74,46 @@ func WriteOpenCodeConfig(
 
 // EnsureMCPEntry adds or updates the gemara-mcp entry in the
 // OpenCode configuration for a source-built binary. The
-// command is the absolute path to the binary and the args
-// include the "serve" subcommand.
+// command array contains the binary path followed by the
+// serve subcommand and mode flag.
 func EnsureMCPEntry(
 	config *OpenCodeConfig,
 	binaryPath string,
+	mode string,
 ) {
+	if mode == "" {
+		mode = consts.MCPModeDefault
+	}
+	enabled := true
 	config.MCP[consts.MCPServerName] = OpenCodeMCPEntry{
-		Command: binaryPath,
-		Args:    []string{"serve"},
+		Type: "local",
+		Command: []string{
+			binaryPath,
+			"serve", consts.MCPModeFlag, mode,
+		},
+		Enabled: &enabled,
 	}
 }
 
-// EnsureMCPEntryPodman adds or updates the gemara-mcp entry
-// in the OpenCode configuration for a Podman/Docker-based
-// installation. The command is the container runtime
-// ("docker" or "podman") and the args run the container
-// interactively with the "serve" subcommand.
-func EnsureMCPEntryPodman(
-	config *OpenCodeConfig,
-	runtime string,
-) {
-	config.MCP[consts.MCPServerName] = OpenCodeMCPEntry{
-		Command: runtime,
-		Args: []string{
-			"run", "--rm", "-i",
-			consts.MCPPodmanImage,
-			"serve",
-		},
+// ParseMCPMode extracts the server mode from an existing
+// MCP config entry's command array. Returns the default
+// mode if no --mode flag is found.
+func ParseMCPMode(entry OpenCodeMCPEntry) string {
+	for i, arg := range entry.Command {
+		if arg == consts.MCPModeFlag &&
+			i+1 < len(entry.Command) {
+			return entry.Command[i+1]
+		}
 	}
+	return consts.MCPModeDefault
+}
+
+// MCPBinaryPath extracts the binary path from an MCP
+// config entry's command array. Returns empty string if
+// the command array is empty.
+func MCPBinaryPath(entry OpenCodeMCPEntry) string {
+	if len(entry.Command) > 0 {
+		return entry.Command[0]
+	}
+	return ""
 }

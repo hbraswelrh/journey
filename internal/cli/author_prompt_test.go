@@ -487,6 +487,182 @@ func TestRunGuidedAuthoring_Integration(t *testing.T) {
 	}
 }
 
+// T551: When session is in artifact mode and user selects
+// ThreatCatalog, system offers choice between MCP wizard
+// and built-in authoring flow.
+func TestRunGuidedAuthoring_ArtifactMode_OffersWizard(
+	t *testing.T,
+) {
+	t.Parallel()
+
+	outputDir := t.TempDir()
+
+	prompter := &authorMockPrompter{
+		choices: []int{
+			2, // ThreatCatalog
+			1, // Built-in authoring (not wizard)
+		},
+		texts: []string{
+			"ACME.WEB.THR01",
+			"Test threat catalog",
+			"1.0.0",
+			"Web application",
+			"Third-party SaaS",
+			"Authentication",
+			"User identity verification",
+			"THR-001",
+			"SQL injection via unvalidated input",
+			"Authentication",
+		},
+	}
+
+	sess := session.NewSessionWithMCP(
+		"v0.20.0", consts.MCPModeArtifact,
+	)
+	cfg := &cli.AuthorPromptConfig{
+		Prompter:      prompter,
+		Session:       sess,
+		SchemaVersion: "v0.20.0",
+		OutputDir:     outputDir,
+		OutputFormat:  consts.DefaultArtifactFormat,
+		RoleName:      consts.RoleSecurityEngineer,
+	}
+
+	var buf bytes.Buffer
+	result, err := cli.RunGuidedAuthoring(cfg, &buf)
+	if err != nil {
+		t.Fatalf("RunGuidedAuthoring: %v", err)
+	}
+
+	output := buf.String()
+	// Should show wizard mention in the output.
+	if !strings.Contains(output, "wizard") {
+		t.Fatalf(
+			"expected wizard mention in output, "+
+				"got: %s",
+			output,
+		)
+	}
+	// Should still produce a valid artifact via built-in
+	// (user chose option 1 = built-in).
+	if result.Artifact == nil {
+		t.Fatal("expected artifact from built-in flow")
+	}
+}
+
+// T553: When session is in advisory mode, no wizard offer
+// is presented for ThreatCatalog.
+func TestRunGuidedAuthoring_AdvisoryMode_NoWizard(
+	t *testing.T,
+) {
+	t.Parallel()
+
+	outputDir := t.TempDir()
+
+	prompter := &authorMockPrompter{
+		choices: []int{2}, // ThreatCatalog (no wizard choice)
+		texts: []string{
+			"ACME.WEB.THR01",
+			"Test",
+			"",
+			"Web app",
+			"",
+			"Auth",
+			"Identity",
+			"THR-001",
+			"SQL injection",
+			"Auth",
+		},
+	}
+
+	sess := session.NewSessionWithMCP(
+		"v0.20.0", consts.MCPModeAdvisory,
+	)
+	cfg := &cli.AuthorPromptConfig{
+		Prompter:      prompter,
+		Session:       sess,
+		SchemaVersion: "v0.20.0",
+		OutputDir:     outputDir,
+		OutputFormat:  consts.DefaultArtifactFormat,
+		RoleName:      consts.RoleSecurityEngineer,
+	}
+
+	var buf bytes.Buffer
+	result, err := cli.RunGuidedAuthoring(cfg, &buf)
+	if err != nil {
+		t.Fatalf("RunGuidedAuthoring: %v", err)
+	}
+
+	output := buf.String()
+	// Should NOT show wizard choice in advisory mode.
+	if strings.Contains(output, "MCP wizard") {
+		t.Fatalf(
+			"expected no wizard offer in advisory "+
+				"mode, got: %s",
+			output,
+		)
+	}
+	if result.Artifact == nil {
+		t.Fatal("expected artifact")
+	}
+}
+
+// T554: For GuidanceCatalog (no MCP prompt), built-in flow
+// is always used regardless of mode.
+func TestRunGuidedAuthoring_NoPromptArtifact_NoWizard(
+	t *testing.T,
+) {
+	t.Parallel()
+
+	outputDir := t.TempDir()
+
+	prompter := &authorMockPrompter{
+		// GuidanceCatalog is index 0 in
+		// SupportedArtifactTypes.
+		choices: []int{0},
+		texts: []string{
+			"ACME.WEB.GC01",
+			"Guidance catalog",
+			"1.0.0",
+			"Web application",
+			"",
+			"Use HTTPS everywhere",
+			"Ensure all connections use TLS 1.2+",
+		},
+	}
+
+	sess := session.NewSessionWithMCP(
+		"v0.20.0", consts.MCPModeArtifact,
+	)
+	cfg := &cli.AuthorPromptConfig{
+		Prompter:      prompter,
+		Session:       sess,
+		SchemaVersion: "v0.20.0",
+		OutputDir:     outputDir,
+		OutputFormat:  consts.DefaultArtifactFormat,
+		RoleName:      consts.RoleSecurityEngineer,
+	}
+
+	var buf bytes.Buffer
+	result, err := cli.RunGuidedAuthoring(cfg, &buf)
+	if err != nil {
+		t.Fatalf("RunGuidedAuthoring: %v", err)
+	}
+
+	output := buf.String()
+	// GuidanceCatalog has no MCP prompt — no wizard offer.
+	if strings.Contains(output, "MCP wizard") {
+		t.Fatalf(
+			"expected no wizard offer for "+
+				"GuidanceCatalog, got: %s",
+			output,
+		)
+	}
+	if result.Artifact == nil {
+		t.Fatal("expected artifact")
+	}
+}
+
 // T549: JSON output format works correctly.
 func TestRunGuidedAuthoring_JSONOutput(t *testing.T) {
 	t.Parallel()

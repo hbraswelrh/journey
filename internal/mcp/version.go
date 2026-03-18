@@ -33,6 +33,9 @@ type CompatResult struct {
 	// MCPSchemaVersion is the Gemara schema version the MCP
 	// server was built against.
 	MCPSchemaVersion string
+	// MCPMode is the server's operating mode (advisory or
+	// artifact), if reported.
+	MCPMode string
 	// SelectedVersion is the user's selected schema version.
 	SelectedVersion string
 	// Recommendation is an actionable message for the user
@@ -45,6 +48,7 @@ type CompatResult struct {
 type VersionInfo struct {
 	ServerVersion string `json:"server_version"`
 	SchemaVersion string `json:"schema_version"`
+	Mode          string `json:"mode,omitempty"`
 }
 
 // VersionFetcher abstracts how version info is retrieved from

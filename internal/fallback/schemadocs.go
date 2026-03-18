@@ -17,8 +17,10 @@ type SchemaDocs struct {
 	Content []byte
 }
 
-// LoadCachedDocs loads cached schema documentation for the
-// specified version from the given cache directory.
+// LoadCachedDocs is the fallback for the
+// gemara://schema/definitions MCP resource when the server
+// is unavailable. It loads cached schema documentation for
+// the specified version from the given cache directory.
 func LoadCachedDocs(
 	cacheDir string,
 	version string,

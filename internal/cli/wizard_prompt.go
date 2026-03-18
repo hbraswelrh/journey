@@ -47,6 +47,7 @@ func AvailableWizards() []WizardInfo {
 type WizardPromptConfig struct {
 	Prompter     WizardPrompter
 	MCPAvailable bool
+	ServerMode   string
 	RoleName     string
 }
 
@@ -90,6 +91,21 @@ func RunWizardLauncher(
 			"You can still configure the wizard "+
 				"and generate the launch command for "+
 				"use once the MCP server is available.",
+		))
+		fmt.Fprintln(out)
+	} else if cfg.ServerMode != consts.MCPModeArtifact {
+		fmt.Fprintln(out, RenderWarning(
+			"The MCP server is running in advisory "+
+				"mode. Wizards require artifact mode. "+
+				"You can reconfigure the server mode "+
+				"in opencode.json by changing --mode "+
+				"to artifact.",
+		))
+		fmt.Fprintln(out)
+		fmt.Fprintln(out, RenderNote(
+			"You can still configure the wizard "+
+				"and generate the launch command for "+
+				"use once artifact mode is enabled.",
 		))
 		fmt.Fprintln(out)
 	}
@@ -987,23 +1003,39 @@ func renderWizardSummary(
 	fmt.Fprintln(out, RenderSuccess(
 		"Wizard configured",
 	))
+
+	// OpenCode handoff instructions.
 	fmt.Fprintln(out)
-	fmt.Fprintln(out, subtleStyle.Render(
-		"Run the following in OpenCode to start "+
-			"the wizard:",
+	fmt.Fprintln(out, headingStyle.Render(
+		"Next: Run in OpenCode",
 	))
 	fmt.Fprintln(out)
-	fmt.Fprintln(out,
-		"  "+headingStyle.Render(result.LaunchCommand),
-	)
+	fmt.Fprintln(out, subtleStyle.Render(
+		"The wizard prompts are MCP protocol "+
+			"messages that require OpenCode as "+
+			"the client. Copy and paste the "+
+			"following into OpenCode:",
+	))
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, codeBlockStyle.Render(
+		result.LaunchCommand,
+	))
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, subtleStyle.Render(
+		"If OpenCode is not running, start it "+
+			"from your project directory:",
+	))
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, codeBlockStyle.Render(
+		"opencode",
+	))
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, faintStyle.Render(
-		"The wizard will use the MCP server's "+
-			"lexicon, schema docs, and "+
-			"validate_gemara_artifact tool to guide "+
-			"you through the remaining steps "+
-			"(threat/control definition and YAML "+
-			"assembly) interactively.",
+		"OpenCode will invoke the MCP server's "+
+			result.WizardName+" prompt, guide "+
+			"you through each step interactively, "+
+			"and validate the final artifact using "+
+			"the validate_gemara_artifact tool.",
 	))
 }
 

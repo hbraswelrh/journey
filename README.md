@@ -58,21 +58,28 @@ receives a path through Layer 2 (Threats and Controls).
 
 Pac-Man integrates with the
 [Gemara MCP server](https://github.com/gemaraproj/gemara-mcp),
-which provides three tools that enhance the learning and
-authoring experience:
+which provides tools, resources, and prompts that enhance the
+learning and authoring experience:
 
-| MCP Tool                     | Function                                           |
-|:-----------------------------|:---------------------------------------------------|
-| `get_lexicon`                | Retrieve the upstream Gemara lexicon (34+ terms)   |
-| `validate_gemara_artifact`   | Validate YAML artifacts against Gemara CUE schemas |
-| `get_schema_docs`            | Retrieve schema documentation for the CUE module   |
+| Category | Name | Function |
+|:---------|:-----|:---------|
+| Tool | `validate_gemara_artifact` | Validate YAML artifacts against Gemara CUE schemas |
+| Resource | `gemara://lexicon` | Retrieve the upstream Gemara lexicon (34+ terms) |
+| Resource | `gemara://schema/definitions` | Retrieve schema documentation for the CUE module |
+| Prompt | `threat_assessment` | Interactive wizard for Threat Catalog creation (artifact mode) |
+| Prompt | `control_catalog` | Interactive wizard for Control Catalog creation (artifact mode) |
+
+The MCP server operates in two modes:
+
+- **Artifact mode** (default) — Full capabilities including
+  guided creation wizards (`threat_assessment` and
+  `control_catalog` prompts)
+- **Advisory mode** — Read-only analysis and validation
+  (tools and resources only, no wizard prompts)
 
 MCP server installation is offered during first launch. All
 capabilities remain functional without the MCP server using
-local CUE tooling and bundled lexicon data. When using the
-latest (non-stable) Gemara schema version, the installed
-gemara-mcp version must be coordinated with the Gemara schema
-version for accurate validation results.
+local CUE tooling and bundled lexicon data.
 
 ### Schema Version Selection
 
@@ -154,85 +161,242 @@ schemas are currently Experimental.
 
 ## Prerequisites
 
+- Linux or macOS (Windows: use WSL)
 - [Go](https://go.dev/dl/) 1.21 or later
 - [CUE](https://cuelang.org/docs/introduction/installation/)
   v0.15.1 or later (for schema validation)
-- Linux or macOS (Windows is not supported)
 - Git (with DCO sign-off and commit signing configured)
-- [Gitleaks](https://github.com/gitleaks/gitleaks) (for secret
-  scanning; installation guidance is provided on first use)
+- [OpenCode](https://opencode.ai) (required — the AI coding
+  agent that serves as the harness for tutorials and MCP
+  interaction)
 
-### Recommended Installation via Homebrew
-
-Homebrew is the preferred installation method for required and
-recommended tools on macOS and Linux:
+### macOS Setup
 
 ```bash
-# CUE (required for schema validation)
+# Install Homebrew (if not already installed)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install required tools
+brew install go
 brew install cue-lang/tap/cue
 
-# Gitleaks (required for pre-commit secret scanning)
-brew install gitleaks
-
-# OpenCode (recommended AI development harness)
+# Install OpenCode (required harness)
 brew install anomalyco/tap/opencode
 
-# Podman (for container-based MCP server installation)
-brew install podman
+# Install Gemara MCP server (recommended)
+git clone https://github.com/gemaraproj/gemara-mcp.git
+cd gemara-mcp
+git checkout main
+make build
+cd ..
 ```
 
-Alternative installation methods (binary releases, install
-scripts) are documented in each tool's upstream repository.
+### Linux Setup
 
-### Optional
+```bash
+# Install Go (https://go.dev/dl/)
+wget https://go.dev/dl/go1.26.1.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.26.1.linux-amd64.tar.gz
+export PATH=$PATH:/usr/local/go/bin
 
-- [Gemara MCP server](https://github.com/gemaraproj/gemara-mcp)
-  (for enhanced lexicon, validation, and schema documentation;
-  installable from source or via Podman during first launch)
+# Install CUE
+go install cuelang.org/go/cmd/cue@latest
+
+# Install OpenCode (required harness)
+curl -fsSL https://opencode.ai/install | bash
+
+# Install Gemara MCP server (recommended)
+git clone https://github.com/gemaraproj/gemara-mcp.git
+cd gemara-mcp
+git checkout main
+make build
+cd ..
+```
 
 ## Getting Started
 
+### Step 1: Clone and Build Pac-Man
+
 ```bash
-# Clone the repository
 git clone https://github.com/hbraswelrh/pacman.git
 cd pacman
-
-# Build
 make build
-
-# Run
-./pacman
 ```
 
-### Recommended: Use OpenCode
+### Step 2: Configure the Gemara MCP Server
 
-[OpenCode](https://opencode.ai) is the preferred AI development
-harness for Pac-Man. It guides you through the entire setup
-process regardless of your role:
+If you built gemara-mcp from source, configure it in
+`opencode.json`:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "gemara-mcp": {
+      "type": "local",
+      "command": [
+        "/path/to/gemara-mcp/bin/gemara-mcp",
+        "serve", "--mode", "artifact"
+      ],
+      "enabled": true
+    }
+  }
+}
+```
+
+Use `--mode artifact` (default) for full capabilities
+including guided creation wizards, or `--mode advisory`
+for read-only analysis and validation only.
+
+If you already have gemara-mcp built elsewhere, point
+the config to your existing binary path.
+
+### Step 3: Launch OpenCode
+
+OpenCode is the required harness for Pac-Man. It provides
+the interactive terminal for tutorials and serves as the
+MCP client for communicating with the Gemara MCP server.
 
 ```bash
-# Install OpenCode
-brew install anomalyco/tap/opencode
-
-# Navigate to the project and launch
 cd pacman
 opencode
 ```
 
-OpenCode will read the project's `AGENTS.md` and guide you
-through MCP server setup, schema version selection, and role
-discovery.
+OpenCode will:
+- Read the project's `AGENTS.md` for context
+- Start the gemara-mcp server automatically (from
+  `opencode.json`)
+- Provide access to MCP tools, resources, and prompts
+
+### Step 4: Verify and Launch
+
+```bash
+# Verify your environment
+./pacman --doctor
+
+# Start OpenCode (the tutorial interface)
+opencode
+```
+
+Pac-Man is a CLI tool for environment verification only.
+The tutorial experience is delivered through OpenCode,
+which reads `AGENTS.md` and connects to the gemara-mcp
+server.
+
+### Tutorials Source
+
+Tutorials are sourced from the upstream Gemara repository
+at [gemaraproj/gemara](https://github.com/gemaraproj/gemara)
+(`docs/tutorials/` on the `main` branch).
+
+On first tutorial launch, Pac-Man will automatically clone
+the repository (shallow, single-branch) to
+`~/.local/share/pacman/gemara/` if tutorials aren't found
+locally. On subsequent launches, it pulls the latest
+changes from `main`.
+
+To override the tutorials directory:
+
+```bash
+./pacman --tutorials /path/to/gemara/docs/tutorials
+```
+
+### Using MCP Wizard Prompts
+
+The `threat_assessment` and `control_catalog` prompts are
+**MCP protocol messages**, not CLI commands. They require
+an MCP client to invoke them. OpenCode is that client.
+
+To use a wizard prompt in OpenCode:
+
+1. Ensure `opencode.json` has gemara-mcp configured with
+   `--mode artifact`
+2. Start OpenCode: `opencode`
+3. Ask OpenCode to run the wizard:
+   - "Run the threat_assessment prompt"
+   - "Help me create a control catalog using the wizard"
+   - "Start the threat assessment wizard for my CI/CD
+     pipeline"
+
+OpenCode will invoke the MCP prompt, present the wizard's
+guided questions, and produce a validated YAML artifact.
+
+Alternatively, run `./pacman` and select "Launch a wizard"
+from the main menu. Pac-Man will collect your context
+(scope, component, role) and generate a ready-to-paste
+command for OpenCode.
+
+### Keeping gemara-mcp Up to Date
+
+The gemara-mcp server is built from source against the
+upstream [gemaraproj/gemara-mcp](https://github.com/gemaraproj/gemara-mcp)
+repository. To ensure your build reflects the latest schema
+support and bug fixes, sync with upstream regularly.
+
+**If you cloned directly from gemaraproj (no fork):**
+
+```bash
+cd gemara-mcp
+git fetch origin
+git checkout main
+git pull origin main
+make build
+```
+
+**If you cloned from a personal fork:**
+
+```bash
+cd gemara-mcp
+
+# Add upstream remote (one-time setup)
+git remote add upstream \
+  https://github.com/gemaraproj/gemara-mcp.git
+
+# Fetch and merge upstream changes
+git fetch upstream
+git checkout main
+git merge upstream/main
+
+# Rebuild
+make build
+```
+
+**Verify the build:**
+
+```bash
+# Check the binary runs
+./bin/gemara-mcp --version
+
+# Or use Pac-Man's doctor command
+cd /path/to/pacman
+./pacman --doctor
+```
+
+**When to sync:**
+
+- Before starting a new tutorial or authoring session
+- When `./pacman --doctor` reports a version mismatch
+  between the MCP server and your selected Gemara schema
+  version
+- When new Gemara schema releases are published at
+  [gemaraproj/gemara](https://github.com/gemaraproj/gemara/releases)
+
+The gemara-mcp server's schema version must be compatible
+with the Gemara schema version selected in your Pac-Man
+session. If you select a newer schema version than your
+MCP server was built against, Pac-Man will warn you during
+schema version selection.
 
 ### First Launch
 
 On first launch, Pac-Man will:
 
-1. **Detect or install the Gemara MCP server** — If not found,
-   the system offers to clone the gemara-mcp repository (via
-   SSH or HTTPS), build from source at the latest release
-   (pinned by SHA256 digest), and configure `opencode.json`
-   with the built binary path. Podman is available as an
-   alternative.
+1. **Detect or configure the Gemara MCP server** — If not
+   found, the system offers to build from source (clone
+   via SSH or HTTPS from gemaraproj/gemara-mcp, checkout
+   main, and build) or provide the path to an existing
+   binary. After setup, select a server mode (artifact or
+   advisory) and configure `opencode.json`.
 2. **Prompt for schema version selection** — Choose between
    Stable (core schemas marked `@status(Stable)`) or Latest
    (most recent tagged release).

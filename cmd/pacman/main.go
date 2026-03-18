@@ -400,22 +400,246 @@ func main() {
 		return
 	}
 
-	// Default: show usage.
-	printUsage()
+	// Default: run the interactive setup flow.
+	// The user goes through role discovery and sees
+	// their learning path in the terminal, then is
+	// directed to OpenCode for authoring.
+	runInteractive(configPath)
 }
+
+// runInteractive runs the full interactive Pac-Man flow:
+//  1. MCP server detection and setup
+//  2. Auto-select latest Gemara schema version
+//  3. Role discovery with activity probing
+//  4. Artifact recommendations and learning path
+//  5. Tutorial walkthrough (interactive, section by section)
+//  6. Handoff to ./pacman --doctor and then OpenCode
+func runInteractive(configPath string) {
+	ctx := context.Background()
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr, "Error: %v\n", err,
+		)
+		os.Exit(1)
+	}
+
+	tutorialsDir := tutorials.ExpandTutorialsDir(
+		consts.DefaultTutorialsDir, homeDir,
+	)
+
+	cachePath := filepath.Join(
+		homeDir,
+		".config",
+		consts.CacheDir,
+		consts.ReleaseCacheFile,
+	)
+
+	// Ensure cache directory exists.
+	cacheDir := filepath.Dir(cachePath)
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"Warning: could not create cache "+
+				"dir: %v\n",
+			err,
+		)
+	}
+
+	httpClient := http.DefaultClient
+	fetcher := func(
+		fetchCtx context.Context,
+	) ([]schema.Release, error) {
+		return schema.FetchReleases(
+			fetchCtx, httpClient,
+		)
+	}
+
+	// Detect TTY for interactive huh widgets vs plain
+	// text fallback (e.g., running inside a pipe).
+	var prompter cli.FreeTextPrompter
+	if isInteractiveTTY() {
+		prompter = &huhPrompter{}
+	} else {
+		fmt.Println(cli.RenderNote(
+			"No interactive terminal detected. " +
+				"Using simple text prompts. " +
+				"For the full interactive " +
+				"experience, run ./pacman " +
+				"directly in a terminal.",
+		))
+		prompter = newPlainPrompter()
+	}
+
+	cfg := &cli.SetupConfig{
+		Prompter:      prompter,
+		BinaryLookup:  mcp.DefaultBinaryLookup,
+		PodmanChecker: mcp.DefaultPodmanChecker,
+		Installer: mcp.NewInstaller(
+			mcp.DefaultReleaseFetcher,
+			mcp.DefaultCommandRunner,
+		),
+		SSHChecker:       mcp.DefaultSSHChecker,
+		ConfigPath:       configPath,
+		VersionFetcher:   fetcher,
+		VersionCachePath: cachePath,
+		RolePrompter:     prompter,
+		TutorialsDir:     tutorialsDir,
+	}
+
+	lipgloss.Println(cli.RenderBanner())
+
+	result, err := cli.RunSetup(ctx, cfg, os.Stdout)
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr, "\nSetup error: %v\n", err,
+		)
+		os.Exit(1)
+	}
+
+	// Display session summary.
+	lipgloss.Println(cli.RenderSessionStatus(
+		result.Session.SchemaVersion,
+		result.Session.IsFallback(),
+	))
+
+	if result.Session.GetRoleName() != "" {
+		lipgloss.Println(cli.RenderSessionRoleInfo(
+			result.Session.GetRoleName(),
+			result.Session.LearningPathSteps,
+			result.Session.RecommendedArtifacts,
+		))
+	}
+
+	// Launch the tutorial walkthrough. This loads
+	// tutorials (fetching from upstream if needed),
+	// regenerates the learning path from the session,
+	// and lets the user walk through each tutorial
+	// section by section.
+	runTutorialFlow(
+		prompter, result.Session, tutorialsDir,
+	)
+
+	// After tutorials, direct the user to verify
+	// their environment and start OpenCode.
+	renderAuthoringHandoff(result.Session)
+}
+
+// renderAuthoringHandoff displays the post-tutorial handoff
+// directing the user to verify their environment with
+// --doctor and then start OpenCode for authoring.
+func renderAuthoringHandoff(sess *session.Session) {
+	fmt.Println()
+	lipgloss.Println(cli.RenderDivider())
+	fmt.Println()
+
+	lipgloss.Println(
+		headingStyle.Render("Ready to Author"),
+	)
+	fmt.Println()
+
+	fmt.Println(subtleStyle.Render(
+		"You've completed your Gemara tutorials. " +
+			"Next, use OpenCode with the gemara-mcp " +
+			"server to author artifacts.",
+	))
+	fmt.Println()
+
+	// Step 1: Verify environment.
+	fmt.Println(headingStyle.Render(
+		"Step 1: Verify your environment",
+	))
+	fmt.Println()
+	fmt.Println(subtleStyle.Render(
+		"Run the doctor check to confirm the " +
+			"Gemara MCP server is installed and " +
+			"configured:",
+	))
+	fmt.Println()
+	lipgloss.Println(codeBlockStyle.Render(
+		"./pacman --doctor",
+	))
+	fmt.Println()
+
+	// Step 2: Start OpenCode.
+	fmt.Println(headingStyle.Render(
+		"Step 2: Start OpenCode",
+	))
+	fmt.Println()
+	fmt.Println(subtleStyle.Render(
+		"OpenCode will connect to the gemara-mcp " +
+			"server automatically and provide " +
+			"wizard prompts, validation, and " +
+			"schema resources.",
+	))
+	fmt.Println()
+	lipgloss.Println(codeBlockStyle.Render("opencode"))
+	fmt.Println()
+
+	// Show suggested prompts based on role.
+	roleName := sess.GetRoleName()
+	if roleName != "" {
+		fmt.Println(subtleStyle.Render(
+			"Tell OpenCode what you want to author:",
+		))
+		fmt.Println()
+		fmt.Printf("  %s\n",
+			faintStyle.Render(
+				`"Create a threat catalog for `+
+					`my CI/CD pipeline using the `+
+					`threat_assessment wizard."`,
+			),
+		)
+		fmt.Printf("  %s\n",
+			faintStyle.Render(
+				`"Help me write a Policy `+
+					`artifact for our deployment `+
+					`pipeline."`,
+			),
+		)
+		fmt.Printf("  %s\n",
+			faintStyle.Render(
+				`"Validate my artifact against `+
+					`the Gemara schema."`,
+			),
+		)
+		fmt.Println()
+	}
+}
+
+// headingStyle and supporting styles used by main are
+// re-declared from cli to avoid exporting internal styles.
+var (
+	headingStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#7D56F4"))
+
+	subtleStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#6C6C6C"))
+
+	faintStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#999999"))
+
+	codeBlockStyle = lipgloss.NewStyle().
+			BorderStyle(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#6C6C6C")).
+			Padding(0, 1).
+			MarginLeft(2)
+)
 
 func printUsage() {
 	lipgloss.Println(cli.RenderBanner())
 	fmt.Println(
-		"Pac-Man verifies your environment for " +
-			"Gemara tutorials.",
-	)
-	fmt.Println(
-		"The tutorial experience is delivered " +
-			"through OpenCode.",
+		"Pac-Man is a role-based tutorial engine " +
+			"for the Gemara GRC schema project.",
 	)
 	fmt.Println()
 	fmt.Println("Usage:")
+	fmt.Println(
+		"  ./pacman             " +
+			"Learn: role discovery, tutorials",
+	)
 	fmt.Println(
 		"  ./pacman --doctor    " +
 			"Check environment readiness",
@@ -427,29 +651,19 @@ func printUsage() {
 	fmt.Println()
 	fmt.Println("Getting started:")
 	fmt.Println(
-		"  1. Run ./pacman --doctor to verify " +
-			"your setup",
+		"  1. Run ./pacman to identify your " +
+			"role and walk through tutorials",
 	)
 	fmt.Println(
-		"  2. Start OpenCode: opencode",
+		"  2. Run ./pacman --doctor to verify " +
+			"gemara-mcp is ready",
 	)
 	fmt.Println(
-		"  3. Tell OpenCode your role and what " +
-			"you want to do",
-	)
-	fmt.Println()
-	fmt.Println("Example prompts for OpenCode:")
-	fmt.Println(
-		"  \"I'm a Security Engineer working on " +
-			"CI/CD pipeline security.\"",
+		"  3. Start OpenCode: opencode",
 	)
 	fmt.Println(
-		"  \"I'm a Policy Author and need to " +
-			"create an adherence policy.\"",
-	)
-	fmt.Println(
-		"  \"Run the threat_assessment prompt " +
-			"for my web application.\"",
+		"  4. Author Gemara artifacts with the " +
+			"gemara-mcp server",
 	)
 	fmt.Println()
 }

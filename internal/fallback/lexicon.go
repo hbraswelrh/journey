@@ -26,7 +26,9 @@ type Lexicon struct {
 // LexiconLoader abstracts lexicon data loading for testing.
 type LexiconLoader func() ([]byte, error)
 
-// LoadBundledLexicon loads the bundled lexicon data using the
+// LoadBundledLexicon is the fallback for the
+// gemara://lexicon MCP resource when the server is
+// unavailable. It loads the bundled lexicon data using the
 // provided loader and returns parsed lexicon entries.
 func LoadBundledLexicon(
 	loader LexiconLoader,

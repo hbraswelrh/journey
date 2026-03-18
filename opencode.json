@@ -1,10 +1,15 @@
 {
-  "mcpServers": {
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
     "gemara-mcp": {
-      "command": "/Users/hbraswel/.local/share/pacman/gemara-mcp/bin/gemara-mcp",
-      "args": [
-        "serve"
-      ]
+      "type": "local",
+      "command": [
+        "/Users/hbraswel/github/openssf/gemara/gemara-mcp/bin/gemara-mcp",
+        "serve",
+        "--mode",
+        "artifact"
+      ],
+      "enabled": true
     }
   }
 }

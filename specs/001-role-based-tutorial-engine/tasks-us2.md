@@ -153,6 +153,24 @@ session for all subsequent operations.
 
 ---
 
+## Phase 5 — MCP Protocol Alignment (spec delta)
+
+These tasks were added after the spec was updated. The
+`GetSchemaDocsForVersion` client method exists but is not
+yet called during version selection.
+
+- [x] T128 [US2] Write failing test
+  `internal/cli/version_prompt_test.go`: after user selects
+  a version and MCP is available, system calls
+  `GetSchemaDocsForVersion` with the selected version to
+  verify schema documentation is available
+- [x] T129 [US2] Update `RunVersionSelection` in
+  `internal/cli/version_prompt.go` to call
+  `GetSchemaDocsForVersion` with the selected version
+  after version is applied to the session
+
+---
+
 ## Dependencies & Execution Order
 
 - Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 (sequential)

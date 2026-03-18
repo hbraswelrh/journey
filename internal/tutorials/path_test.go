@@ -326,6 +326,81 @@ func TestPathVersionMismatchFlagged(t *testing.T) {
 	}
 }
 
+// Policy Author role routes to Layer 3 tutorials
+// including Tailored Policy Writing.
+func TestGeneratePath_PolicyAuthor(t *testing.T) {
+	t.Parallel()
+
+	predefined := roles.PredefinedRoles()
+	var policyAuthor *roles.Role
+	for i := range predefined {
+		if predefined[i].Name ==
+			consts.RolePolicyAuthor {
+			policyAuthor = &predefined[i]
+			break
+		}
+	}
+	if policyAuthor == nil {
+		t.Fatal("Policy Author role not found")
+	}
+
+	keywords := roles.ExtractKeywords(
+		"create policy and timeline for adherence",
+	)
+	profile := roles.ResolveLayerMappings(
+		policyAuthor, keywords,
+		"create policy and timeline for adherence",
+	)
+
+	tuts := loadTestTutorials(t)
+	path := GeneratePath(profile, tuts, "v0.20.0")
+
+	if len(path.Steps) == 0 {
+		t.Fatal("expected non-empty learning path")
+	}
+
+	// At least one step should be Layer 3.
+	hasLayer3 := false
+	for _, step := range path.Steps {
+		if step.Layer == consts.LayerRiskPolicy {
+			hasLayer3 = true
+			break
+		}
+	}
+	if !hasLayer3 {
+		t.Error("expected at least one Layer 3 step")
+	}
+
+	// Tailored Policy Writing should be in the path.
+	foundTailored := false
+	for _, step := range path.Steps {
+		if step.Tutorial.Title ==
+			"Tailored Policy Writing" {
+			foundTailored = true
+			// Verify annotations mention policy
+			// keywords.
+			if step.WhyAnnotation == "" {
+				t.Error(
+					"Tailored Policy Writing: " +
+						"empty WhyAnnotation",
+				)
+			}
+			break
+		}
+	}
+	if !foundTailored {
+		titles := make([]string, len(path.Steps))
+		for i, s := range path.Steps {
+			titles[i] = s.Tutorial.Title
+		}
+		t.Fatalf(
+			"expected Tailored Policy Writing in "+
+				"path, got: %v",
+			titles,
+		)
+	}
+}
+
 // GeneratePath with nil profile returns empty path.
 func TestGeneratePathNilProfile(t *testing.T) {
 	t.Parallel()
@@ -384,6 +459,210 @@ func TestStepStatusCompleted(t *testing.T) {
 	if !info.IsCompleted {
 		t.Error("expected step 0 to be completed")
 	}
+}
+
+// ScoreSections assigns relevance scores to sections
+// based on user keywords.
+func TestScoreSections(t *testing.T) {
+	t.Parallel()
+
+	sections := []string{
+		"Policy Scope Definition",
+		"Metadata and Naming Conventions",
+		"RACI Contacts Structure",
+		"Non-Compliance Handling",
+		"CUE Validation",
+		"Cross-References to Other Layers",
+	}
+	keywords := []string{
+		"scope definition",
+		"non-compliance handling",
+	}
+
+	scores := ScoreSections(sections, keywords)
+
+	// "Policy Scope Definition" should match "scope
+	// definition".
+	if scores["Policy Scope Definition"] == 0 {
+		t.Error(
+			"expected non-zero score for " +
+				"Policy Scope Definition",
+		)
+	}
+
+	// "Non-Compliance Handling" should match
+	// "non-compliance handling".
+	if scores["Non-Compliance Handling"] == 0 {
+		t.Error(
+			"expected non-zero score for " +
+				"Non-Compliance Handling",
+		)
+	}
+
+	// "Metadata and Naming Conventions" should NOT match
+	// these keywords.
+	if scores["Metadata and Naming Conventions"] != 0 {
+		t.Error(
+			"expected zero score for Metadata " +
+				"and Naming Conventions",
+		)
+	}
+}
+
+// PrimarySections returns the highest-scoring sections.
+func TestPrimarySections(t *testing.T) {
+	t.Parallel()
+
+	sections := []string{
+		"Policy Scope Definition",
+		"Metadata and Naming Conventions",
+		"Non-Compliance Handling",
+		"Adherence Configuration",
+	}
+	keywords := []string{
+		"scope definition",
+		"non-compliance handling",
+		"adherence requirements",
+	}
+
+	primary := PrimarySections(sections, keywords)
+
+	if len(primary) == 0 {
+		t.Fatal("expected at least one primary section")
+	}
+
+	// Should include sections matching keywords.
+	primarySet := make(map[string]bool)
+	for _, s := range primary {
+		primarySet[s] = true
+	}
+	if !primarySet["Policy Scope Definition"] {
+		t.Error(
+			"expected Policy Scope Definition " +
+				"in primary",
+		)
+	}
+	if !primarySet["Non-Compliance Handling"] {
+		t.Error(
+			"expected Non-Compliance Handling " +
+				"in primary",
+		)
+	}
+	// "Metadata" should NOT be primary.
+	if primarySet["Metadata and Naming Conventions"] {
+		t.Error(
+			"expected Metadata not in primary",
+		)
+	}
+}
+
+// WhatAnnotation highlights primary sections when
+// keywords are provided.
+func TestWhatAnnotation_WithKeywords(t *testing.T) {
+	t.Parallel()
+
+	predefined := roles.PredefinedRoles()
+	var policyAuthor *roles.Role
+	for i := range predefined {
+		if predefined[i].Name ==
+			consts.RolePolicyAuthor {
+			policyAuthor = &predefined[i]
+			break
+		}
+	}
+
+	keywords := roles.ExtractKeywords(
+		"non-compliance handling and scope definition",
+	)
+	profile := roles.ResolveLayerMappings(
+		policyAuthor, keywords,
+		"non-compliance handling and scope definition",
+	)
+
+	tuts := loadTestTutorials(t)
+	path := GeneratePath(profile, tuts, "v0.20.0")
+
+	// Find the Tailored Policy Writing step.
+	for _, step := range path.Steps {
+		if step.Tutorial.Title !=
+			"Tailored Policy Writing" {
+			continue
+		}
+		// WhatAnnotation should mention "Focus on".
+		if !containsStr(
+			step.WhatAnnotation, "Focus on",
+		) {
+			t.Fatalf(
+				"expected 'Focus on' in "+
+					"WhatAnnotation, got: %s",
+				step.WhatAnnotation,
+			)
+		}
+		// Should mention the relevant sections.
+		if !containsStr(
+			step.WhatAnnotation,
+			"Non-Compliance Handling",
+		) {
+			t.Fatalf(
+				"expected Non-Compliance Handling "+
+					"in WhatAnnotation, got: %s",
+				step.WhatAnnotation,
+			)
+		}
+		return
+	}
+	t.Fatal(
+		"Tailored Policy Writing not found in path",
+	)
+}
+
+// PathStep includes SectionRelevance and PrimarySections.
+func TestPathStep_SectionRelevance(t *testing.T) {
+	t.Parallel()
+
+	predefined := roles.PredefinedRoles()
+	var policyAuthor *roles.Role
+	for i := range predefined {
+		if predefined[i].Name ==
+			consts.RolePolicyAuthor {
+			policyAuthor = &predefined[i]
+			break
+		}
+	}
+
+	keywords := roles.ExtractKeywords(
+		"adherence requirements and timeline for " +
+			"adherence",
+	)
+	profile := roles.ResolveLayerMappings(
+		policyAuthor, keywords,
+		"adherence requirements and timeline for "+
+			"adherence",
+	)
+
+	tuts := loadTestTutorials(t)
+	path := GeneratePath(profile, tuts, "v0.20.0")
+
+	for _, step := range path.Steps {
+		if step.Tutorial.Title !=
+			"Tailored Policy Writing" {
+			continue
+		}
+		if len(step.SectionRelevance) == 0 {
+			t.Fatal(
+				"expected non-empty SectionRelevance",
+			)
+		}
+		if len(step.PrimarySections) == 0 {
+			t.Fatal(
+				"expected non-empty PrimarySections",
+			)
+		}
+		return
+	}
+	t.Fatal(
+		"Tailored Policy Writing not found in path",
+	)
 }
 
 // Helper: containsStr checks for substring.

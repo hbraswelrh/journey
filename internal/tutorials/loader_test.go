@@ -56,6 +56,7 @@ func TestLoadTutorialsValidDir(t *testing.T) {
 		"Guidance Catalog Guide",
 		"Policy Guide",
 		"Control Catalog Guide",
+		"Tailored Policy Writing",
 	}
 	for _, title := range expected {
 		if !titles[title] {
@@ -181,6 +182,7 @@ func TestLoadTutorialsLayerParsing(t *testing.T) {
 		"Guidance Catalog Guide":  1,
 		"Policy Guide":            3,
 		"Control Catalog Guide":   2,
+		"Tailored Policy Writing": 3,
 	}
 
 	for title, expectedLayer := range checks {
@@ -218,6 +220,136 @@ func TestLoadTutorialsFilePaths(t *testing.T) {
 				"tutorial %s FilePath is not "+
 					"accessible: %v",
 				tut.Title, err,
+			)
+		}
+	}
+}
+
+// Tailored Policy Writing tutorial loads with correct
+// structure and all expected sections.
+func TestLoadTutorials_TailoredPolicyWriting(
+	t *testing.T,
+) {
+	t.Parallel()
+
+	dir := filepath.Join("testdata", "valid")
+
+	tutorials, err := LoadTutorials(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var policy *Tutorial
+	for i := range tutorials {
+		if tutorials[i].Title ==
+			"Tailored Policy Writing" {
+			policy = &tutorials[i]
+			break
+		}
+	}
+	if policy == nil {
+		t.Fatal(
+			"Tailored Policy Writing tutorial not found",
+		)
+	}
+
+	if policy.Layer != 3 {
+		t.Errorf(
+			"expected layer 3, got %d", policy.Layer,
+		)
+	}
+	if policy.SchemaVersion != "v0.20.0" {
+		t.Errorf(
+			"expected schema_version v0.20.0, got %s",
+			policy.SchemaVersion,
+		)
+	}
+
+	expectedSections := []string{
+		"Policy Scope Definition",
+		"Metadata and Naming Conventions",
+		"RACI Contacts Structure",
+		"Importing Control and Guidance Catalogs",
+		"Policy Criteria and Assessment Requirements",
+		"Implementation Plan",
+		"Evaluation and Enforcement Timelines",
+		"Adherence Configuration",
+		"Non-Compliance Handling",
+		"CUE Validation",
+		"Cross-References to Other Layers",
+	}
+	if len(policy.Sections) != len(expectedSections) {
+		t.Fatalf(
+			"expected %d sections, got %d: %v",
+			len(expectedSections),
+			len(policy.Sections),
+			policy.Sections,
+		)
+	}
+	for i, want := range expectedSections {
+		if policy.Sections[i] != want {
+			t.Errorf(
+				"section[%d] = %q, want %q",
+				i, policy.Sections[i], want,
+			)
+		}
+	}
+}
+
+// Tailored Policy Writing content blocks extract with
+// correct categories.
+func TestParseSections_TailoredPolicyWriting(
+	t *testing.T,
+) {
+	t.Parallel()
+
+	path := filepath.Join(
+		"testdata", "valid",
+		"tailored-policy-writing.md",
+	)
+
+	sections, err := ParseSections(path)
+	if err != nil {
+		t.Fatalf("ParseSections: %v", err)
+	}
+	if len(sections) != 11 {
+		t.Fatalf(
+			"expected 11 sections, got %d",
+			len(sections),
+		)
+	}
+
+	// Check specific section headings.
+	headings := make([]string, len(sections))
+	for i, s := range sections {
+		headings[i] = s.Heading
+	}
+	if headings[0] != "Policy Scope Definition" {
+		t.Errorf(
+			"first section = %q, want %q",
+			headings[0], "Policy Scope Definition",
+		)
+	}
+	if headings[9] != "CUE Validation" {
+		t.Errorf(
+			"section[9] = %q, want %q",
+			headings[9], "CUE Validation",
+		)
+	}
+	if headings[10] != "Cross-References to Other Layers" {
+		t.Errorf(
+			"section[10] = %q, want %q",
+			headings[10],
+			"Cross-References to Other Layers",
+		)
+	}
+
+	// Verify non-empty body content.
+	for _, s := range sections {
+		if len(s.Body) == 0 {
+			t.Errorf(
+				"section %q has empty body",
+				s.Heading,
 			)
 		}
 	}

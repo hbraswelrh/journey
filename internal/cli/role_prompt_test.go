@@ -428,6 +428,208 @@ func TestRoleDiscovery_IntegrationAudit(t *testing.T) {
 	}
 }
 
+// T014: Artifact recommendation rendering includes type
+// names, descriptions, and MCP wizard names where applicable.
+func TestRoleDiscovery_ArtifactRecommendationRendering(
+	t *testing.T,
+) {
+	t.Run("L2_wizard_artifacts", func(t *testing.T) {
+		var buf bytes.Buffer
+
+		// Security Engineer with CI/CD activities
+		// resolves Layer 2, producing ThreatCatalog
+		// (wizard: threat_assessment) and ControlCatalog
+		// (wizard: control_catalog).
+		cfg := &cli.RolePromptConfig{
+			Prompter: &mockFreeTextPrompter{
+				choices: []int{0}, // Security Engineer
+				texts: []string{
+					"CI/CD pipeline management " +
+						"and threat modeling",
+				},
+			},
+			TutorialsDir: filepath.Join(
+				"..", "tutorials", "testdata", "valid",
+			),
+			SchemaVersion: "v0.20.0",
+		}
+
+		result, err := cli.RunRoleDiscovery(cfg, &buf)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if result.Profile == nil {
+			t.Fatal("expected non-nil profile")
+		}
+
+		// Verify recommendations were populated.
+		if len(result.Profile.Recommendations) == 0 {
+			t.Fatal(
+				"expected non-empty recommendations",
+			)
+		}
+
+		output := buf.String()
+
+		// Verify artifact type names appear in output.
+		if !strings.Contains(
+			output, consts.ArtifactThreatCatalog,
+		) {
+			t.Errorf(
+				"expected %q in output, got: %s",
+				consts.ArtifactThreatCatalog, output,
+			)
+		}
+		if !strings.Contains(
+			output, consts.ArtifactControlCatalog,
+		) {
+			t.Errorf(
+				"expected %q in output, got: %s",
+				consts.ArtifactControlCatalog, output,
+			)
+		}
+
+		// Verify descriptions appear in output.
+		threatDesc :=
+			consts.ArtifactDescriptions[consts.ArtifactThreatCatalog]
+		if !strings.Contains(output, threatDesc) {
+			t.Errorf(
+				"expected threat catalog description "+
+					"in output, got: %s",
+				output,
+			)
+		}
+		controlDesc :=
+			consts.ArtifactDescriptions[consts.ArtifactControlCatalog]
+		if !strings.Contains(output, controlDesc) {
+			t.Errorf(
+				"expected control catalog description "+
+					"in output, got: %s",
+				output,
+			)
+		}
+
+		// Verify MCP wizard names appear in output.
+		if !strings.Contains(
+			output, consts.WizardThreatAssessment,
+		) {
+			t.Errorf(
+				"expected wizard name %q in output, "+
+					"got: %s",
+				consts.WizardThreatAssessment, output,
+			)
+		}
+		if !strings.Contains(
+			output, consts.WizardControlCatalog,
+		) {
+			t.Errorf(
+				"expected wizard name %q in output, "+
+					"got: %s",
+				consts.WizardControlCatalog, output,
+			)
+		}
+	})
+
+	t.Run("L3_collaborative_artifacts", func(t *testing.T) {
+		var buf bytes.Buffer
+
+		// CISO with policy activities resolves Layer 3,
+		// producing Policy recommendation — no wizard,
+		// uses collaborative authoring.
+		predefined := roles.PredefinedRoles()
+		cisoIdx := -1
+		for i, r := range predefined {
+			if r.Name == consts.RoleCISO {
+				cisoIdx = i
+				break
+			}
+		}
+		if cisoIdx < 0 {
+			t.Fatal("CISO role not found in predefined")
+		}
+
+		cfg := &cli.RolePromptConfig{
+			Prompter: &mockFreeTextPrompter{
+				choices: []int{
+					cisoIdx, // CISO role
+					2,       // "Both layers" for
+					//   ambiguous "adherence"
+				},
+				texts: []string{
+					"create policy and timeline " +
+						"for adherence",
+				},
+			},
+			TutorialsDir: filepath.Join(
+				"..", "tutorials", "testdata", "valid",
+			),
+			SchemaVersion: "v0.20.0",
+		}
+
+		result, err := cli.RunRoleDiscovery(cfg, &buf)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if result.Profile == nil {
+			t.Fatal("expected non-nil profile")
+		}
+
+		// Verify Policy recommendation exists.
+		hasPolicy := false
+		for _, rec := range result.Profile.Recommendations {
+			if rec.ArtifactType ==
+				consts.ArtifactPolicy {
+				hasPolicy = true
+				break
+			}
+		}
+		if !hasPolicy {
+			t.Errorf(
+				"expected Policy in recommendations, "+
+					"got: %v",
+				result.Profile.Recommendations,
+			)
+		}
+
+		output := buf.String()
+
+		// Verify Policy artifact type appears.
+		if !strings.Contains(
+			output, consts.ArtifactPolicy,
+		) {
+			t.Errorf(
+				"expected %q in output, got: %s",
+				consts.ArtifactPolicy, output,
+			)
+		}
+
+		// Verify Policy description appears.
+		policyDesc :=
+			consts.ArtifactDescriptions[consts.ArtifactPolicy]
+		if !strings.Contains(output, policyDesc) {
+			t.Errorf(
+				"expected policy description in "+
+					"output, got: %s",
+				output,
+			)
+		}
+
+		// Verify collaborative approach is shown
+		// (Policy has no wizard).
+		if !strings.Contains(
+			output, "Collaborative authoring",
+		) {
+			t.Errorf(
+				"expected 'Collaborative authoring' "+
+					"in output for Policy, got: %s",
+				output,
+			)
+		}
+	})
+}
+
 // Ambiguous keywords trigger clarification question.
 func TestRoleDiscovery_AmbiguousKeywords(t *testing.T) {
 	var buf bytes.Buffer

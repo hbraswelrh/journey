@@ -43,6 +43,7 @@ func TestWriteAndReadOpenCodeConfig(t *testing.T) {
 		config,
 		"/home/user/.local/share/pacman/gemara-mcp/"+
 			"bin/gemara-mcp",
+		consts.MCPModeArtifact,
 	)
 
 	if err := mcp.WriteOpenCodeConfig(
@@ -64,78 +65,58 @@ func TestWriteAndReadOpenCodeConfig(t *testing.T) {
 		)
 	}
 
-	// Verify command is the absolute binary path.
+	// Verify command[0] is the binary path.
 	expectedCmd := "/home/user/.local/share/pacman/" +
 		"gemara-mcp/bin/gemara-mcp"
-	if entry.Command != expectedCmd {
+	gotPath := mcp.MCPBinaryPath(entry)
+	if gotPath != expectedCmd {
 		t.Fatalf(
-			"expected command %q, got %q",
-			expectedCmd, entry.Command,
+			"expected command[0] %q, got %q",
+			expectedCmd, gotPath,
 		)
 	}
 
-	// Verify args includes "serve".
-	if len(entry.Args) != 1 || entry.Args[0] != "serve" {
+	// Verify command contains serve, --mode, artifact.
+	wantCmd := []string{
+		expectedCmd, "serve", "--mode", "artifact",
+	}
+	if len(entry.Command) != len(wantCmd) {
 		t.Fatalf(
-			"expected args [serve], got %v",
-			entry.Args,
+			"expected command %v, got %v",
+			wantCmd, entry.Command,
+		)
+	}
+	for i, want := range wantCmd {
+		if entry.Command[i] != want {
+			t.Fatalf(
+				"command[%d] = %q, want %q",
+				i, entry.Command[i], want,
+			)
+		}
+	}
+
+	// Verify type is "local".
+	if entry.Type != "local" {
+		t.Fatalf(
+			"expected type local, got %q",
+			entry.Type,
 		)
 	}
 }
 
-func TestEnsureMCPEntryPodman(t *testing.T) {
-	config := &mcp.OpenCodeConfig{
-		MCP: make(map[string]mcp.OpenCodeMCPEntry),
-	}
-
-	mcp.EnsureMCPEntryPodman(config, "docker")
-
-	entry, ok := config.MCP[consts.MCPServerName]
-	if !ok {
-		t.Fatal("expected gemara-mcp entry")
-	}
-	if entry.Command != "docker" {
-		t.Fatalf(
-			"expected command docker, got %q",
-			entry.Command,
-		)
-	}
-	if len(entry.Args) < 4 {
-		t.Fatalf(
-			"expected at least 4 args, got %v",
-			entry.Args,
-		)
-	}
-	// Verify args: run --rm -i <image> serve
-	if entry.Args[0] != "run" {
-		t.Errorf("args[0] = %q, want run", entry.Args[0])
-	}
-	if entry.Args[1] != "--rm" {
-		t.Errorf(
-			"args[1] = %q, want --rm", entry.Args[1],
-		)
-	}
-	if entry.Args[2] != "-i" {
-		t.Errorf("args[2] = %q, want -i", entry.Args[2])
-	}
-	if entry.Args[len(entry.Args)-1] != "serve" {
-		t.Errorf(
-			"last arg = %q, want serve",
-			entry.Args[len(entry.Args)-1],
-		)
-	}
-}
-
-func TestEnsureMCPEntry_PreservesExistingEntries(t *testing.T) {
+func TestEnsureMCPEntry_PreservesExistingEntries(
+	t *testing.T,
+) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "opencode.json")
 
-	// Write a config with an existing MCP entry.
+	// Write a config with an existing MCP entry using
+	// the correct OpenCode format.
 	existing := map[string]any{
-		"mcpServers": map[string]any{
+		"mcp": map[string]any{
 			"other-server": map[string]any{
-				"command": "other-binary",
-				"args":    []string{"run"},
+				"type":    "local",
+				"command": []string{"other-binary"},
 			},
 		},
 	}
@@ -147,7 +128,6 @@ func TestEnsureMCPEntry_PreservesExistingEntries(t *testing.T) {
 		t.Fatalf("write setup: %v", err)
 	}
 
-	// Read, add gemara-mcp, write back.
 	config, err := mcp.ReadOpenCodeConfig(path)
 	if err != nil {
 		t.Fatalf("unexpected read error: %v", err)
@@ -156,6 +136,7 @@ func TestEnsureMCPEntry_PreservesExistingEntries(t *testing.T) {
 	mcp.EnsureMCPEntry(
 		config,
 		"/opt/gemara-mcp/bin/gemara-mcp",
+		consts.MCPModeArtifact,
 	)
 
 	if err := mcp.WriteOpenCodeConfig(
@@ -164,7 +145,6 @@ func TestEnsureMCPEntry_PreservesExistingEntries(t *testing.T) {
 		t.Fatalf("unexpected write error: %v", err)
 	}
 
-	// Verify both entries exist.
 	readBack, err := mcp.ReadOpenCodeConfig(path)
 	if err != nil {
 		t.Fatalf("unexpected read error: %v", err)
@@ -178,8 +158,7 @@ func TestEnsureMCPEntry_PreservesExistingEntries(t *testing.T) {
 	}
 }
 
-// TestMCPConfigOutputFormat verifies the JSON output matches
-// the expected MCP client format.
+// Verify JSON output matches the OpenCode MCP config format.
 func TestMCPConfigOutputFormat(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "opencode.json")
@@ -189,6 +168,7 @@ func TestMCPConfigOutputFormat(t *testing.T) {
 	}
 	mcp.EnsureMCPEntry(
 		config, "/usr/local/bin/gemara-mcp",
+		consts.MCPModeArtifact,
 	)
 
 	if err := mcp.WriteOpenCodeConfig(
@@ -202,21 +182,20 @@ func TestMCPConfigOutputFormat(t *testing.T) {
 		t.Fatalf("read error: %v", err)
 	}
 
-	// Parse as generic JSON to verify structure.
 	var raw map[string]json.RawMessage
 	if err := json.Unmarshal(data, &raw); err != nil {
 		t.Fatalf("parse error: %v", err)
 	}
 
-	// Should have mcpServers key.
-	if _, ok := raw["mcpServers"]; !ok {
-		t.Fatal("expected mcpServers key in output")
+	// Should have "mcp" key (not "mcpServers").
+	if _, ok := raw["mcp"]; !ok {
+		t.Fatal("expected 'mcp' key in output")
 	}
 
 	// Parse the servers.
 	var servers map[string]map[string]any
 	if err := json.Unmarshal(
-		raw["mcpServers"], &servers,
+		raw["mcp"], &servers,
 	); err != nil {
 		t.Fatalf("parse servers: %v", err)
 	}
@@ -226,27 +205,148 @@ func TestMCPConfigOutputFormat(t *testing.T) {
 		t.Fatal("expected gemara-mcp server entry")
 	}
 
-	// command should be a string, not an array.
-	cmd, ok := entry["command"].(string)
+	// type should be "local".
+	if entry["type"] != "local" {
+		t.Errorf("type = %v, want local", entry["type"])
+	}
+
+	// command should be an array.
+	cmd, ok := entry["command"].([]any)
 	if !ok {
 		t.Fatalf(
-			"command should be string, got %T",
+			"command should be array, got %T",
 			entry["command"],
 		)
 	}
-	if cmd != "/usr/local/bin/gemara-mcp" {
-		t.Errorf("command = %q", cmd)
+	wantCmd := []string{
+		"/usr/local/bin/gemara-mcp",
+		"serve", "--mode", "artifact",
 	}
-
-	// args should be an array containing "serve".
-	args, ok := entry["args"].([]any)
-	if !ok {
+	if len(cmd) != len(wantCmd) {
 		t.Fatalf(
-			"args should be array, got %T",
-			entry["args"],
+			"expected %d command elements, got %v",
+			len(wantCmd), cmd,
 		)
 	}
-	if len(args) != 1 || args[0] != "serve" {
-		t.Errorf("args = %v, want [serve]", args)
+	for i, want := range wantCmd {
+		if cmd[i] != want {
+			t.Errorf(
+				"command[%d] = %v, want %q",
+				i, cmd[i], want,
+			)
+		}
+	}
+}
+
+func TestEnsureMCPEntry_DefaultMode(t *testing.T) {
+	config := &mcp.OpenCodeConfig{
+		MCP: make(map[string]mcp.OpenCodeMCPEntry),
+	}
+	mcp.EnsureMCPEntry(
+		config, "/usr/local/bin/gemara-mcp", "",
+	)
+
+	entry := config.MCP[consts.MCPServerName]
+	// command = [binary, serve, --mode, artifact]
+	if len(entry.Command) != 4 {
+		t.Fatalf(
+			"expected 4 command elements, got %v",
+			entry.Command,
+		)
+	}
+	if entry.Command[3] != consts.MCPModeArtifact {
+		t.Fatalf(
+			"expected default mode %q, got %q",
+			consts.MCPModeArtifact, entry.Command[3],
+		)
+	}
+}
+
+func TestEnsureMCPEntry_AdvisoryMode(t *testing.T) {
+	config := &mcp.OpenCodeConfig{
+		MCP: make(map[string]mcp.OpenCodeMCPEntry),
+	}
+	mcp.EnsureMCPEntry(
+		config, "/usr/local/bin/gemara-mcp",
+		consts.MCPModeAdvisory,
+	)
+
+	entry := config.MCP[consts.MCPServerName]
+	wantCmd := []string{
+		"/usr/local/bin/gemara-mcp",
+		"serve", "--mode", "advisory",
+	}
+	if len(entry.Command) != len(wantCmd) {
+		t.Fatalf(
+			"expected command %v, got %v",
+			wantCmd, entry.Command,
+		)
+	}
+	for i, want := range wantCmd {
+		if entry.Command[i] != want {
+			t.Fatalf(
+				"command[%d] = %q, want %q",
+				i, entry.Command[i], want,
+			)
+		}
+	}
+}
+
+func TestParseMCPMode_Found(t *testing.T) {
+	entry := mcp.OpenCodeMCPEntry{
+		Type: "local",
+		Command: []string{
+			"/usr/local/bin/gemara-mcp",
+			"serve", "--mode", "advisory",
+		},
+	}
+	mode := mcp.ParseMCPMode(entry)
+	if mode != consts.MCPModeAdvisory {
+		t.Fatalf(
+			"expected %q, got %q",
+			consts.MCPModeAdvisory, mode,
+		)
+	}
+}
+
+func TestParseMCPMode_NotFound(t *testing.T) {
+	entry := mcp.OpenCodeMCPEntry{
+		Type: "local",
+		Command: []string{
+			"/usr/local/bin/gemara-mcp",
+			"serve",
+		},
+	}
+	mode := mcp.ParseMCPMode(entry)
+	if mode != consts.MCPModeDefault {
+		t.Fatalf(
+			"expected default %q, got %q",
+			consts.MCPModeDefault, mode,
+		)
+	}
+}
+
+func TestMCPBinaryPath(t *testing.T) {
+	entry := mcp.OpenCodeMCPEntry{
+		Type: "local",
+		Command: []string{
+			"/opt/gemara-mcp/bin/gemara-mcp",
+			"serve", "--mode", "artifact",
+		},
+	}
+	path := mcp.MCPBinaryPath(entry)
+	if path != "/opt/gemara-mcp/bin/gemara-mcp" {
+		t.Fatalf("expected binary path, got %q", path)
+	}
+}
+
+func TestMCPBinaryPath_Empty(t *testing.T) {
+	entry := mcp.OpenCodeMCPEntry{
+		Type:    "local",
+		Command: []string{},
+	}
+	path := mcp.MCPBinaryPath(entry)
+	if path != "" {
+		t.Fatalf("expected empty, got %q", path)
 	}
 }

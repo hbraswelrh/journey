@@ -17,19 +17,28 @@ install and configure the Gemara MCP server
 as an enhanced authoring and learning companion. OpenCode guides
 the user through the entire setup process regardless of their
 role, ensuring they have the tools they need before proceeding.
-The MCP server provides direct access to three tools that
-augment Pac-Man's capabilities throughout all subsequent
-operations:
+The MCP server provides direct access to MCP tools, resources,
+and prompts that augment Pac-Man's capabilities throughout all
+subsequent operations:
 
-- **get_lexicon**: Retrieve the upstream Gemara lexicon entries,
-  ensuring all terminology used by Pac-Man and the user's
-  authored content aligns with the canonical Gemara vocabulary.
-- **validate_gemara_artifact**: Validate YAML artifacts against
-  Gemara schema definitions without requiring the user to
-  install CUE locally or run `cue vet` manually.
-- **get_schema_docs**: Retrieve schema documentation for the
-  Gemara CUE module, providing contextual reference material
-  during guided authoring and learning paths.
+- **Tool — `validate_gemara_artifact`**: Validate YAML
+  artifacts against Gemara schema definitions without
+  requiring the user to install CUE locally or run `cue vet`
+  manually.
+- **Resource — `gemara://lexicon`**: Retrieve the upstream
+  Gemara lexicon entries, ensuring all terminology used by
+  Pac-Man and the user's authored content aligns with the
+  canonical Gemara vocabulary.
+- **Resource — `gemara://schema/definitions`**: Retrieve
+  schema documentation for the Gemara CUE module, providing
+  contextual reference material during guided authoring and
+  learning paths. Supports a `version` parameter
+  (`gemara://schema/definitions{?version}`) for
+  version-specific documentation.
+- **Prompts — `threat_assessment`, `control_catalog`**
+  (artifact mode only): Interactive wizards that guide users
+  through creating Gemara-compatible Threat Catalogs and
+  Control Catalogs respectively.
 
 The system automates MCP server installation by resolving the
 latest release of the gemara-mcp repository, verifying the
@@ -45,6 +54,34 @@ tooling for validation and bundled lexicon data, but the system
 MUST inform the user which enhanced capabilities are unavailable
 without the MCP server and offer installation again at any point
 during the session.
+
+The system MUST prompt the user to select a server mode:
+
+- **Advisory mode** (`--mode advisory`): Read-only analysis
+  and validation of existing artifacts. Provides the
+  `validate_gemara_artifact` tool and all resources but no
+  guided creation prompts. Suitable for users who want to
+  validate existing work or explore schemas without wizard
+  assistance.
+- **Artifact mode** (`--mode artifact`): All advisory
+  capabilities plus guided artifact creation wizards
+  (`threat_assessment` and `control_catalog` prompts).
+  Suitable for users who want full guided authoring support.
+
+The default mode is `artifact`. The selected mode determines
+which MCP capabilities are available and MUST be recorded in
+the session state. The `opencode.json` configuration MUST
+include the `--mode` flag in the server args:
+```json
+{
+  "mcpServers": {
+    "gemara-mcp": {
+      "command": "/path/to/gemara-mcp",
+      "args": ["serve", "--mode", "artifact"]
+    }
+  }
+}
+```
 
 **Why this priority**: The MCP server provides the upstream
 lexicon, live schema validation, and schema documentation that
@@ -82,7 +119,8 @@ with local fallbacks.
    runs `make build` to produce the binary, verifies the
    binary is accessible, writes or updates the OpenCode MCP
    configuration (`opencode.json`) with the built binary path
-   as a local MCP server entry, and confirms the server
+   as a local MCP server entry including the selected
+   `--mode` flag in the args array, and confirms the server
    responds to a health check.
 
 3. **Given** a user chooses to install the MCP server via Podman
@@ -108,11 +146,24 @@ with local fallbacks.
    context on how it would improve the current operation.
 
 6. **Given** the MCP server is installed and running, **When**
-   the system initializes a session, **Then** it queries
-   `get_lexicon` to load the current upstream lexicon,
-   `get_schema_docs` to cache schema documentation, and
-   confirms `validate_gemara_artifact` is available for
-   on-demand validation throughout the session.
+   the system initializes a session, **Then** it reads the
+   `gemara://lexicon` resource to load the current upstream
+   lexicon, reads `gemara://schema/definitions` to cache
+   schema documentation, confirms the
+   `validate_gemara_artifact` tool is available for on-demand
+   validation, and — if running in artifact mode — confirms
+   the `threat_assessment` and `control_catalog` prompts are
+   listed via the prompts endpoint.
+
+7. **Given** a user chooses to install the MCP server, **When**
+   installation completes, **Then** the system prompts the
+   user to select a server mode: Advisory (read-only analysis
+   and validation) or Artifact (advisory plus guided creation
+   wizards). The selected mode is written to the OpenCode MCP
+   configuration and recorded in the session state. If the
+   user selects Advisory mode, the system informs them that
+   the `threat_assessment` and `control_catalog` prompts will
+   not be available.
 
 ---
 
@@ -132,8 +183,9 @@ Experimental schemas). The user's choice determines which schema
 version is used for all validation, tutorial content alignment,
 and guided authoring throughout the session. If the Gemara MCP
 server is installed (per US1), the system MAY use the MCP
-server's `get_schema_docs` tool to supplement version information
-with schema documentation for the selected version.
+server's `gemara://schema/definitions{?version}` resource to
+supplement version information with schema documentation for
+the selected version.
 
 **Why this priority**: Schema version selection is a prerequisite
 for every feature after MCP setup. Learning paths, content
@@ -174,6 +226,10 @@ validation commands.
    system also checks whether the installed gemara-mcp version
    is compatible with the selected Gemara schema version and
    warns the user if a mismatch is detected (see FR-031).
+   The system also reads
+   `gemara://schema/definitions{?version}` with the selected
+   version to verify schema documentation is available for
+   that version.
 
 4. **Given** the system has previously fetched and cached schema
    version information, **When** the user launches the tool
@@ -464,6 +520,18 @@ system explains each field, suggests values based on the user's
 stated scope, and validates the in-progress artifact against the
 Gemara CUE schema at each step.
 
+When the Gemara MCP server is running in artifact mode, the
+system MAY delegate authoring of Threat Catalogs and Control
+Catalogs to the MCP server's interactive prompts
+(`threat_assessment` and `control_catalog`). These prompts
+provide structured wizard flows that mirror the Gemara
+tutorials' structure and produce validated artifacts. The
+system MUST present the user with a choice between using the
+MCP-assisted wizard (if available) or the built-in guided
+authoring flow. When the MCP server is running in advisory
+mode or is unavailable, only the built-in guided authoring
+flow is available.
+
 **Why this priority**: Content authoring is the ultimate
 value-delivery action — it turns learning into production
 artifacts. However, it depends on the learning paths (US3) and
@@ -496,6 +564,25 @@ schema.
    YAML document that passes full `cue vet` validation and
    follows the naming conventions documented in the Gemara
    tutorials (e.g., `ORG.PROJ.COMPONENT.THR##`).
+
+4. **Given** the Gemara MCP server is running in artifact
+   mode and a Security Engineer wants to author a Threat
+   Catalog, **When** they begin guided authoring, **Then**
+   the system offers two options: (a) use the MCP server's
+   `threat_assessment` prompt for an interactive wizard
+   experience, or (b) use the built-in guided authoring
+   flow. If the user selects the MCP wizard, the system
+   delegates to the prompt and validates the final artifact
+   using `validate_gemara_artifact`.
+
+5. **Given** the Gemara MCP server is running in advisory
+   mode and a user wants to author a Control Catalog,
+   **When** they begin guided authoring, **Then** the system
+   uses only the built-in guided authoring flow (the
+   `control_catalog` prompt is not available in advisory
+   mode) and validates each step using the
+   `validate_gemara_artifact` tool, which IS available in
+   advisory mode.
 
 ---
 
@@ -573,6 +660,24 @@ schema.
   gemara-mcp, or switch to the schema version that matches
   their MCP server.
 
+- What happens when the user attempts to launch an MCP
+  wizard (e.g., `threat_assessment`) but the server is
+  running in advisory mode? The system MUST inform the user
+  that prompts are only available in artifact mode, offer to
+  reconfigure the server to artifact mode (updating the
+  `--mode` flag in `opencode.json` and restarting the
+  server), and fall back to the built-in guided authoring
+  flow if the user declines.
+
+- What happens when an MCP resource read fails (e.g.,
+  `gemara://lexicon` returns an error) but the MCP tool
+  (`validate_gemara_artifact`) still works? The system MUST
+  handle partial MCP availability gracefully: fall back to
+  bundled lexicon data for the failed resource while
+  continuing to use the functional tool for validation. The
+  system MUST inform the user which specific capabilities
+  have fallen back to local equivalents.
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
@@ -624,8 +729,8 @@ schema.
   consistently in all user-facing output and MUST NOT redefine
   or use alternate meanings for controlled vocabulary terms.
   When the Gemara MCP server is available, the system MUST
-  source lexicon data from the `get_lexicon` tool to ensure
-  alignment with the latest upstream vocabulary.
+  source lexicon data from the `gemara://lexicon` resource
+  to ensure alignment with the latest upstream vocabulary.
 - **FR-012**: System MUST produce all structured output in both
   YAML and JSON formats, with YAML as the default for
   human-readable output.
@@ -729,10 +834,15 @@ schema.
 - **FR-026**: On first launch, the system MUST offer the user
   the option to install the Gemara MCP server
   ([github.com/gemaraproj/gemara-mcp](https://github.com/gemaraproj/gemara-mcp))
-  before any other operation. The system MUST explain the
-  three tools the MCP server provides (`get_lexicon`,
-  `validate_gemara_artifact`, `get_schema_docs`) and how each
-  enhances the Pac-Man experience.
+  before any other operation. The system MUST explain the MCP
+  server's capabilities: the `validate_gemara_artifact` tool
+  for schema validation, the `gemara://lexicon` resource for
+  terminology alignment, the
+  `gemara://schema/definitions` resource for schema
+  documentation, and — when running in artifact mode — the
+  `threat_assessment` and `control_catalog` prompts for
+  guided artifact creation wizards. The system MUST explain
+  how each enhances the Pac-Man experience.
 - **FR-027**: System MUST support two MCP server installation
   methods: automated build from source and Podman.
   - **Build from source** (preferred): The system MUST ask the
@@ -748,7 +858,11 @@ schema.
     MCP configuration file (`opencode.json`) with a local MCP
     server entry whose `command` references the built binary
     path, ensuring the MCP server is available in subsequent
-    OpenCode sessions.
+    OpenCode sessions. The `opencode.json` entry MUST include
+    the `--mode` flag in the args array, defaulting to
+    `artifact` unless the user explicitly selects advisory
+    mode. The args MUST be
+    `["serve", "--mode", "<selected-mode>"]`.
   - **Podman**: The system MUST verify Podman is installed
     (offering `brew install podman` if not), provide Podman
     run configuration, verify the container starts, and
@@ -758,23 +872,36 @@ schema.
   running and responds to a health check.
 - **FR-028**: When the Gemara MCP server is installed and
   running, the system MUST use it as the preferred source for
-  lexicon data (`get_lexicon`), schema documentation
-  (`get_schema_docs`), and artifact validation
-  (`validate_gemara_artifact`). MCP-sourced data MUST take
-  precedence over locally bundled or cached equivalents.
+  lexicon data (reading the `gemara://lexicon` resource),
+  schema documentation (reading
+  `gemara://schema/definitions` or
+  `gemara://schema/definitions{?version}`), and artifact
+  validation (calling the `validate_gemara_artifact` tool).
+  MCP-sourced data MUST take precedence over locally bundled
+  or cached equivalents. When running in artifact mode, the
+  system MUST also make the `threat_assessment` and
+  `control_catalog` prompts available for guided authoring.
 - **FR-029**: When the Gemara MCP server is not installed or
   not running, the system MUST fall back to local equivalents:
   bundled lexicon data for terminology, local CUE tooling for
   validation, and cached schema documentation for reference.
   The system MUST inform the user which capabilities are
   degraded and offer MCP server installation at any point
-  during the session.
+  during the session. When the MCP server is installed but
+  running in advisory mode, the system MUST inform the user
+  that guided creation prompts (`threat_assessment`,
+  `control_catalog`) are unavailable in this mode and MUST
+  offer to reconfigure the server to artifact mode if the
+  user attempts wizard-based authoring.
 - **FR-030**: The system MUST detect whether the Gemara MCP
   server is already installed and running at the start of each
   session. If detected, the system MUST skip the installation
   prompt and proceed directly to schema version selection
   (US2), confirming MCP server availability in the session
-  status.
+  status. The system MUST also determine the server's
+  operating mode (advisory or artifact) at session start and
+  record it in the session state, adjusting available
+  capabilities accordingly.
 - **FR-031**: When the user selects "Latest" as their Gemara
   schema version and the Gemara MCP server is installed, the
   system MUST verify that the installed gemara-mcp version is
@@ -805,8 +932,11 @@ schema.
   how to install them, and how to begin their role-appropriate
   learning path. OpenCode's MCP server support MUST be used to
   connect to the Gemara MCP server when available, enabling
-  direct access to `get_lexicon`, `validate_gemara_artifact`,
-  and `get_schema_docs` within the guided session.
+  direct access to the `validate_gemara_artifact` tool, the
+  `gemara://lexicon` and `gemara://schema/definitions`
+  resources, and — in artifact mode — the
+  `threat_assessment` and `control_catalog` prompts within
+  the guided session.
 - **FR-034**: The system MUST provide OpenCode-specific
   configuration (project rules, custom commands, and an
   `AGENTS.md` file) that encodes role-based onboarding flows,
@@ -835,6 +965,43 @@ schema.
   platform package managers) for users who do not use
   Homebrew. The system MUST verify that each required tool
   is accessible after installation before proceeding.
+- **FR-036**: The system MUST support two gemara-mcp server
+  operating modes as defined by the server:
+  - **Advisory mode** (`--mode advisory`): Read-only
+    analysis and validation. Provides the
+    `validate_gemara_artifact` tool and all resources
+    (`gemara://lexicon`,
+    `gemara://schema/definitions{?version}`) but no
+    prompts.
+  - **Artifact mode** (`--mode artifact`): All advisory
+    capabilities plus the `threat_assessment` and
+    `control_catalog` prompts for guided artifact creation.
+  The default mode MUST be `artifact`. The system MUST
+  allow the user to select a mode during installation and
+  MUST allow mode changes in subsequent sessions by
+  updating the `opencode.json` configuration. The selected
+  mode MUST be persisted in the session state and MUST
+  determine which capabilities are presented to the user.
+- **FR-037**: When the Gemara MCP server is available, the
+  system MUST access lexicon data and schema documentation
+  via MCP resource URIs (`gemara://lexicon` and
+  `gemara://schema/definitions{?version}`) rather than MCP
+  tool calls. The system MUST distinguish between MCP tools
+  (callable functions like `validate_gemara_artifact`), MCP
+  resources (data endpoints like `gemara://lexicon`), and
+  MCP prompts (guided workflows like `threat_assessment`)
+  in all internal code and user-facing explanations.
+- **FR-038**: When the Gemara MCP server is running in
+  artifact mode, the system MUST present users with the
+  option to use MCP prompts (`threat_assessment`,
+  `control_catalog`) as an alternative to the built-in
+  guided authoring flow for the corresponding artifact
+  types (ThreatCatalog, ControlCatalog). The system MUST
+  NOT present MCP prompt options when the server is in
+  advisory mode or unavailable. For artifact types that do
+  not have corresponding MCP prompts (GuidanceCatalog,
+  Policy, MappingDocument, EvaluationLog), the built-in
+  guided authoring flow MUST always be used.
 
 ### Key Entities
 
@@ -894,11 +1061,14 @@ schema.
 - **MCP Server Connection**: The Gemara MCP server instance
   used by the current session. Attributes: installation method
   (binary or Podman), connection status (running, stopped, not
-  installed), server version, Gemara schema version the server
-  was built against, compatibility status with the user's
-  selected schema version (compatible, mismatched, unknown),
-  available tools (get_lexicon, validate_gemara_artifact,
-  get_schema_docs), last health check timestamp.
+  installed), server mode (advisory or artifact), server
+  version, Gemara schema version the server was built against,
+  compatibility status with the user's selected schema version
+  (compatible, mismatched, unknown), available tools
+  (`validate_gemara_artifact`), available resources
+  (`gemara://lexicon`, `gemara://schema/definitions`),
+  available prompts (`threat_assessment`, `control_catalog` —
+  artifact mode only), last health check timestamp.
 
 ### Assumptions
 
@@ -946,6 +1116,15 @@ schema.
   maintained vocabulary of domain activity terms rather than
   requiring a machine learning model. The keyword-to-layer
   mapping (FR-022) is extensible through configuration.
+- The Gemara MCP server follows the Model Context Protocol
+  specification, exposing tools (callable functions),
+  resources (data endpoints accessed by URI), and prompts
+  (guided conversation templates). Pac-Man's MCP client
+  MUST use the appropriate MCP protocol methods for each
+  category: tool calls for `validate_gemara_artifact`,
+  resource reads for `gemara://lexicon` and
+  `gemara://schema/definitions`, and prompt listing/get for
+  `threat_assessment` and `control_catalog`.
 
 ## Success Criteria *(mandatory)*
 
@@ -1009,13 +1188,25 @@ schema.
   silently defaults to an unselected version.
 
 - **SC-013**: Users who install the Gemara MCP server can
-  complete the installation and verify server connectivity
-  within 5 minutes, with no more than 3 steps for either the
-  binary or Podman installation method.
+  complete the installation (including mode selection) and
+  verify server connectivity within 5 minutes, with no more
+  than 4 steps for either the binary or Podman installation
+  method.
 
 - **SC-014**: When the MCP server is available, all lexicon
-  lookups, schema documentation requests, and artifact
-  validations use the MCP server's tools. When the MCP server
-  becomes unavailable, the system falls back to local
-  equivalents within 5 seconds with zero data loss on
-  in-progress work.
+  lookups use the `gemara://lexicon` resource, all schema
+  documentation requests use the
+  `gemara://schema/definitions` resource, and all artifact
+  validations use the `validate_gemara_artifact` tool. When
+  running in artifact mode, the `threat_assessment` and
+  `control_catalog` prompts are available for guided
+  authoring. When the MCP server becomes unavailable, the
+  system falls back to local equivalents within 5 seconds
+  with zero data loss on in-progress work.
+
+- **SC-015**: Users running the MCP server in advisory mode
+  can access all validation and reference capabilities
+  (tool + resources) but are correctly informed that guided
+  creation prompts are unavailable. Switching from advisory
+  to artifact mode (or vice versa) takes effect within one
+  session restart.

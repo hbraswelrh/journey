@@ -48,6 +48,15 @@ type Transport interface {
 		tool string,
 		args map[string]any,
 	) ([]byte, error)
+	// ReadResource reads an MCP resource by URI and
+	// returns the raw content.
+	ReadResource(
+		ctx context.Context,
+		uri string,
+	) ([]byte, error)
+	// ListPrompts queries the MCP server for available
+	// prompts and returns the raw response.
+	ListPrompts(ctx context.Context) ([]byte, error)
 }
 
 // ClientConfig holds configuration for the MCP client.
@@ -144,12 +153,12 @@ func (c *Client) HealthCheck(ctx context.Context) error {
 	return nil
 }
 
-// GetLexicon invokes the get_lexicon MCP tool and returns the
-// raw response.
+// GetLexicon reads the gemara://lexicon MCP resource and
+// returns the raw response.
 func (c *Client) GetLexicon(
 	ctx context.Context,
 ) ([]byte, error) {
-	return c.callTool(ctx, "get_lexicon", nil)
+	return c.readResource(ctx, "gemara://lexicon")
 }
 
 // ValidateArtifact invokes the validate_gemara_artifact MCP
@@ -170,12 +179,26 @@ func (c *Client) ValidateArtifact(
 	)
 }
 
-// GetSchemaDocs invokes the get_schema_docs MCP tool and
-// returns the raw response.
+// GetSchemaDocs reads the gemara://schema/definitions MCP
+// resource and returns the raw response.
 func (c *Client) GetSchemaDocs(
 	ctx context.Context,
 ) ([]byte, error) {
-	return c.callTool(ctx, "get_schema_docs", nil)
+	return c.readResource(
+		ctx, "gemara://schema/definitions",
+	)
+}
+
+// GetSchemaDocsForVersion reads the
+// gemara://schema/definitions resource with a specific
+// version parameter.
+func (c *Client) GetSchemaDocsForVersion(
+	ctx context.Context,
+	version string,
+) ([]byte, error) {
+	uri := "gemara://schema/definitions?version=" +
+		version
+	return c.readResource(ctx, uri)
 }
 
 // MCPPrompt describes an MCP server prompt (wizard).
@@ -202,13 +225,25 @@ type MCPPromptArg struct {
 	Required bool `json:"required"`
 }
 
-// ListPrompts invokes the MCP prompts/list method and
-// returns the available prompts (wizards).
+// ListPrompts queries the MCP server for available prompts
+// (wizards). Prompts are only available when the server is
+// running in artifact mode.
 func (c *Client) ListPrompts(
 	ctx context.Context,
 ) ([]MCPPrompt, error) {
-	resp, err := c.callTool(ctx, "prompts/list", nil)
+	c.mu.RLock()
+	status := c.status
+	c.mu.RUnlock()
+
+	if status != StatusConnected {
+		return nil, ErrNotConnected
+	}
+
+	resp, err := c.transport.ListPrompts(ctx)
 	if err != nil {
+		c.mu.Lock()
+		c.status = StatusDisconnected
+		c.mu.Unlock()
 		return nil, err
 	}
 	var result struct {
@@ -239,6 +274,33 @@ func (c *Client) callTool(
 	if err != nil {
 		// Detect disconnection: mark client as disconnected
 		// so the session can trigger fallback.
+		c.mu.Lock()
+		c.status = StatusDisconnected
+		c.mu.Unlock()
+		return nil, err
+	}
+	return resp, nil
+}
+
+// readResource is a helper that checks connection status
+// before reading a resource via the transport.
+func (c *Client) readResource(
+	ctx context.Context,
+	uri string,
+) ([]byte, error) {
+	c.mu.RLock()
+	status := c.status
+	c.mu.RUnlock()
+
+	if status != StatusConnected {
+		return nil, ErrNotConnected
+	}
+
+	resp, err := c.transport.ReadResource(ctx, uri)
+	if err != nil {
+		// Detect disconnection: mark client as
+		// disconnected so the session can trigger
+		// fallback.
 		c.mu.Lock()
 		c.status = StatusDisconnected
 		c.mu.Unlock()

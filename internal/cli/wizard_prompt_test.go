@@ -330,6 +330,67 @@ func TestWizard_BackToMenu(t *testing.T) {
 	}
 }
 
+// TestWizard_AdvisoryModeWarning verifies that when the MCP
+// server is in advisory mode, the wizard warns and shows an
+// advisory mode message.
+func TestWizard_AdvisoryModeWarning(t *testing.T) {
+	t.Parallel()
+
+	prompter := &wizardMockPrompter{
+		choices: []int{2}, // Back to main menu
+	}
+
+	cfg := &cli.WizardPromptConfig{
+		Prompter:     prompter,
+		MCPAvailable: true,
+		ServerMode:   consts.MCPModeAdvisory,
+	}
+
+	var buf bytes.Buffer
+	_, err := cli.RunWizardLauncher(cfg, &buf)
+	if err != nil {
+		t.Fatalf("RunWizardLauncher: %v", err)
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "advisory") {
+		t.Fatalf(
+			"expected advisory mode warning, got: %s",
+			output,
+		)
+	}
+}
+
+// TestWizard_ArtifactModeNoWarning verifies that artifact
+// mode does not show the advisory mode warning.
+func TestWizard_ArtifactModeNoWarning(t *testing.T) {
+	t.Parallel()
+
+	prompter := &wizardMockPrompter{
+		choices: []int{2}, // Back to main menu
+	}
+
+	cfg := &cli.WizardPromptConfig{
+		Prompter:     prompter,
+		MCPAvailable: true,
+		ServerMode:   consts.MCPModeArtifact,
+	}
+
+	var buf bytes.Buffer
+	_, err := cli.RunWizardLauncher(cfg, &buf)
+	if err != nil {
+		t.Fatalf("RunWizardLauncher: %v", err)
+	}
+
+	output := buf.String()
+	if strings.Contains(output, "advisory mode") {
+		t.Fatalf(
+			"expected no advisory warning, got: %s",
+			output,
+		)
+	}
+}
+
 // TestAvailableWizards returns the expected wizards.
 func TestAvailableWizards(t *testing.T) {
 	t.Parallel()

@@ -43,6 +43,13 @@ type AuthorPromptResult struct {
 	// ValidationErrors are any errors from final
 	// validation.
 	ValidationErrors []authoring.ValidationError
+	// WizardDelegated is true if the user chose to use
+	// an MCP wizard instead of the built-in authoring
+	// flow.
+	WizardDelegated bool
+	// WizardName is the MCP prompt name to delegate to
+	// (set when WizardDelegated is true).
+	WizardName string
 }
 
 // RunGuidedAuthoring executes the full guided authoring
@@ -68,6 +75,40 @@ func RunGuidedAuthoring(
 		return nil, fmt.Errorf(
 			"select artifact type: %w", err,
 		)
+	}
+
+	// Check if the selected artifact type has a
+	// corresponding MCP wizard and the session is in
+	// artifact mode.
+	if cfg.Session != nil && cfg.Session.IsArtifactMode() {
+		wizardName := artifactTypeWizard(artifactType)
+		if wizardName != "" {
+			useWizard, wizErr := offerWizardChoice(
+				cfg.Prompter, out, artifactType,
+				wizardName,
+			)
+			if wizErr != nil {
+				return nil, fmt.Errorf(
+					"wizard choice: %w", wizErr,
+				)
+			}
+			if useWizard {
+				fmt.Fprintln(out, RenderNote(
+					"Delegating to the MCP "+
+						wizardName+" prompt. "+
+						"The wizard will guide "+
+						"you interactively.",
+				))
+				// Return nil to signal wizard
+				// delegation — the caller
+				// (main.go) handles launching
+				// the wizard flow.
+				return &AuthorPromptResult{
+					WizardDelegated: true,
+					WizardName:      wizardName,
+				}, nil
+			}
+		}
 	}
 
 	// Step 2: Initialize engine.
@@ -288,6 +329,51 @@ func runAuthoringStep(
 
 	// Complete the step.
 	return engine.CompleteStep()
+}
+
+// artifactTypeWizard returns the MCP wizard prompt name
+// for a given artifact type, or empty string if no wizard
+// exists for that type.
+func artifactTypeWizard(artifactType string) string {
+	switch artifactType {
+	case consts.ArtifactThreatCatalog:
+		return consts.WizardThreatAssessment
+	case consts.ArtifactControlCatalog:
+		return consts.WizardControlCatalog
+	default:
+		return ""
+	}
+}
+
+// offerWizardChoice presents the user with a choice between
+// using the MCP wizard or the built-in authoring flow.
+func offerWizardChoice(
+	prompter FreeTextPrompter,
+	out io.Writer,
+	artifactType string,
+	wizardName string,
+) (bool, error) {
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, subtleStyle.Render(
+		fmt.Sprintf(
+			"The MCP server provides a %q wizard "+
+				"for %s authoring.",
+			wizardName, artifactType,
+		),
+	))
+	fmt.Fprintln(out)
+
+	choice, err := prompter.Ask(
+		"How would you like to author this artifact?",
+		[]string{
+			"Use MCP wizard (interactive, guided)",
+			"Use built-in authoring flow",
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return choice == 0, nil
 }
 
 // toDisplayErrors converts authoring ValidationErrors to
