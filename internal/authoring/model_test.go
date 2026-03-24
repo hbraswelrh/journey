@@ -78,6 +78,14 @@ func TestArtifactTypeToSchema(t *testing.T) {
 			consts.SchemaGuidanceCatalog,
 		},
 		{
+			consts.ArtifactVectorCatalog,
+			consts.SchemaVectorCatalog,
+		},
+		{
+			consts.ArtifactPrincipleCatalog,
+			consts.SchemaPrincipleCatalog,
+		},
+		{
 			consts.ArtifactControlCatalog,
 			consts.SchemaControlCatalog,
 		},
@@ -86,8 +94,16 @@ func TestArtifactTypeToSchema(t *testing.T) {
 			consts.SchemaThreatCatalog,
 		},
 		{
+			consts.ArtifactCapabilityCatalog,
+			consts.SchemaCapabilityCatalog,
+		},
+		{
 			consts.ArtifactPolicy,
 			consts.SchemaPolicy,
+		},
+		{
+			consts.ArtifactRiskCatalog,
+			consts.SchemaRiskCatalog,
 		},
 		{
 			consts.ArtifactMappingDocument,
@@ -96,6 +112,14 @@ func TestArtifactTypeToSchema(t *testing.T) {
 		{
 			consts.ArtifactEvaluationLog,
 			consts.SchemaEvaluationLog,
+		},
+		{
+			consts.ArtifactEnforcementLog,
+			consts.SchemaEnforcementLog,
+		},
+		{
+			consts.ArtifactAuditLog,
+			consts.SchemaAuditLog,
 		},
 	}
 	for _, tt := range tests {
@@ -130,25 +154,31 @@ func TestArtifactTypeToSchemaUnknown(t *testing.T) {
 	}
 }
 
-// T503: SupportedArtifactTypes returns the six artifact
-// types that have published CUE schemas.
+// T503: SupportedArtifactTypes returns all artifact types
+// that have published CUE schemas.
 func TestSupportedArtifactTypes(t *testing.T) {
 	t.Parallel()
 	types := SupportedArtifactTypes()
-	if len(types) != 6 {
+	if len(types) != 12 {
 		t.Fatalf(
 			"SupportedArtifactTypes length = %d, "+
-				"want 6",
+				"want 12",
 			len(types),
 		)
 	}
 	expected := map[string]bool{
-		consts.ArtifactGuidanceCatalog: true,
-		consts.ArtifactControlCatalog:  true,
-		consts.ArtifactThreatCatalog:   true,
-		consts.ArtifactPolicy:          true,
-		consts.ArtifactMappingDocument: true,
-		consts.ArtifactEvaluationLog:   true,
+		consts.ArtifactGuidanceCatalog:   true,
+		consts.ArtifactVectorCatalog:     true,
+		consts.ArtifactPrincipleCatalog:  true,
+		consts.ArtifactControlCatalog:    true,
+		consts.ArtifactThreatCatalog:     true,
+		consts.ArtifactCapabilityCatalog: true,
+		consts.ArtifactPolicy:            true,
+		consts.ArtifactRiskCatalog:       true,
+		consts.ArtifactMappingDocument:   true,
+		consts.ArtifactEvaluationLog:     true,
+		consts.ArtifactEnforcementLog:    true,
+		consts.ArtifactAuditLog:          true,
 	}
 	for _, at := range types {
 		if !expected[at] {

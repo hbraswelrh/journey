@@ -248,14 +248,14 @@ func TestBuildArtifact(t *testing.T) {
 	}
 }
 
-// T519: ArtifactTemplates returns templates for all six
+// T519: ArtifactTemplates returns templates for all
 // supported artifact types with non-empty step lists.
 func TestArtifactTemplates(t *testing.T) {
 	t.Parallel()
 	templates := ArtifactTemplates()
-	if len(templates) != 6 {
+	if len(templates) != 12 {
 		t.Fatalf(
-			"ArtifactTemplates length = %d, want 6",
+			"ArtifactTemplates length = %d, want 12",
 			len(templates),
 		)
 	}

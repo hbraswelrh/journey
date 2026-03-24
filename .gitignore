@@ -23,6 +23,11 @@ go.work.sum
 *.swo
 *~
 
+# Web interface
+web/node_modules/
+web/dist/
+web/src/generated/
+
 # OS files
 .DS_Store
 Thumbs.db

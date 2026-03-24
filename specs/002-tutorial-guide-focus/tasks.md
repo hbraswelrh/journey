@@ -56,8 +56,8 @@
 
 ### Tests
 
-- [ ] T013 Write failing test in `internal/cli/setup_test.go` verifying that after `RunRoleDiscovery` completes, the returned `ActivityProfile` has a populated `Recommendations` field with artifact types matching the resolved layers
-- [ ] T014 [P] Write failing test in `internal/cli/role_prompt_test.go` verifying that the artifact recommendation rendering output includes artifact type names, descriptions, and MCP wizard names where applicable
+- [x] T013 Write failing test in `internal/cli/setup_test.go` verifying that after `RunRoleDiscovery` completes, the returned `ActivityProfile` has a populated `Recommendations` field with artifact types matching the resolved layers
+- [x] T014 [P] Write failing test in `internal/cli/role_prompt_test.go` verifying that the artifact recommendation rendering output includes artifact type names, descriptions, and MCP wizard names where applicable
 
 ### Implementation
 
@@ -100,7 +100,7 @@
 
 ### Tests
 
-- [ ] T025 Write failing test in `internal/cli/tutorial_prompt_test.go` verifying that when a tutorial is marked complete, `BuildHandoffSummary` is called with the completed step and session, and `RenderHandoffSummary` produces output containing the artifact type and schema definition
+- [x] T025 Write failing test in `internal/cli/tutorial_prompt_test.go` verifying that when a tutorial is marked complete, `BuildHandoffSummary` is called with the completed step and session, and `RenderHandoffSummary` produces output containing the artifact type and schema definition
 
 ### Implementation
 
@@ -166,8 +166,8 @@
 - [x] T044 Run full `make test` and verify zero failures across the entire test suite
 - [x] T045 Run `make build` and verify the binary builds with zero errors
 - [x] T046 [P] Run `./pacman --doctor` and verify it still functions correctly with no changes to its output or behavior (FR-017)
-- [ ] T047 [P] Verify quickstart.md scenario: launch Pac-Man, confirm no version prompt, confirm artifact recommendations display, complete a tutorial, confirm handoff summary directs to OpenCode with gemara-mcp tools/resources listed
-- [ ] T048 [P] Verify edge case: run setup with no network and no cache, confirm graceful degradation with warning message
+- [x] T047 [P] Verify quickstart.md scenario: launch Pac-Man, confirm no version prompt, confirm artifact recommendations display, complete a tutorial, confirm handoff summary directs to OpenCode with gemara-mcp tools/resources listed
+- [x] T048 [P] Verify edge case: run setup with no network and no cache, confirm graceful degradation with warning message
 - [x] T049 Review all terminal output across every flow (activity identification, tutorial navigation, handoff summary) for consistent visual styling, clear spacing, scannable format, and accessibility for non-technical users (FR-018). Fix any rough edges in rendering functions in `internal/cli/styles.go` and `internal/cli/handoff.go`
 - [x] T050 Review all modified files to confirm no MCP authoring wizard replication (FR-010 compliance check)
 - [x] T051 Verify all handoff summaries reference OpenCode by name, list gemara-mcp tools/resources/prompts, and provide actionable next steps for each artifact type (FR-019)

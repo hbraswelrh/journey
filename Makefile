@@ -15,7 +15,8 @@ LDFLAGS   :=
 GOLANGCI  := golangci-lint
 CUE       := cue
 
-.PHONY: all build test lint fmt schema-check clean help
+.PHONY: all build test lint fmt schema-check clean help \
+       web-data web-build web-dev web-clean
 
 ## all: Build and lint (default target)
 all: build lint
@@ -42,8 +43,24 @@ fmt:
 schema-check:
 	@echo "schema-check: no artifacts to validate yet"
 
-## clean: Remove built binary and test caches
-clean:
+## web-data: Generate TypeScript constants from Go source
+web-data:
+	$(GO) run ./cmd/genwebdata
+
+## web-build: Build the web interface (runs codegen first)
+web-build: web-data
+	cd web && npm run build
+
+## web-dev: Start the web dev server
+web-dev: web-data
+	cd web && npm run dev
+
+## web-clean: Remove web build artifacts
+web-clean:
+	rm -rf web/dist web/src/generated
+
+## clean: Remove built binary, test caches, and web artifacts
+clean: web-clean
 	rm -f $(BUILD_DIR)/$(BINARY)
 	$(GO) clean -testcache
 

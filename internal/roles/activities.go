@@ -14,22 +14,31 @@ import (
 // When a keyword maps to multiple layers, the system asks a
 // clarifying follow-up.
 var LayerKeywords = map[string][]int{
-	// Layer 1 (Guidance) keywords.
-	"eu cra":                   {consts.LayerGuidance},
-	"nist":                     {consts.LayerGuidance},
-	"owasp":                    {consts.LayerGuidance},
-	"hipaa":                    {consts.LayerGuidance},
-	"gdpr":                     {consts.LayerGuidance},
-	"pci":                      {consts.LayerGuidance},
-	"iso":                      {consts.LayerGuidance},
-	"best practices":           {consts.LayerGuidance},
-	"machine-readable format":  {consts.LayerGuidance},
-	"standards":                {consts.LayerGuidance},
-	"codify":                   {consts.LayerGuidance},
-	"formalize best practices": {consts.LayerGuidance},
-	"internal use-case":        {consts.LayerGuidance},
-	"regulatory":               {consts.LayerGuidance},
-	"guidance":                 {consts.LayerGuidance},
+	// Layer 1 (Vectors & Guidance) keywords.
+	"eu cra":                   {consts.LayerVectorsGuidance},
+	"nist":                     {consts.LayerVectorsGuidance},
+	"owasp":                    {consts.LayerVectorsGuidance},
+	"hipaa":                    {consts.LayerVectorsGuidance},
+	"gdpr":                     {consts.LayerVectorsGuidance},
+	"pci":                      {consts.LayerVectorsGuidance},
+	"iso":                      {consts.LayerVectorsGuidance},
+	"best practices":           {consts.LayerVectorsGuidance},
+	"machine-readable format":  {consts.LayerVectorsGuidance},
+	"standards":                {consts.LayerVectorsGuidance},
+	"codify":                   {consts.LayerVectorsGuidance},
+	"formalize best practices": {consts.LayerVectorsGuidance},
+	"internal use-case":        {consts.LayerVectorsGuidance},
+	"regulatory":               {consts.LayerVectorsGuidance},
+	"guidance":                 {consts.LayerVectorsGuidance},
+	"attack vectors":           {consts.LayerVectorsGuidance},
+	"vectors":                  {consts.LayerVectorsGuidance},
+	"mitre att&ck":             {consts.LayerVectorsGuidance},
+	"secure design principles": {consts.LayerVectorsGuidance},
+	"design principles":        {consts.LayerVectorsGuidance},
+	"principles":               {consts.LayerVectorsGuidance},
+	"vector catalog":           {consts.LayerVectorsGuidance},
+	"principle catalog":        {consts.LayerVectorsGuidance},
+	"guidance catalog":         {consts.LayerVectorsGuidance},
 
 	// Layer 2 (Threats & Controls) keywords.
 	"sdlc": {consts.LayerThreatsControls},
@@ -60,6 +69,12 @@ var LayerKeywords = map[string][]int{
 	"threat assessment": {
 		consts.LayerThreatsControls,
 	},
+	"capability catalog": {
+		consts.LayerThreatsControls,
+	},
+	"system capabilities": {
+		consts.LayerThreatsControls,
+	},
 
 	// Layer 3 (Risk & Policy) keywords.
 	"create policy": {consts.LayerRiskPolicy},
@@ -80,14 +95,17 @@ var LayerKeywords = map[string][]int{
 		consts.LayerRiskPolicy,
 	},
 	"compliance scope": {consts.LayerRiskPolicy},
+	"risk catalog":     {consts.LayerRiskPolicy},
+	"risk categories":  {consts.LayerRiskPolicy},
+	"risk severity":    {consts.LayerRiskPolicy},
 
 	// Ambiguous keywords (span Layers 1 and 3).
 	"evidence collection": {
-		consts.LayerGuidance,
+		consts.LayerVectorsGuidance,
 		consts.LayerRiskPolicy,
 	},
 	"adherence": {
-		consts.LayerGuidance,
+		consts.LayerVectorsGuidance,
 		consts.LayerRiskPolicy,
 	},
 
@@ -99,14 +117,43 @@ var LayerKeywords = map[string][]int{
 		consts.LayerSensitiveActivity,
 	},
 
-	// Layer 5 (Evaluation) keywords.
+	// Layer 5 (Intent & Behavior Evaluation) keywords.
 	"evaluation":     {consts.LayerEvaluation},
-	"audit":          {consts.LayerEvaluation},
 	"assessment":     {consts.LayerEvaluation},
 	"evaluation log": {consts.LayerEvaluation},
 	"control evaluation": {
 		consts.LayerEvaluation,
 	},
+	"intent evaluation": {
+		consts.LayerEvaluation,
+	},
+	"behavior evaluation": {
+		consts.LayerEvaluation,
+	},
+
+	// Layer 6 (Preventive & Remediative Enforcement)
+	// keywords.
+	"enforcement": {consts.LayerEnforcement},
+	"enforcement log": {
+		consts.LayerEnforcement,
+	},
+	"preventive enforcement": {
+		consts.LayerEnforcement,
+	},
+	"remediative enforcement": {
+		consts.LayerEnforcement,
+	},
+	"admission controller": {
+		consts.LayerEnforcement,
+	},
+
+	// Layer 7 (Audit & Continuous Monitoring) keywords.
+	"audit":     {consts.LayerAudit},
+	"audit log": {consts.LayerAudit},
+	"continuous monitoring": {
+		consts.LayerAudit,
+	},
+	"audit results": {consts.LayerAudit},
 }
 
 // Confidence represents how strongly a keyword matched.
@@ -429,12 +476,18 @@ func (p *ActivityProfile) AllKeywords() []string {
 // CUE schema definition names. This duplicates the mapping
 // in authoring/model.go to avoid a circular import.
 var artifactSchemaMap = map[string]string{
-	consts.ArtifactGuidanceCatalog: consts.SchemaGuidanceCatalog,
-	consts.ArtifactControlCatalog:  consts.SchemaControlCatalog,
-	consts.ArtifactThreatCatalog:   consts.SchemaThreatCatalog,
-	consts.ArtifactPolicy:          consts.SchemaPolicy,
-	consts.ArtifactMappingDocument: consts.SchemaMappingDocument,
-	consts.ArtifactEvaluationLog:   consts.SchemaEvaluationLog,
+	consts.ArtifactGuidanceCatalog:   consts.SchemaGuidanceCatalog,
+	consts.ArtifactVectorCatalog:     consts.SchemaVectorCatalog,
+	consts.ArtifactPrincipleCatalog:  consts.SchemaPrincipleCatalog,
+	consts.ArtifactControlCatalog:    consts.SchemaControlCatalog,
+	consts.ArtifactThreatCatalog:     consts.SchemaThreatCatalog,
+	consts.ArtifactCapabilityCatalog: consts.SchemaCapabilityCatalog,
+	consts.ArtifactPolicy:            consts.SchemaPolicy,
+	consts.ArtifactRiskCatalog:       consts.SchemaRiskCatalog,
+	consts.ArtifactMappingDocument:   consts.SchemaMappingDocument,
+	consts.ArtifactEvaluationLog:     consts.SchemaEvaluationLog,
+	consts.ArtifactEnforcementLog:    consts.SchemaEnforcementLog,
+	consts.ArtifactAuditLog:          consts.SchemaAuditLog,
 }
 
 // ArtifactRecommendations builds a list of recommended

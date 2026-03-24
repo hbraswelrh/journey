@@ -100,6 +100,14 @@ gemara-mcp server's tools and wizard prompts.
   pipeline. Validate it against the #Policy schema."
 - "I have an existing threat catalog — validate it
   using the MCP server."
+- "Create a vector catalog documenting MITRE ATT&CK
+  techniques for our cloud infrastructure."
+- "Help me write a Principle Catalog for our secure
+  design principles."
+- "Create a Risk Catalog with severity levels and risk
+  appetite definitions for our organization."
+- "I need a Capability Catalog for our Kubernetes
+  platform. Walk me through it."
 
 ### Combining Both Paths
 
@@ -122,39 +130,51 @@ OpenCode should support this seamless transition.
 
 | Role | Layers | Focus |
 |------|--------|-------|
-| Security Engineer | L2 (Threats & Controls), L1 (Guidance) | Threat modeling, control design, secure architecture |
-| Compliance Officer | L3 (Risk & Policy), L1 (Guidance), L5 (Evaluation) | Regulatory alignment, evidence, audit prep |
-| CISO/Security Leader | L3 (Risk & Policy), L1 (Guidance) | Risk appetite, policy, scope definition |
+| Security Engineer | L2 (Threats & Controls), L1 (Vectors & Guidance) | Threat modeling, control design, secure architecture |
+| Compliance Officer | L3 (Risk & Policy), L1 (Vectors & Guidance), L5 (Evaluation) | Regulatory alignment, evidence, audit prep |
+| CISO/Security Leader | L3 (Risk & Policy), L1 (Vectors & Guidance) | Risk appetite, policy, scope definition |
 | Developer | L2 (Threats & Controls), L4 (Sensitive Activities) | CI/CD, dependency management, SDLC |
 | Platform Engineer | L2 (Threats & Controls), L4 (Sensitive Activities) | Pipeline security, infrastructure controls |
-| Policy Author | L3 (Risk & Policy) | Policy creation, adherence timelines |
-| Auditor | L5 (Evaluation), L3 (Risk & Policy) | Assessments, evidence collection, evaluation logs |
+| Policy Author | L3 (Risk & Policy) | Policy creation, adherence timelines, risk catalogs |
+| Auditor | L5 (Evaluation), L7 (Audit), L3 (Risk & Policy) | Assessments, evidence collection, audit logs |
 
 ### Activity Keywords → Gemara Layers
 
 When the user describes their activities, map keywords to
 layers:
 
-**Layer 1 (Guidance)**: EU CRA, NIST, OWASP, HIPAA, GDPR,
-PCI, ISO, best practices, standards, regulatory, codify,
-formalize best practices, machine-readable format
+**Layer 1 (Vectors & Guidance)**: EU CRA, NIST, OWASP,
+HIPAA, GDPR, PCI, ISO, best practices, standards,
+regulatory, codify, formalize best practices,
+machine-readable format, attack vectors, vectors,
+MITRE ATT&CK, secure design principles, principles,
+vector catalog, principle catalog, guidance catalog
 
 **Layer 2 (Threats & Controls)**: SDLC, threat modeling,
 penetration testing, secure architecture review, CI/CD,
 dependency management, upstream open-source, custom
 controls, OSPS Baseline, FINOS CCC, control catalog,
-threat assessment
+threat assessment, capability catalog, system capabilities
 
 **Layer 3 (Risk & Policy)**: create policy, timeline for
 adherence, scope definition, audit interviews, assessment
 plans, adherence requirements, risk appetite,
-non-compliance handling, compliance scope
+non-compliance handling, compliance scope, risk catalog,
+risk categories, risk severity
 
 **Layer 4 (Sensitive Activities)**: pipeline security,
 deployment pipeline
 
-**Layer 5 (Evaluation)**: evaluation, audit, assessment,
-evaluation log, control evaluation
+**Layer 5 (Intent & Behavior Evaluation)**: evaluation,
+assessment, evaluation log, control evaluation, intent
+evaluation, behavior evaluation
+
+**Layer 6 (Preventive & Remediative Enforcement)**:
+enforcement, enforcement log, preventive enforcement,
+remediative enforcement, admission controller
+
+**Layer 7 (Audit & Continuous Monitoring)**: audit,
+audit log, continuous monitoring, audit results
 
 **Ambiguous** (clarify with user): evidence collection
 (L1 or L3), adherence (L1 or L3)
@@ -267,7 +287,10 @@ FINOS CCC Core for pre-built capabilities and threats.
 After authoring any artifact, validate it:
 - Use `validate_gemara_artifact` with the YAML content
   and the appropriate schema definition (e.g., `#Policy`,
-  `#ThreatCatalog`, `#ControlCatalog`)
+  `#ThreatCatalog`, `#ControlCatalog`,
+  `#VectorCatalog`, `#PrincipleCatalog`,
+  `#CapabilityCatalog`, `#RiskCatalog`,
+  `#EnforcementLog`, `#AuditLog`)
 
 ### Using Resources
 
@@ -280,24 +303,30 @@ After authoring any artifact, validate it:
 
 | Layer | Name | Purpose |
 |-------|------|---------|
-| 1 | Guidance | Standards, best practices, regulatory requirements |
-| 2 | Threats & Controls | Threat catalogs, control catalogs |
-| 3 | Risk & Policy | Organizational policy, assessment plans, adherence |
+| 1 | Vectors & Guidance | Standards, best practices, regulatory requirements, attack vectors, secure design principles |
+| 2 | Threats & Controls | Threat catalogs, control catalogs, capability catalogs |
+| 3 | Risk & Policy | Organizational policy, risk catalogs, assessment plans, adherence |
 | 4 | Sensitive Activities | Deployment pipelines, CI/CD, operational activities |
-| 5 | Evaluation | Assessment logs, control evaluations, evidence |
-| 6 | Results | Aggregated evaluation results |
-| 7 | Communication | Reporting and stakeholder communication |
+| 5 | Intent & Behavior Evaluation | Assessment logs, control evaluations, evidence |
+| 6 | Preventive & Remediative Enforcement | Corrective actions for noncompliance |
+| 7 | Audit & Continuous Monitoring | Efficacy review of all previous outputs |
 
 ## Artifact Types
 
 | Type | Schema | Layer |
 |------|--------|-------|
 | Guidance Catalog | `#GuidanceCatalog` | L1 |
+| Vector Catalog | `#VectorCatalog` | L1 |
+| Principle Catalog | `#PrincipleCatalog` | L1 |
 | Control Catalog | `#ControlCatalog` | L2 |
 | Threat Catalog | `#ThreatCatalog` | L2 |
+| Capability Catalog | `#CapabilityCatalog` | L2 |
 | Policy | `#Policy` | L3 |
+| Risk Catalog | `#RiskCatalog` | L3 |
 | Mapping Document | `#MappingDocument` | L2-L3 |
 | Evaluation Log | `#EvaluationLog` | L5 |
+| Enforcement Log | `#EnforcementLog` | L6 |
+| Audit Log | `#AuditLog` | L7 |
 
 ## Project Structure
 

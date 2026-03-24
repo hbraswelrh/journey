@@ -659,6 +659,214 @@ func TestSetup_AutoSelectsLatestVersion(t *testing.T) {
 	}
 }
 
+// T013: RunSetup with RolePrompter populates
+// Recommendations on the returned session's profile.
+func TestSetup_RoleDiscoveryPopulatesRecommendations(
+	t *testing.T,
+) {
+	var buf bytes.Buffer
+
+	tutDir := "../tutorials/testdata/valid"
+
+	cfg := &cli.SetupConfig{
+		Prompter:         &mockPrompter{},
+		BinaryLookup:     mockBinaryFound("/usr/local/bin/gemara-mcp"),
+		PodmanChecker:    mockPodmanNotRunning(),
+		VersionFetcher:   setupTestReleaseFetcher(),
+		VersionCachePath: filepath.Join(t.TempDir(), "releases.json"),
+		RolePrompter: &mockPrompter{
+			// Security Engineer, then activity text.
+			choices: []int{0},
+			texts: []string{
+				"CI/CD pipeline management and " +
+					"threat modeling",
+			},
+		},
+		TutorialsDir: tutDir,
+	}
+
+	result, err := cli.RunSetup(
+		context.Background(), cfg, &buf,
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Session should have role profile set.
+	if result.Session.GetRoleName() == "" {
+		t.Fatal("expected non-empty role name")
+	}
+
+	// Session should have RecommendedArtifacts > 0
+	// because Security Engineer + CI/CD resolves Layer 2
+	// which maps to ThreatCatalog and ControlCatalog.
+	if result.Session.RecommendedArtifacts == 0 {
+		t.Fatal(
+			"expected RecommendedArtifacts > 0 " +
+				"after role discovery with CI/CD " +
+				"activities",
+		)
+	}
+
+	// Verify resolved layers include Layer 2.
+	hasL2 := false
+	for _, l := range result.Session.ResolvedLayers {
+		if l == consts.LayerThreatsControls {
+			hasL2 = true
+			break
+		}
+	}
+	if !hasL2 {
+		t.Errorf(
+			"expected Layer 2 in resolved layers, "+
+				"got: %v",
+			result.Session.ResolvedLayers,
+		)
+	}
+
+	// Verify version was also auto-selected.
+	if result.Session.SchemaVersion != "v0.20.0" {
+		t.Errorf(
+			"expected schema version v0.20.0, got %s",
+			result.Session.SchemaVersion,
+		)
+	}
+
+	output := buf.String()
+
+	// Verify artifact recommendations were rendered.
+	if !strings.Contains(
+		output, consts.ArtifactThreatCatalog,
+	) {
+		t.Errorf(
+			"expected %q in output, got: %s",
+			consts.ArtifactThreatCatalog, output,
+		)
+	}
+}
+
+// T047: End-to-end quickstart verification: launch setup,
+// confirm no version prompt, confirm artifact recommendations
+// display, and confirm handoff summary references are present
+// in the role discovery output.
+func TestSetup_QuickstartEndToEnd(t *testing.T) {
+	var buf bytes.Buffer
+
+	tutDir := "../tutorials/testdata/valid"
+
+	cfg := &cli.SetupConfig{
+		Prompter:         &mockPrompter{},
+		BinaryLookup:     mockBinaryFound("/usr/local/bin/gemara-mcp"),
+		PodmanChecker:    mockPodmanNotRunning(),
+		VersionFetcher:   setupTestReleaseFetcher(),
+		VersionCachePath: filepath.Join(t.TempDir(), "releases.json"),
+		RolePrompter: &mockPrompter{
+			// Security Engineer, then CI/CD activities.
+			choices: []int{0},
+			texts: []string{
+				"CI/CD pipeline management and " +
+					"threat modeling",
+			},
+		},
+		TutorialsDir: tutDir,
+	}
+
+	result, err := cli.RunSetup(
+		context.Background(), cfg, &buf,
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	output := buf.String()
+
+	// 1. No version prompt — version auto-selected.
+	if result.Session.SchemaVersion != "v0.20.0" {
+		t.Fatalf(
+			"expected auto-selected version v0.20.0, "+
+				"got %s",
+			result.Session.SchemaVersion,
+		)
+	}
+	if !strings.Contains(output, "v0.20.0") {
+		t.Fatalf(
+			"expected version in output, got: %s",
+			output,
+		)
+	}
+
+	// 2. Artifact recommendations displayed.
+	if !strings.Contains(
+		output, consts.ArtifactThreatCatalog,
+	) {
+		t.Errorf(
+			"expected %q in output, got: %s",
+			consts.ArtifactThreatCatalog, output,
+		)
+	}
+	if !strings.Contains(
+		output, consts.ArtifactControlCatalog,
+	) {
+		t.Errorf(
+			"expected %q in output, got: %s",
+			consts.ArtifactControlCatalog, output,
+		)
+	}
+
+	// 3. MCP wizard names displayed.
+	if !strings.Contains(
+		output, consts.WizardThreatAssessment,
+	) {
+		t.Errorf(
+			"expected wizard %q in output, got: %s",
+			consts.WizardThreatAssessment, output,
+		)
+	}
+	if !strings.Contains(
+		output, consts.WizardControlCatalog,
+	) {
+		t.Errorf(
+			"expected wizard %q in output, got: %s",
+			consts.WizardControlCatalog, output,
+		)
+	}
+
+	// 4. Artifact descriptions displayed.
+	threatDesc :=
+		consts.ArtifactDescriptions[consts.ArtifactThreatCatalog]
+	if !strings.Contains(output, threatDesc) {
+		t.Errorf(
+			"expected threat description in output, "+
+				"got: %s",
+			output,
+		)
+	}
+
+	// 5. Session has role profile populated.
+	if result.Session.GetRoleName() !=
+		consts.RoleSecurityEngineer {
+		t.Errorf(
+			"expected role %s, got %s",
+			consts.RoleSecurityEngineer,
+			result.Session.GetRoleName(),
+		)
+	}
+
+	// 6. Recommended artifacts count stored in session.
+	if result.Session.RecommendedArtifacts == 0 {
+		t.Error(
+			"expected RecommendedArtifacts > 0",
+		)
+	}
+
+	// 7. Learning path steps generated.
+	if result.Session.LearningPathSteps == 0 {
+		t.Error(
+			"expected LearningPathSteps > 0",
+		)
+	}
+}
+
 // T020: RunSetup continues gracefully when AutoSelectLatest
 // fails (no network, no cache).
 func TestSetup_AutoSelectFailsGracefully(t *testing.T) {
@@ -705,6 +913,101 @@ func TestSetup_AutoSelectFailsGracefully(t *testing.T) {
 		t.Fatalf(
 			"expected warning in output, got: %s",
 			output,
+		)
+	}
+}
+
+// T048: End-to-end edge case — no network and no cache,
+// verify graceful degradation with role discovery still
+// functioning despite empty schema version.
+func TestSetup_NoNetworkNoCacheWithRoleDiscovery(
+	t *testing.T,
+) {
+	var buf bytes.Buffer
+
+	tutDir := "../tutorials/testdata/valid"
+
+	failFetcher := func(
+		_ context.Context,
+	) ([]schema.Release, error) {
+		return nil, errors.New("network unreachable")
+	}
+
+	cfg := &cli.SetupConfig{
+		Prompter:         &mockPrompter{},
+		BinaryLookup:     mockBinaryFound("/usr/local/bin/gemara-mcp"),
+		PodmanChecker:    mockPodmanNotRunning(),
+		VersionFetcher:   failFetcher,
+		VersionCachePath: filepath.Join(t.TempDir(), "nonexistent.json"),
+		RolePrompter: &mockPrompter{
+			// Security Engineer, then CI/CD activities.
+			choices: []int{0},
+			texts: []string{
+				"CI/CD pipeline management and " +
+					"threat modeling",
+			},
+		},
+		TutorialsDir: tutDir,
+	}
+
+	result, err := cli.RunSetup(
+		context.Background(), cfg, &buf,
+	)
+	if err != nil {
+		t.Fatalf(
+			"expected graceful degradation, "+
+				"got error: %v",
+			err,
+		)
+	}
+
+	output := buf.String()
+
+	// 1. Version should be empty (network failed, no
+	//    cache).
+	if result.Session.SchemaVersion != "" {
+		t.Fatalf(
+			"expected empty schema version, got %s",
+			result.Session.SchemaVersion,
+		)
+	}
+
+	// 2. Warning message should appear about the version
+	//    resolution failure.
+	if !strings.Contains(
+		strings.ToLower(output), "warning",
+	) && !strings.Contains(output, "could not") {
+		t.Errorf(
+			"expected warning in output, got: %s",
+			output,
+		)
+	}
+
+	// 3. Role discovery should still complete
+	//    successfully despite no schema version.
+	if result.Session.GetRoleName() == "" {
+		t.Error(
+			"expected role discovery to complete " +
+				"even without schema version",
+		)
+	}
+
+	// 4. Artifact recommendations should still be
+	//    populated — they depend on layers, not schema
+	//    version.
+	if result.Session.RecommendedArtifacts == 0 {
+		t.Error(
+			"expected artifact recommendations " +
+				"despite schema version failure",
+		)
+	}
+
+	// 5. Tutorials should load (though no version
+	//    mismatch checks without a version).
+	if result.Session.LearningPathSteps == 0 {
+		t.Error(
+			"expected learning path steps " +
+				"despite schema version failure",
 		)
 	}
 }

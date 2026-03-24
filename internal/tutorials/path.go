@@ -236,13 +236,13 @@ func StepStatus(
 // Gemara layers that have no tutorials available.
 func MissingLayerMessage(layer int) string {
 	layerNames := map[int]string{
-		1: "Guidance",
+		1: "Vectors & Guidance",
 		2: "Threats & Controls",
 		3: "Risk & Policy",
 		4: "Sensitive Activities",
-		5: "Evaluation",
-		6: "Data Collection",
-		7: "Reporting",
+		5: "Intent & Behavior Evaluation",
+		6: "Preventive & Remediative Enforcement",
+		7: "Audit & Continuous Monitoring",
 	}
 	name := layerNames[layer]
 	if name == "" {

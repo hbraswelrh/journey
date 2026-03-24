@@ -111,22 +111,34 @@ const DefaultOutputFormat = "yaml"
 
 // Gemara schema definition names used for cue vet validation.
 const (
-	SchemaGuidanceCatalog = "#GuidanceCatalog"
-	SchemaControlCatalog  = "#ControlCatalog"
-	SchemaThreatCatalog   = "#ThreatCatalog"
-	SchemaPolicy          = "#Policy"
-	SchemaMappingDocument = "#MappingDocument"
-	SchemaEvaluationLog   = "#EvaluationLog"
+	SchemaGuidanceCatalog   = "#GuidanceCatalog"
+	SchemaVectorCatalog     = "#VectorCatalog"
+	SchemaPrincipleCatalog  = "#PrincipleCatalog"
+	SchemaControlCatalog    = "#ControlCatalog"
+	SchemaThreatCatalog     = "#ThreatCatalog"
+	SchemaCapabilityCatalog = "#CapabilityCatalog"
+	SchemaPolicy            = "#Policy"
+	SchemaRiskCatalog       = "#RiskCatalog"
+	SchemaMappingDocument   = "#MappingDocument"
+	SchemaEvaluationLog     = "#EvaluationLog"
+	SchemaEnforcementLog    = "#EnforcementLog"
+	SchemaAuditLog          = "#AuditLog"
 )
 
 // Gemara artifact type identifiers.
 const (
-	ArtifactGuidanceCatalog = "GuidanceCatalog"
-	ArtifactControlCatalog  = "ControlCatalog"
-	ArtifactThreatCatalog   = "ThreatCatalog"
-	ArtifactPolicy          = "Policy"
-	ArtifactMappingDocument = "MappingDocument"
-	ArtifactEvaluationLog   = "EvaluationLog"
+	ArtifactGuidanceCatalog   = "GuidanceCatalog"
+	ArtifactVectorCatalog     = "VectorCatalog"
+	ArtifactPrincipleCatalog  = "PrincipleCatalog"
+	ArtifactControlCatalog    = "ControlCatalog"
+	ArtifactThreatCatalog     = "ThreatCatalog"
+	ArtifactCapabilityCatalog = "CapabilityCatalog"
+	ArtifactPolicy            = "Policy"
+	ArtifactRiskCatalog       = "RiskCatalog"
+	ArtifactMappingDocument   = "MappingDocument"
+	ArtifactEvaluationLog     = "EvaluationLog"
+	ArtifactEnforcementLog    = "EnforcementLog"
+	ArtifactAuditLog          = "AuditLog"
 )
 
 // Gemara relationship type strings for MappingDocument entries.
@@ -182,14 +194,26 @@ const SessionHealthCheckInterval = 30
 // Gemara layer numbers. The seven-layer model is Gemara's core
 // organizing framework.
 const (
-	LayerGuidance          = 1
+	LayerVectorsGuidance   = 1
 	LayerThreatsControls   = 2
 	LayerRiskPolicy        = 3
 	LayerSensitiveActivity = 4
 	LayerEvaluation        = 5
-	LayerDataCollection    = 6
-	LayerReporting         = 7
+	LayerEnforcement       = 6
+	LayerAudit             = 7
 )
+
+// LayerGuidance is an alias for LayerVectorsGuidance,
+// preserved for backward compatibility.
+const LayerGuidance = LayerVectorsGuidance
+
+// LayerDataCollection is an alias for LayerEnforcement,
+// preserved for backward compatibility.
+const LayerDataCollection = LayerEnforcement
+
+// LayerReporting is an alias for LayerAudit,
+// preserved for backward compatibility.
+const LayerReporting = LayerAudit
 
 // Predefined role names per FR-002. This list MUST be updated
 // as research identifies new personas.
@@ -240,28 +264,37 @@ const TeamConfigExt = ".yaml"
 // cross-layer (L1-L3) and is listed under each layer it
 // spans.
 var LayerArtifacts = map[int][]string{
-	LayerGuidance: {ArtifactGuidanceCatalog},
+	LayerVectorsGuidance: {
+		ArtifactGuidanceCatalog,
+		ArtifactVectorCatalog,
+		ArtifactPrincipleCatalog,
+	},
 	LayerThreatsControls: {
 		ArtifactThreatCatalog,
 		ArtifactControlCatalog,
+		ArtifactCapabilityCatalog,
 	},
-	LayerRiskPolicy:        {ArtifactPolicy},
+	LayerRiskPolicy: {
+		ArtifactPolicy,
+		ArtifactRiskCatalog,
+	},
 	LayerSensitiveActivity: {},
 	LayerEvaluation:        {ArtifactEvaluationLog},
-	LayerDataCollection:    {},
-	LayerReporting:         {},
+	LayerEnforcement:       {ArtifactEnforcementLog},
+	LayerAudit:             {ArtifactAuditLog},
 }
 
 // ArtifactFlowDescriptions describes how artifacts flow
 // between adjacent Gemara layers.
 var ArtifactFlowDescriptions = map[[2]int]string{
-	{LayerGuidance, LayerThreatsControls}: "Guidance " +
-		"catalogs inform threat and control scope",
-	{LayerGuidance, LayerRiskPolicy}: "Guidance " +
+	{LayerVectorsGuidance, LayerThreatsControls}: "" +
+		"Guidance and vector catalogs inform threat " +
+		"and control scope",
+	{LayerVectorsGuidance, LayerRiskPolicy}: "Guidance " +
 		"catalogs are referenced by policy documents",
 	{LayerThreatsControls, LayerRiskPolicy}: "Control " +
-		"and threat catalogs feed policy evaluation " +
-		"criteria",
+		"and threat catalogs feed policy and risk " +
+		"catalog evaluation criteria",
 	{LayerThreatsControls, LayerSensitiveActivity}: "" +
 		"Controls define requirements for sensitive " +
 		"activities",
@@ -270,6 +303,10 @@ var ArtifactFlowDescriptions = map[[2]int]string{
 		"activities",
 	{LayerRiskPolicy, LayerEvaluation}: "Policy drives " +
 		"evaluation log assessments",
+	{LayerEvaluation, LayerEnforcement}: "Evaluation " +
+		"findings drive enforcement actions",
+	{LayerEnforcement, LayerAudit}: "Enforcement logs " +
+		"inform audit and continuous monitoring",
 }
 
 // AuthoringOutputDir is the default subdirectory for
@@ -288,9 +325,14 @@ const (
 	SectionThreats        = "threats"
 	SectionControls       = "controls"
 	SectionGuidanceItems  = "guidance_items"
+	SectionVectors        = "vectors"
+	SectionPrinciples     = "principles"
+	SectionRisks          = "risks"
 	SectionPolicyCriteria = "policy_criteria"
 	SectionMappings       = "mappings"
 	SectionEvaluations    = "evaluations"
+	SectionActions        = "actions"
+	SectionResults        = "results"
 )
 
 // Validation status values for authored artifacts.
@@ -309,6 +351,16 @@ var ArtifactTypeSections = map[string][]string{
 		SectionScope,
 		SectionGuidanceItems,
 	},
+	ArtifactVectorCatalog: {
+		SectionMetadata,
+		SectionScope,
+		SectionVectors,
+	},
+	ArtifactPrincipleCatalog: {
+		SectionMetadata,
+		SectionScope,
+		SectionPrinciples,
+	},
 	ArtifactControlCatalog: {
 		SectionMetadata,
 		SectionScope,
@@ -320,10 +372,20 @@ var ArtifactTypeSections = map[string][]string{
 		SectionCapabilities,
 		SectionThreats,
 	},
+	ArtifactCapabilityCatalog: {
+		SectionMetadata,
+		SectionScope,
+		SectionCapabilities,
+	},
 	ArtifactPolicy: {
 		SectionMetadata,
 		SectionScope,
 		SectionPolicyCriteria,
+	},
+	ArtifactRiskCatalog: {
+		SectionMetadata,
+		SectionScope,
+		SectionRisks,
 	},
 	ArtifactMappingDocument: {
 		SectionMetadata,
@@ -333,6 +395,16 @@ var ArtifactTypeSections = map[string][]string{
 		SectionMetadata,
 		SectionScope,
 		SectionEvaluations,
+	},
+	ArtifactEnforcementLog: {
+		SectionMetadata,
+		SectionScope,
+		SectionActions,
+	},
+	ArtifactAuditLog: {
+		SectionMetadata,
+		SectionScope,
+		SectionResults,
 	},
 }
 
@@ -354,6 +426,12 @@ var ArtifactDescriptions = map[string]string{
 	ArtifactGuidanceCatalog: "A structured catalog of " +
 		"standards, best practices, and regulatory " +
 		"requirements that your organization follows.",
+	ArtifactVectorCatalog: "A catalog of attack vectors " +
+		"and techniques that document known methods of " +
+		"compromise relevant to your domain.",
+	ArtifactPrincipleCatalog: "A catalog of foundational " +
+		"values and principles that guide governance, " +
+		"design, and operational decisions.",
 	ArtifactControlCatalog: "A catalog of security " +
 		"controls that mitigate identified threats, " +
 		"with assessment requirements and evidence " +
@@ -361,15 +439,28 @@ var ArtifactDescriptions = map[string]string{
 	ArtifactThreatCatalog: "A catalog of threats to a " +
 		"specific component, organized by capability, " +
 		"with severity and likelihood assessments.",
+	ArtifactCapabilityCatalog: "A catalog of system " +
+		"capabilities and features that can be " +
+		"leveraged to implement security controls.",
 	ArtifactPolicy: "An organizational policy document " +
 		"defining adherence requirements, timelines, " +
 		"and scope for a set of controls.",
+	ArtifactRiskCatalog: "A structured collection of " +
+		"documented risks with severity levels, risk " +
+		"appetite definitions, and threat mappings.",
 	ArtifactMappingDocument: "A cross-reference document " +
 		"that maps controls to guidance items, " +
 		"establishing traceability between layers.",
 	ArtifactEvaluationLog: "An assessment log recording " +
 		"control evaluations, evidence collected, and " +
 		"compliance findings.",
+	ArtifactEnforcementLog: "A log of enforcement " +
+		"actions taken in response to noncompliance " +
+		"findings from evaluations.",
+	ArtifactAuditLog: "A formal audit record " +
+		"documenting review results, evidence, and " +
+		"recommendations for organizational " +
+		"compliance posture.",
 }
 
 // ArtifactWizards maps artifact types that have MCP wizard
@@ -385,6 +476,27 @@ var ArtifactWizards = map[string]string{
 // beginning authoring in OpenCode with the gemara-mcp
 // server.
 var DefaultPreparationChecklists = map[string][]string{
+	ArtifactGuidanceCatalog: {
+		"Identify the standard, regulation, or best " +
+			"practice to codify",
+		"Determine scope and applicability",
+		"Gather source material (regulatory text, " +
+			"standard sections)",
+	},
+	ArtifactVectorCatalog: {
+		"Identify the domain or technology to document " +
+			"attack vectors for",
+		"Determine scope and applicability contexts",
+		"Gather known attack methods and exploitation " +
+			"pathways (e.g., MITRE ATT&CK techniques)",
+	},
+	ArtifactPrincipleCatalog: {
+		"Identify the governance or design area for " +
+			"the principles",
+		"Determine scope and applicability",
+		"Gather foundational values and rationale from " +
+			"organizational standards",
+	},
 	ArtifactThreatCatalog: {
 		"Identify the component or system to assess",
 		"Determine scope boundaries (what is in/out)",
@@ -398,12 +510,11 @@ var DefaultPreparationChecklists = map[string][]string{
 		"Determine scope boundaries",
 		"Decide whether to import from an existing catalog",
 	},
-	ArtifactGuidanceCatalog: {
-		"Identify the standard, regulation, or best " +
-			"practice to codify",
-		"Determine scope and applicability",
-		"Gather source material (regulatory text, " +
-			"standard sections)",
+	ArtifactCapabilityCatalog: {
+		"Identify the system or technology to document " +
+			"capabilities for",
+		"Determine capability groupings and categories",
+		"Gather feature and component descriptions",
 	},
 	ArtifactPolicy: {
 		"Identify the controls this policy governs",
@@ -411,6 +522,13 @@ var DefaultPreparationChecklists = map[string][]string{
 		"Determine compliance scope (teams, systems, " +
 			"regions)",
 		"Establish non-compliance handling procedures",
+	},
+	ArtifactRiskCatalog: {
+		"Identify organizational risk categories",
+		"Determine risk appetite levels per category",
+		"Map risks to known threats from Layer 2 " +
+			"threat catalogs",
+		"Define severity boundaries and RACI ownership",
 	},
 	ArtifactMappingDocument: {
 		"Identify source and target catalogs to map",
@@ -422,5 +540,20 @@ var DefaultPreparationChecklists = map[string][]string{
 		"Identify the controls to evaluate",
 		"Gather evidence and assessment materials",
 		"Determine evaluation criteria and scoring",
+	},
+	ArtifactEnforcementLog: {
+		"Identify the evaluation findings to respond to",
+		"Determine enforcement disposition " +
+			"(enforced, tolerated, clear)",
+		"Document the enforcement method and steps",
+		"Gather assessment findings for justification",
+	},
+	ArtifactAuditLog: {
+		"Define the audit scope and criteria",
+		"Identify the policies and controls to audit " +
+			"against",
+		"Gather evidence from evaluation and " +
+			"enforcement logs",
+		"Assign RACI ownership for the audit",
 	},
 }

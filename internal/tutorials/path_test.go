@@ -263,7 +263,7 @@ func TestPathMultipleLayersCombined(t *testing.T) {
 func TestMissingLayerMessage(t *testing.T) {
 	t.Parallel()
 
-	msg := MissingLayerMessage(consts.LayerDataCollection)
+	msg := MissingLayerMessage(consts.LayerEnforcement)
 
 	if msg == "" {
 		t.Fatal("expected non-empty message")
@@ -271,7 +271,7 @@ func TestMissingLayerMessage(t *testing.T) {
 	if !containsStr(msg, "Layer 6") {
 		t.Error("message should reference Layer 6")
 	}
-	if !containsStr(msg, "Data Collection") {
+	if !containsStr(msg, "Enforcement") {
 		t.Error("message should reference layer name")
 	}
 	if !containsStr(msg, "No tutorials") {

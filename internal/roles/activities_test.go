@@ -549,9 +549,9 @@ func TestArtifactRecommendations_StrongL2(t *testing.T) {
 
 	recs := ArtifactRecommendations(profile)
 
-	if len(recs) != 2 {
+	if len(recs) != 3 {
 		t.Fatalf(
-			"expected 2 recommendations for L2, "+
+			"expected 3 recommendations for L2, "+
 				"got %d", len(recs),
 		)
 	}
@@ -566,6 +566,11 @@ func TestArtifactRecommendations_StrongL2(t *testing.T) {
 	}
 	if !types[consts.ArtifactControlCatalog] {
 		t.Error("expected ControlCatalog recommendation")
+	}
+	if !types[consts.ArtifactCapabilityCatalog] {
+		t.Error(
+			"expected CapabilityCatalog recommendation",
+		)
 	}
 
 	// Verify descriptions are populated.
@@ -593,7 +598,7 @@ func TestArtifactRecommendations_InferredL1(t *testing.T) {
 	profile := &ActivityProfile{
 		ResolvedLayers: []LayerMapping{
 			{
-				Layer:      consts.LayerGuidance,
+				Layer:      consts.LayerVectorsGuidance,
 				Confidence: ConfidenceInferred,
 				Keywords:   []string{"nist"},
 			},
@@ -602,33 +607,52 @@ func TestArtifactRecommendations_InferredL1(t *testing.T) {
 
 	recs := ArtifactRecommendations(profile)
 
-	if len(recs) != 1 {
+	if len(recs) != 3 {
 		t.Fatalf(
-			"expected 1 recommendation for L1, "+
+			"expected 3 recommendations for L1, "+
 				"got %d", len(recs),
 		)
 	}
 
-	if recs[0].ArtifactType != consts.ArtifactGuidanceCatalog {
-		t.Errorf(
-			"expected GuidanceCatalog, got %s",
-			recs[0].ArtifactType,
+	types := make(map[string]bool)
+	for _, r := range recs {
+		types[r.ArtifactType] = true
+	}
+
+	if !types[consts.ArtifactGuidanceCatalog] {
+		t.Error("expected GuidanceCatalog recommendation")
+	}
+	if !types[consts.ArtifactVectorCatalog] {
+		t.Error("expected VectorCatalog recommendation")
+	}
+	if !types[consts.ArtifactPrincipleCatalog] {
+		t.Error(
+			"expected PrincipleCatalog recommendation",
 		)
 	}
-	if recs[0].Confidence != ConfidenceInferred {
-		t.Error("expected inferred confidence")
-	}
-	if recs[0].MCPWizard != "" {
-		t.Errorf(
-			"expected no wizard for GuidanceCatalog, "+
-				"got %s", recs[0].MCPWizard,
-		)
-	}
-	if recs[0].AuthoringApproach != consts.ApproachCollaborative {
-		t.Errorf(
-			"expected collaborative approach, got %s",
-			recs[0].AuthoringApproach,
-		)
+
+	// Verify all use collaborative approach (no wizards
+	// for L1 artifacts).
+	for _, r := range recs {
+		if r.Confidence != ConfidenceInferred {
+			t.Errorf(
+				"expected inferred confidence for %s",
+				r.ArtifactType,
+			)
+		}
+		if r.MCPWizard != "" {
+			t.Errorf(
+				"expected no wizard for %s, got %s",
+				r.ArtifactType, r.MCPWizard,
+			)
+		}
+		if r.AuthoringApproach != consts.ApproachCollaborative {
+			t.Errorf(
+				"expected collaborative approach for "+
+					"%s, got %s",
+				r.ArtifactType, r.AuthoringApproach,
+			)
+		}
 	}
 }
 
@@ -684,8 +708,10 @@ func TestArtifactRecommendations_Deduplication(
 ) {
 	t.Parallel()
 
-	// L2 has ThreatCatalog+ControlCatalog. If same artifact
-	// appeared in two layers, only one should appear.
+	// L2 has ThreatCatalog+ControlCatalog+CapabilityCatalog.
+	// L1 has GuidanceCatalog+VectorCatalog+PrincipleCatalog.
+	// If same artifact appeared in two layers, only one
+	// should appear.
 	profile := &ActivityProfile{
 		ResolvedLayers: []LayerMapping{
 			{
@@ -694,7 +720,7 @@ func TestArtifactRecommendations_Deduplication(
 				Keywords:   []string{"threat modeling"},
 			},
 			{
-				Layer:      consts.LayerGuidance,
+				Layer:      consts.LayerVectorsGuidance,
 				Confidence: ConfidenceInferred,
 				Keywords:   []string{"nist"},
 			},
@@ -703,11 +729,12 @@ func TestArtifactRecommendations_Deduplication(
 
 	recs := ArtifactRecommendations(profile)
 
-	// L2 = ThreatCatalog + ControlCatalog, L1 =
-	// GuidanceCatalog → 3 unique types.
-	if len(recs) != 3 {
+	// L2 = ThreatCatalog + ControlCatalog +
+	// CapabilityCatalog, L1 = GuidanceCatalog +
+	// VectorCatalog + PrincipleCatalog → 6 unique types.
+	if len(recs) != 6 {
 		t.Fatalf(
-			"expected 3 unique recommendations, "+
+			"expected 6 unique recommendations, "+
 				"got %d", len(recs),
 		)
 	}

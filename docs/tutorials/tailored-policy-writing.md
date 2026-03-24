@@ -131,8 +131,10 @@ metadata:
 
 **Naming convention**: The `POL` prefix distinguishes
 Policy artifacts from Threat Catalogs (`THR`), Control
-Catalogs (`CTRL`), and Guidance Catalogs (`GDN`). The
-two-digit suffix (`01`) allows multiple policies per
+Catalogs (`CTRL`), Guidance Catalogs (`GDN`), Vector
+Catalogs (`VEC`), Principle Catalogs (`PRC`),
+Capability Catalogs (`CAP`), and Risk Catalogs (`RSK`).
+The two-digit suffix (`01`) allows multiple policies per
 component.
 
 **Mapping references**: List every catalog that this
@@ -500,10 +502,12 @@ every other layer in the Gemara model:
 
 | Flow | Direction | Relationship |
 |------|-----------|-------------|
-| Layer 1 → Layer 3 | Upstream | Guidance Catalogs are referenced by Policy documents |
-| Layer 2 → Layer 3 | Upstream | Control and Threat Catalogs feed Policy evaluation criteria |
+| Layer 1 → Layer 3 | Upstream | Guidance, Vector, and Principle Catalogs are referenced by Policy documents |
+| Layer 2 → Layer 3 | Upstream | Control, Threat, and Capability Catalogs feed Policy and Risk Catalog evaluation criteria |
 | Layer 3 → Layer 4 | Downstream | Policy governs which Controls apply to Sensitive Activities |
 | Layer 3 → Layer 5 | Downstream | Policy drives Evaluation Log Assessments |
+| Layer 5 → Layer 6 | Downstream | Evaluation findings drive Enforcement Log actions |
+| Layer 6 → Layer 7 | Downstream | Enforcement Logs inform Audit Logs and Continuous Monitoring |
 
 **Upstream connections**: Your Policy's `imports` section
 references Control Catalogs (Layer 2). The
@@ -527,8 +531,13 @@ becomes the input for:
    chain from Policy through Evaluation findings to
    enforcement records.
 
-**What's next**: After publishing your Policy, use the
-Evaluation Log schema (`#EvaluationLog`) at Layer 5 to
-record Assessment results. Each Assessment Requirement
-from your imported Control Catalog becomes an evaluation
-target.
+**What's next**: After publishing your Policy, consider
+creating a Risk Catalog (`#RiskCatalog`) at Layer 3 to
+document organizational risks with severity levels and
+appetite boundaries. Then use the Evaluation Log schema
+(`#EvaluationLog`) at Layer 5 to record Assessment
+results. Each Assessment Requirement from your imported
+Control Catalog becomes an evaluation target. Enforcement
+actions are recorded in Enforcement Logs (`#EnforcementLog`)
+at Layer 6, and Audit Logs (`#AuditLog`) at Layer 7
+capture the formal review of compliance posture.

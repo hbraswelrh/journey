@@ -8,6 +8,9 @@ import (
 	"testing"
 
 	"github.com/hbraswelrh/pacman/internal/cli"
+	"github.com/hbraswelrh/pacman/internal/consts"
+	"github.com/hbraswelrh/pacman/internal/schema"
+	"github.com/hbraswelrh/pacman/internal/session"
 	"github.com/hbraswelrh/pacman/internal/tutorials"
 )
 
@@ -240,6 +243,131 @@ func TestRunTutorialPlayer_RoleContext(t *testing.T) {
 		t.Error(
 			"expected role name in output for " +
 				"personalized questions",
+		)
+	}
+}
+
+// T025: Tutorial completion triggers BuildHandoffSummary
+// and RenderHandoffSummary producing output with the
+// artifact type and schema definition.
+func TestRunTutorialPlayer_HandoffOnComplete(
+	t *testing.T,
+) {
+	t.Parallel()
+
+	// Walk through all sections then mark complete.
+	prompter := &tutorialMockPrompter{
+		choices: []int{
+			0, // Select first tutorial (Layer 2)
+			// Section 1 (Scope Definition):
+			0, // Answer focused question
+			0, // Continue to next section
+			// Section 2 (Capability Identification):
+			0, // Answer focused question
+			0, // Follow-up
+			0, // Continue to next section
+			// Section 3 (Threat Identification):
+			0, // Answer focused question
+			0, // Follow-up
+			0, // Follow-up
+			0, // Continue to next section
+			// Section 4 (CUE Validation):
+			0, // Answer focused question
+			// Last section nav: [Go back, Mark
+			//   complete, Back to list]
+			1, // Mark complete
+			2, // Back to main menu
+		},
+	}
+
+	sess := session.NewSessionWithMCP(
+		"v0.20.0", "artifact",
+	)
+	selRes := &schema.SelectionResult{
+		SelectedTag:         "v0.20.0",
+		ExperimentalSchemas: []string{"base"},
+	}
+
+	cfg := &cli.TutorialPromptConfig{
+		Prompter:        prompter,
+		LearningPath:    testLearningPath(),
+		TutorialsDir:    "../../internal/tutorials/testdata/valid",
+		RoleName:        "Security Engineer",
+		Session:         sess,
+		SelectionResult: selRes,
+	}
+
+	var buf bytes.Buffer
+	result, err := cli.RunTutorialPlayer(cfg, &buf)
+	if err != nil {
+		t.Fatalf("RunTutorialPlayer: %v", err)
+	}
+
+	if !result.CompletedSteps[0] {
+		t.Error("expected step 0 to be completed")
+	}
+
+	output := buf.String()
+
+	// Handoff summary should contain the artifact type
+	// resolved from Layer 2.
+	if !strings.Contains(
+		output, consts.ArtifactThreatCatalog,
+	) {
+		t.Errorf(
+			"expected %q in handoff output, got: %s",
+			consts.ArtifactThreatCatalog, output,
+		)
+	}
+
+	// Handoff summary should contain the schema
+	// definition.
+	if !strings.Contains(
+		output, consts.SchemaThreatCatalog,
+	) {
+		t.Errorf(
+			"expected %q in handoff output, got: %s",
+			consts.SchemaThreatCatalog, output,
+		)
+	}
+
+	// Handoff should reference OpenCode since MCP is
+	// configured.
+	if !strings.Contains(output, "OpenCode") &&
+		!strings.Contains(output, "opencode") {
+		t.Error(
+			"expected OpenCode reference in " +
+				"handoff output",
+		)
+	}
+
+	// Handoff should reference the wizard prompt for
+	// ThreatCatalog.
+	if !strings.Contains(
+		output, consts.WizardThreatAssessment,
+	) {
+		t.Errorf(
+			"expected wizard %q in handoff output, "+
+				"got: %s",
+			consts.WizardThreatAssessment, output,
+		)
+	}
+
+	// Handoff should list MCP tools and resources.
+	if !strings.Contains(
+		output, consts.ToolValidateArtifact,
+	) {
+		t.Errorf(
+			"expected %q in handoff output, got: %s",
+			consts.ToolValidateArtifact, output,
+		)
+	}
+	if !strings.Contains(
+		output, consts.ResourceLexicon,
+	) {
+		t.Errorf(
+			"expected %q in handoff output, got: %s",
+			consts.ResourceLexicon, output,
 		)
 	}
 }

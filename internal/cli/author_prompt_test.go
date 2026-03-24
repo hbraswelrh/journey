@@ -54,7 +54,7 @@ func TestRunGuidedAuthoring_TypeSelection(t *testing.T) {
 
 	outputDir := t.TempDir()
 
-	// Select ThreatCatalog (index 2 in
+	// Select ThreatCatalog (index 4 in
 	// SupportedArtifactTypes order).
 	// Then provide values for all required fields in
 	// each step of ThreatCatalog template:
@@ -65,7 +65,7 @@ func TestRunGuidedAuthoring_TypeSelection(t *testing.T) {
 	// Step 4 (threats): threat_id, threat_description,
 	//   target_capability
 	prompter := &authorMockPrompter{
-		choices: []int{2}, // ThreatCatalog
+		choices: []int{4}, // ThreatCatalog
 		texts: []string{
 			// metadata fields
 			"ACME.WEB.THR01",
@@ -125,7 +125,7 @@ func TestRunGuidedAuthoring_AllSteps(t *testing.T) {
 	outputDir := t.TempDir()
 
 	prompter := &authorMockPrompter{
-		choices: []int{2}, // ThreatCatalog
+		choices: []int{4}, // ThreatCatalog
 		texts: []string{
 			"ACME.WEB.THR01",
 			"Test threat catalog",
@@ -177,7 +177,7 @@ func TestRunGuidedAuthoring_OutputExists(t *testing.T) {
 	outputDir := t.TempDir()
 
 	prompter := &authorMockPrompter{
-		choices: []int{2},
+		choices: []int{4},
 		texts: []string{
 			"ACME.WEB.THR01",
 			"Test threat catalog",
@@ -229,7 +229,7 @@ func TestRunGuidedAuthoring_ValidOutput(t *testing.T) {
 	outputDir := t.TempDir()
 
 	prompter := &authorMockPrompter{
-		choices: []int{2},
+		choices: []int{4},
 		texts: []string{
 			"ACME.WEB.THR01",
 			"Threat catalog for web app",
@@ -300,7 +300,7 @@ func TestRunGuidedAuthoring_RoleContext(t *testing.T) {
 	outputDir := t.TempDir()
 
 	prompter := &authorMockPrompter{
-		choices: []int{2},
+		choices: []int{4},
 		texts: []string{
 			"ACME.WEB.THR01",
 			"Test",
@@ -362,7 +362,7 @@ func TestRunGuidedAuthoring_Integration(t *testing.T) {
 	outputDir := t.TempDir()
 
 	prompter := &authorMockPrompter{
-		choices: []int{2},
+		choices: []int{4},
 		texts: []string{
 			"ACME.WEB.THR01",
 			"Web Application Threat Assessment",
@@ -499,7 +499,7 @@ func TestRunGuidedAuthoring_ArtifactMode_OffersWizard(
 
 	prompter := &authorMockPrompter{
 		choices: []int{
-			2, // ThreatCatalog
+			4, // ThreatCatalog
 			1, // Built-in authoring (not wizard)
 		},
 		texts: []string{
@@ -560,7 +560,7 @@ func TestRunGuidedAuthoring_AdvisoryMode_NoWizard(
 	outputDir := t.TempDir()
 
 	prompter := &authorMockPrompter{
-		choices: []int{2}, // ThreatCatalog (no wizard choice)
+		choices: []int{4}, // ThreatCatalog (no wizard choice)
 		texts: []string{
 			"ACME.WEB.THR01",
 			"Test",
@@ -670,7 +670,7 @@ func TestRunGuidedAuthoring_JSONOutput(t *testing.T) {
 	outputDir := t.TempDir()
 
 	prompter := &authorMockPrompter{
-		choices: []int{2},
+		choices: []int{4},
 		texts: []string{
 			"ACME.WEB.THR01",
 			"Test",

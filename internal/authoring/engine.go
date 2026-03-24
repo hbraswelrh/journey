@@ -243,7 +243,7 @@ func ArtifactTemplates() map[string]ArtifactTemplate {
 	return map[string]ArtifactTemplate{
 		consts.ArtifactGuidanceCatalog: {
 			ArtifactType: consts.ArtifactGuidanceCatalog,
-			Layer:        consts.LayerGuidance,
+			Layer:        consts.LayerVectorsGuidance,
 			Steps: []AuthoringStep{
 				metadataStep(
 					consts.ArtifactGuidanceCatalog,
@@ -252,6 +252,32 @@ func ArtifactTemplates() map[string]ArtifactTemplate {
 					consts.ArtifactGuidanceCatalog,
 				),
 				guidanceItemsStep(),
+			},
+		},
+		consts.ArtifactVectorCatalog: {
+			ArtifactType: consts.ArtifactVectorCatalog,
+			Layer:        consts.LayerVectorsGuidance,
+			Steps: []AuthoringStep{
+				metadataStep(
+					consts.ArtifactVectorCatalog,
+				),
+				scopeStep(
+					consts.ArtifactVectorCatalog,
+				),
+				vectorsStep(),
+			},
+		},
+		consts.ArtifactPrincipleCatalog: {
+			ArtifactType: consts.ArtifactPrincipleCatalog,
+			Layer:        consts.LayerVectorsGuidance,
+			Steps: []AuthoringStep{
+				metadataStep(
+					consts.ArtifactPrincipleCatalog,
+				),
+				scopeStep(
+					consts.ArtifactPrincipleCatalog,
+				),
+				principlesStep(),
 			},
 		},
 		consts.ArtifactControlCatalog: {
@@ -281,6 +307,19 @@ func ArtifactTemplates() map[string]ArtifactTemplate {
 				threatsStep(),
 			},
 		},
+		consts.ArtifactCapabilityCatalog: {
+			ArtifactType: consts.ArtifactCapabilityCatalog,
+			Layer:        consts.LayerThreatsControls,
+			Steps: []AuthoringStep{
+				metadataStep(
+					consts.ArtifactCapabilityCatalog,
+				),
+				scopeStep(
+					consts.ArtifactCapabilityCatalog,
+				),
+				capabilitiesStep(),
+			},
+		},
 		consts.ArtifactPolicy: {
 			ArtifactType: consts.ArtifactPolicy,
 			Layer:        consts.LayerRiskPolicy,
@@ -290,9 +329,22 @@ func ArtifactTemplates() map[string]ArtifactTemplate {
 				policyCriteriaStep(),
 			},
 		},
+		consts.ArtifactRiskCatalog: {
+			ArtifactType: consts.ArtifactRiskCatalog,
+			Layer:        consts.LayerRiskPolicy,
+			Steps: []AuthoringStep{
+				metadataStep(
+					consts.ArtifactRiskCatalog,
+				),
+				scopeStep(
+					consts.ArtifactRiskCatalog,
+				),
+				risksStep(),
+			},
+		},
 		consts.ArtifactMappingDocument: {
 			ArtifactType: consts.ArtifactMappingDocument,
-			Layer:        consts.LayerGuidance,
+			Layer:        consts.LayerVectorsGuidance,
 			Steps: []AuthoringStep{
 				metadataStep(
 					consts.ArtifactMappingDocument,
@@ -311,6 +363,32 @@ func ArtifactTemplates() map[string]ArtifactTemplate {
 					consts.ArtifactEvaluationLog,
 				),
 				evaluationsStep(),
+			},
+		},
+		consts.ArtifactEnforcementLog: {
+			ArtifactType: consts.ArtifactEnforcementLog,
+			Layer:        consts.LayerEnforcement,
+			Steps: []AuthoringStep{
+				metadataStep(
+					consts.ArtifactEnforcementLog,
+				),
+				scopeStep(
+					consts.ArtifactEnforcementLog,
+				),
+				actionsStep(),
+			},
+		},
+		consts.ArtifactAuditLog: {
+			ArtifactType: consts.ArtifactAuditLog,
+			Layer:        consts.LayerAudit,
+			Steps: []AuthoringStep{
+				metadataStep(
+					consts.ArtifactAuditLog,
+				),
+				scopeStep(
+					consts.ArtifactAuditLog,
+				),
+				auditResultsStep(),
 			},
 		},
 	}
@@ -629,22 +707,236 @@ func evaluationsStep() AuthoringStep {
 	}
 }
 
+// vectorsStep returns the vectors definition step.
+func vectorsStep() AuthoringStep {
+	return AuthoringStep{
+		Name: consts.SectionVectors,
+		Description: "Define the attack vectors — " +
+			"methods and pathways through which " +
+			"threats may be realized",
+		Fields: []StepField{
+			{
+				Name:         "vector_id",
+				Description:  "Vector identifier",
+				FieldType:    "string",
+				Required:     true,
+				ExampleValue: "VEC-001",
+			},
+			{
+				Name: "vector_description",
+				Description: "Description of the " +
+					"attack vector or technique",
+				FieldType: "string",
+				Required:  true,
+				ExampleValue: "Credential stuffing " +
+					"via compromised password databases",
+			},
+			{
+				Name: "vector_group",
+				Description: "Group this vector " +
+					"belongs to",
+				FieldType:    "string",
+				Required:     true,
+				ExampleValue: "Credential Attacks",
+			},
+		},
+	}
+}
+
+// principlesStep returns the principles definition step.
+func principlesStep() AuthoringStep {
+	return AuthoringStep{
+		Name: consts.SectionPrinciples,
+		Description: "Define the principles — " +
+			"foundational values that guide " +
+			"governance, design, and operational " +
+			"decisions",
+		Fields: []StepField{
+			{
+				Name:         "principle_id",
+				Description:  "Principle identifier",
+				FieldType:    "string",
+				Required:     true,
+				ExampleValue: "PRC-001",
+			},
+			{
+				Name: "principle_title",
+				Description: "Title describing the " +
+					"principle at a glance",
+				FieldType:    "string",
+				Required:     true,
+				ExampleValue: "Defense in Depth",
+			},
+			{
+				Name: "principle_description",
+				Description: "Explanation of the " +
+					"principle and its expected outcomes",
+				FieldType: "string",
+				Required:  true,
+				ExampleValue: "Apply multiple layers " +
+					"of security controls to protect " +
+					"against single points of failure",
+			},
+			{
+				Name: "principle_group",
+				Description: "Group this principle " +
+					"belongs to",
+				FieldType:    "string",
+				Required:     true,
+				ExampleValue: "Secure Design",
+			},
+		},
+	}
+}
+
+// risksStep returns the risks definition step.
+func risksStep() AuthoringStep {
+	return AuthoringStep{
+		Name: consts.SectionRisks,
+		Description: "Define the risks — potential " +
+			"negative impacts resulting from threats",
+		Fields: []StepField{
+			{
+				Name:         "risk_id",
+				Description:  "Risk identifier",
+				FieldType:    "string",
+				Required:     true,
+				ExampleValue: "RSK-001",
+			},
+			{
+				Name: "risk_description",
+				Description: "Description of the " +
+					"risk scenario",
+				FieldType: "string",
+				Required:  true,
+				ExampleValue: "Unauthorized access " +
+					"to production systems via " +
+					"compromised credentials",
+			},
+			{
+				Name: "risk_severity",
+				Description: "Assessed severity " +
+					"level (Low, Medium, High, " +
+					"Critical)",
+				FieldType:    "enum",
+				Required:     true,
+				ExampleValue: "High",
+			},
+			{
+				Name: "risk_group",
+				Description: "Risk category this " +
+					"risk belongs to",
+				FieldType:    "string",
+				Required:     true,
+				ExampleValue: "Access Control",
+			},
+		},
+	}
+}
+
+// actionsStep returns the enforcement actions step.
+func actionsStep() AuthoringStep {
+	return AuthoringStep{
+		Name: consts.SectionActions,
+		Description: "Record enforcement actions " +
+			"taken in response to noncompliance " +
+			"findings",
+		Fields: []StepField{
+			{
+				Name: "disposition",
+				Description: "Enforcement outcome " +
+					"(Undetermined, Enforced, " +
+					"Tolerated, Clear)",
+				FieldType:    "enum",
+				Required:     true,
+				ExampleValue: "Enforced",
+			},
+			{
+				Name: "method_ref",
+				Description: "Reference to the " +
+					"enforcement method in the Policy",
+				FieldType:    "string",
+				Required:     true,
+				ExampleValue: "ACME.SEC.POL01.ENF01",
+			},
+			{
+				Name: "message",
+				Description: "Additional context " +
+					"about the enforcement action",
+				FieldType: "string",
+				Required:  false,
+				ExampleValue: "Deployment blocked " +
+					"by admission controller",
+			},
+		},
+	}
+}
+
+// auditResultsStep returns the audit results step.
+func auditResultsStep() AuthoringStep {
+	return AuthoringStep{
+		Name: consts.SectionResults,
+		Description: "Record audit results against " +
+			"the defined criteria",
+		Fields: []StepField{
+			{
+				Name:         "result_id",
+				Description:  "Audit result identifier",
+				FieldType:    "string",
+				Required:     true,
+				ExampleValue: "AUD-001",
+			},
+			{
+				Name: "result_type",
+				Description: "Type of audit result " +
+					"(Gap, Finding, Observation, " +
+					"Strength)",
+				FieldType:    "enum",
+				Required:     true,
+				ExampleValue: "Finding",
+			},
+			{
+				Name: "result_description",
+				Description: "Detailed explanation " +
+					"of the audit result",
+				FieldType: "string",
+				Required:  true,
+				ExampleValue: "TLS 1.2 still in use " +
+					"for internal service " +
+					"communication",
+			},
+		},
+	}
+}
+
 // exampleName returns an example artifact name for the
 // given artifact type.
 func exampleName(artifactType string) string {
 	switch artifactType {
 	case consts.ArtifactGuidanceCatalog:
 		return "ACME.WEB.GDN01"
+	case consts.ArtifactVectorCatalog:
+		return "ACME.WEB.VEC01"
+	case consts.ArtifactPrincipleCatalog:
+		return "ACME.WEB.PRC01"
 	case consts.ArtifactControlCatalog:
 		return "ACME.WEB.CTL01"
 	case consts.ArtifactThreatCatalog:
 		return "ACME.WEB.THR01"
+	case consts.ArtifactCapabilityCatalog:
+		return "ACME.WEB.CAP01"
 	case consts.ArtifactPolicy:
 		return "ACME.WEB.POL01"
+	case consts.ArtifactRiskCatalog:
+		return "ACME.WEB.RSK01"
 	case consts.ArtifactMappingDocument:
 		return "ACME.WEB.MAP01"
 	case consts.ArtifactEvaluationLog:
 		return "ACME.WEB.EVAL01"
+	case consts.ArtifactEnforcementLog:
+		return "ACME.WEB.ENF01"
+	case consts.ArtifactAuditLog:
+		return "ACME.WEB.AUD01"
 	default:
 		return "ACME.PROJ.ART01"
 	}
@@ -657,21 +949,39 @@ func exampleDesc(artifactType string) string {
 	case consts.ArtifactGuidanceCatalog:
 		return "Guidance catalog for web application " +
 			"security best practices"
+	case consts.ArtifactVectorCatalog:
+		return "Attack vectors targeting web " +
+			"application infrastructure"
+	case consts.ArtifactPrincipleCatalog:
+		return "Secure design principles for web " +
+			"application architecture"
 	case consts.ArtifactControlCatalog:
 		return "Control catalog for web application " +
 			"security controls"
 	case consts.ArtifactThreatCatalog:
 		return "Threat catalog for web application " +
 			"threat assessment"
+	case consts.ArtifactCapabilityCatalog:
+		return "System capabilities for web " +
+			"application platform"
 	case consts.ArtifactPolicy:
 		return "Security policy for web application " +
 			"deployment"
+	case consts.ArtifactRiskCatalog:
+		return "Organizational risks for web " +
+			"application operations"
 	case consts.ArtifactMappingDocument:
 		return "Mapping between guidance items and " +
 			"implementing controls"
 	case consts.ArtifactEvaluationLog:
 		return "Evaluation log for policy compliance " +
 			"assessment"
+	case consts.ArtifactEnforcementLog:
+		return "Enforcement actions for noncompliance " +
+			"findings"
+	case consts.ArtifactAuditLog:
+		return "Audit results for compliance posture " +
+			"review"
 	default:
 		return "Gemara artifact"
 	}
@@ -684,15 +994,33 @@ func exampleScope(artifactType string) string {
 	case consts.ArtifactGuidanceCatalog:
 		return "Web application authentication and " +
 			"authorization"
+	case consts.ArtifactVectorCatalog:
+		return "Web application attack techniques " +
+			"and exploitation pathways"
+	case consts.ArtifactPrincipleCatalog:
+		return "Secure design principles for cloud " +
+			"native applications"
 	case consts.ArtifactControlCatalog:
 		return "Web application input validation and " +
 			"output encoding"
 	case consts.ArtifactThreatCatalog:
 		return "Web application attack surface"
+	case consts.ArtifactCapabilityCatalog:
+		return "Kubernetes platform features and " +
+			"components"
 	case consts.ArtifactPolicy:
 		return "Production deployment pipeline"
+	case consts.ArtifactRiskCatalog:
+		return "Organizational risk categories for " +
+			"cloud operations"
 	case consts.ArtifactEvaluationLog:
 		return "Q1 2026 compliance assessment"
+	case consts.ArtifactEnforcementLog:
+		return "Enforcement actions for Q1 2026 " +
+			"evaluation findings"
+	case consts.ArtifactAuditLog:
+		return "Annual compliance audit for cloud " +
+			"infrastructure"
 	default:
 		return "System under assessment"
 	}

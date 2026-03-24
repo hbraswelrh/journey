@@ -195,12 +195,18 @@ func (a *AuthoredArtifact) SetStatus(s ValidationStatus) {
 // artifactTypeSchemaMap maps artifact type names to their
 // CUE schema definition strings.
 var artifactTypeSchemaMap = map[string]string{
-	consts.ArtifactGuidanceCatalog: consts.SchemaGuidanceCatalog,
-	consts.ArtifactControlCatalog:  consts.SchemaControlCatalog,
-	consts.ArtifactThreatCatalog:   consts.SchemaThreatCatalog,
-	consts.ArtifactPolicy:          consts.SchemaPolicy,
-	consts.ArtifactMappingDocument: consts.SchemaMappingDocument,
-	consts.ArtifactEvaluationLog:   consts.SchemaEvaluationLog,
+	consts.ArtifactGuidanceCatalog:   consts.SchemaGuidanceCatalog,
+	consts.ArtifactVectorCatalog:     consts.SchemaVectorCatalog,
+	consts.ArtifactPrincipleCatalog:  consts.SchemaPrincipleCatalog,
+	consts.ArtifactControlCatalog:    consts.SchemaControlCatalog,
+	consts.ArtifactThreatCatalog:     consts.SchemaThreatCatalog,
+	consts.ArtifactCapabilityCatalog: consts.SchemaCapabilityCatalog,
+	consts.ArtifactPolicy:            consts.SchemaPolicy,
+	consts.ArtifactRiskCatalog:       consts.SchemaRiskCatalog,
+	consts.ArtifactMappingDocument:   consts.SchemaMappingDocument,
+	consts.ArtifactEvaluationLog:     consts.SchemaEvaluationLog,
+	consts.ArtifactEnforcementLog:    consts.SchemaEnforcementLog,
+	consts.ArtifactAuditLog:          consts.SchemaAuditLog,
 }
 
 // ArtifactTypeToSchema returns the CUE schema definition
@@ -219,11 +225,17 @@ func ArtifactTypeToSchema(
 func SupportedArtifactTypes() []string {
 	return []string{
 		consts.ArtifactGuidanceCatalog,
+		consts.ArtifactVectorCatalog,
+		consts.ArtifactPrincipleCatalog,
 		consts.ArtifactControlCatalog,
 		consts.ArtifactThreatCatalog,
+		consts.ArtifactCapabilityCatalog,
 		consts.ArtifactPolicy,
+		consts.ArtifactRiskCatalog,
 		consts.ArtifactMappingDocument,
 		consts.ArtifactEvaluationLog,
+		consts.ArtifactEnforcementLog,
+		consts.ArtifactAuditLog,
 	}
 }
 
