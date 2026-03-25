@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/consts"
 )
 
 // T524: ValidationError contains field path, error message,

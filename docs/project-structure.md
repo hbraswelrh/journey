@@ -6,8 +6,8 @@ the web frontend mirrors the role discovery flow in a
 browser.
 
 ```
-gemara-user-journey/
-  cmd/gemara-user-journey/
+journey/
+  cmd/journey/
     main.go                # Application entry point
   cmd/genwebdata/
     main.go                # TypeScript data generator for web UI

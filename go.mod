@@ -1,4 +1,4 @@
-module github.com/hbraswelrh/gemara-user-journey
+module github.com/hbraswelrh/journey
 
 go 1.26.1
 

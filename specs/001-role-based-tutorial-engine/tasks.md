@@ -19,7 +19,7 @@
 configuration
 
 - [x] T001 [US1] Restructure project: move entry point to
-  `cmd/gemara-user-journey/main.go`, create `internal/` package directories
+  `cmd/journey/main.go`, create `internal/` package directories
   (`consts/`, `mcp/`, `fallback/`, `session/`, `cli/`)
 - [x] T002 [US1] Create `Makefile` with targets: `build`, `test`,
   `lint`, `fmt`, `schema-check`, `clean`

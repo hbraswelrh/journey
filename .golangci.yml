@@ -21,7 +21,7 @@ linters:
 settings:
   goimports:
     local-prefixes:
-      - github.com/hbraswelrh/gemara-user-journey
+      - github.com/hbraswelrh/journey
   revive:
     rules:
       - name: blank-imports

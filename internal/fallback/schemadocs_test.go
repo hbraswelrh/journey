@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/fallback"
+	"github.com/hbraswelrh/journey/internal/fallback"
 )
 
 func TestLoadCachedDocs_Success(t *testing.T) {

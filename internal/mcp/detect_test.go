@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/mcp"
+	"github.com/hbraswelrh/journey/internal/mcp"
 )
 
 func TestDetect_BinaryFoundInPATH(t *testing.T) {

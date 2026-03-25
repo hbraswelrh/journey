@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/roles"
+	"github.com/hbraswelrh/journey/internal/roles"
 )
 
 // LearningPath is an ordered sequence of tutorial references

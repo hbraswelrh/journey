@@ -106,7 +106,7 @@
 
 - [x] T026 [US2] Add `Session` and `SelectionResult` fields to `TutorialPlayerConfig` (or equivalent config struct) in `internal/cli/tutorial_prompt.go` so the tutorial player has access to session state and version selection results for building handoff summaries
 - [x] T027 [US2] Modify the tutorial completion handler in `internal/cli/tutorial_prompt.go` (the `navComplete` case): after rendering the existing "Completed: <title>" success message, call `BuildHandoffSummary(step, cfg.Session, cfg.SelectionResult)` and `RenderHandoffSummary(summary, out)`
-- [x] T028 [US2] Update the caller of `RunTutorialPlayer` in `cmd/gemara-user-journey/main.go` to pass the `Session` and `SelectionResult` through the config
+- [x] T028 [US2] Update the caller of `RunTutorialPlayer` in `cmd/journey/main.go` to pass the `Session` and `SelectionResult` through the config
 - [x] T029 [US2] Verify test from T025 passes and run `make test` to confirm no regressions
 
 **Checkpoint**: User Story 2 is fully functional — tutorials end with a handoff summary directing users to OpenCode with the gemara-mcp server.
@@ -115,19 +115,19 @@
 
 ## Phase 6: User Story 4 — Clear Handoff to OpenCode with gemara-mcp (Priority: P4)
 
-**Goal**: Post-tutorial handoff summary directs users to open an OpenCode session where the gemara-mcp server provides tools (`validate_gemara_artifact`), resources (`gemara://lexicon`, `gemara://schema/definitions`), and wizard prompts (`threat_assessment`, `control_catalog`) for authoring. When gemara-mcp is not configured, setup instructions referencing `./gemara-user-journey --doctor` are shown.
+**Goal**: Post-tutorial handoff summary directs users to open an OpenCode session where the gemara-mcp server provides tools (`validate_gemara_artifact`), resources (`gemara://lexicon`, `gemara://schema/definitions`), and wizard prompts (`threat_assessment`, `control_catalog`) for authoring. When gemara-mcp is not configured, setup instructions referencing `./journey --doctor` are shown.
 
-**Independent Test**: Complete a tutorial when gemara-mcp is configured (verify OpenCode launch instructions, wizard name, and available tools/resources shown) and when not configured (verify `./gemara-user-journey --doctor` reference and `cue vet` command shown).
+**Independent Test**: Complete a tutorial when gemara-mcp is configured (verify OpenCode launch instructions, wizard name, and available tools/resources shown) and when not configured (verify `./journey --doctor` reference and `cue vet` command shown).
 
 ### Tests
 
 - [x] T030 Write failing test in `internal/cli/handoff_test.go` verifying `RenderHandoffSummary` output includes "OpenCode", "gemara-mcp", the wizard prompt name, and lists `validate_gemara_artifact`, `gemara://lexicon`, and `gemara://schema/definitions` when `MCPConfigured` is true
-- [x] T031 [P] Write failing test in `internal/cli/handoff_test.go` verifying `RenderHandoffSummary` output includes `./gemara-user-journey --doctor` reference, `opencode.json` setup instructions, and `cue vet` command when `MCPConfigured` is false
+- [x] T031 [P] Write failing test in `internal/cli/handoff_test.go` verifying `RenderHandoffSummary` output includes `./journey --doctor` reference, `opencode.json` setup instructions, and `cue vet` command when `MCPConfigured` is false
 
 ### Implementation
 
 - [x] T032 [US4] Enhance `RenderHandoffSummary` in `internal/cli/handoff.go` to render the configured path: show "Available in OpenCode" section listing tools, resources, and prompts from the `HandoffSummary` fields; show instructions to launch `opencode` and use the wizard prompt with the gemara-mcp server
-- [x] T033 [US4] Enhance `RenderHandoffSummary` in `internal/cli/handoff.go` to render the not-configured path: show a clear note that gemara-mcp is not yet configured, reference `./gemara-user-journey --doctor` for environment verification, explain how to configure `opencode.json`, and show `cue vet -c -d '<SchemaDef>' github.com/gemaraproj/gemara@latest artifact.yaml` as a manual validation alternative
+- [x] T033 [US4] Enhance `RenderHandoffSummary` in `internal/cli/handoff.go` to render the not-configured path: show a clear note that gemara-mcp is not yet configured, reference `./journey --doctor` for environment verification, explain how to configure `opencode.json`, and show `cue vet -c -d '<SchemaDef>' github.com/gemaraproj/gemara@latest artifact.yaml` as a manual validation alternative
 - [x] T034 [US4] Add version mismatch warning rendering to `RenderHandoffSummary` in `internal/cli/handoff.go`: when `VersionMismatch` is true, render a `RenderWarning` noting the discrepancy and recommending post-authoring validation
 - [x] T035 [US4] Verify tests from T030-T031 pass and run `make test` to confirm no regressions
 
@@ -148,7 +148,7 @@
 ### Implementation
 
 - [x] T037 [US5] Add a bypass comment header to `RunVersionSelection` in `internal/cli/version_prompt.go`: document that this function is intentionally bypassed in the active flow per ADR-0003, retained for planned future re-enablement, and can be re-enabled by replacing the `AutoSelectLatest` call in `setup.go` with `RunVersionSelection`
-- [x] T038 [US5] Remove or disable the "Switch schema version" menu option in `cmd/gemara-user-journey/main.go` (if one exists in the main menu): add a comment noting the deferral per ADR-0003 — N/A: no version switch menu option exists
+- [x] T038 [US5] Remove or disable the "Switch schema version" menu option in `cmd/journey/main.go` (if one exists in the main menu): add a comment noting the deferral per ADR-0003 — N/A: no version switch menu option exists
 - [x] T039 [US5] Create `docs/adrs/ADR-0003-version-selection-deferral.md` per research.md section R5: Context (friction during onboarding, Gemara User Journey's tutorial focus), Decision (auto-select latest, preserve code), Consequences (simpler onboarding, re-enablement path)
 - [x] T040 [US5] Verify test from T036 passes and run `make test` to confirm no regressions
 
@@ -168,7 +168,7 @@
 - [ ] T053 [P] [US6] Create `docs/layer-reference.md` by extracting the Gemara Layer Reference content from the current `README.md` (lines 142-161). Include a title (`# Gemara Layer Reference`), a brief context paragraph, the full 7-layer table, and a link back to the README.
 - [ ] T054 [P] [US6] Create `docs/project-structure.md` by extracting the Project Structure content from the current `README.md` (lines 407-452). Include a title (`# Project Structure`), a brief context paragraph, the full directory tree with descriptions, the ADRs section (lines 490-496), and a link back to the README.
 - [ ] T055 [P] [US6] Create `docs/mcp-update-guide.md` by extracting the "Keeping gemara-mcp Up to Date" content from the current `README.md` (lines 329-388). Include a title (`# Keeping gemara-mcp Up to Date`), a brief context paragraph, sync instructions for both direct-clone and fork workflows, the verification steps, and a link back to the README.
-- [ ] T056 [US6] Rewrite `README.md` as a concise landing page (~120-150 lines) following the structure defined in `contracts/cli-flow.md` Documentation Contract. The README MUST include: (1) a one-paragraph project summary positioning Gemara User Journey as a role-based tutorial guide and distinguishing it from the MCP server (FR-020), (2) the web UI screenshot via `![Gemara User Journey Web UI](docs/images/web-ui-preview.png)` (FR-022), (3) a User Journey section with 3-step narrative: Discover (role + activity identification), Learn (tailored tutorial walkthrough), Author (handoff to OpenCode with gemara-mcp for artifact authoring using Gemara schemas and MCP server tools) (FR-023), (4) a Prerequisites section with hyperlinked dependency names — [Go](https://go.dev/dl/) 1.21+, [CUE](https://cuelang.org/docs/introduction/installation/) v0.15.1+, [OpenCode](https://opencode.ai), [Git](https://git-scm.com/downloads), [gemara-mcp](https://github.com/gemaraproj/gemara-mcp) build from source (FR-021), (5) a Getting Started section with exactly 4 steps: clone and build, verify with `./gemara-user-journey --doctor`, launch `opencode`, tell OpenCode your role (FR-024), (6) an Upstream Projects table linking Gemara and gemara-mcp repos, (7) a Learn More section linking to `docs/layer-reference.md`, `docs/project-structure.md`, `docs/mcp-update-guide.md`, and `CONTRIBUTING.md` (FR-024), (8) a one-line License section. Do NOT include inline platform-specific install commands, `<details>` HTML, SDK references, or content that belongs in `docs/` files.
+- [ ] T056 [US6] Rewrite `README.md` as a concise landing page (~120-150 lines) following the structure defined in `contracts/cli-flow.md` Documentation Contract. The README MUST include: (1) a one-paragraph project summary positioning Gemara User Journey as a role-based tutorial guide and distinguishing it from the MCP server (FR-020), (2) the web UI screenshot via `![Gemara User Journey Web UI](docs/images/web-ui-preview.png)` (FR-022), (3) a User Journey section with 3-step narrative: Discover (role + activity identification), Learn (tailored tutorial walkthrough), Author (handoff to OpenCode with gemara-mcp for artifact authoring using Gemara schemas and MCP server tools) (FR-023), (4) a Prerequisites section with hyperlinked dependency names — [Go](https://go.dev/dl/) 1.21+, [CUE](https://cuelang.org/docs/introduction/installation/) v0.15.1+, [OpenCode](https://opencode.ai), [Git](https://git-scm.com/downloads), [gemara-mcp](https://github.com/gemaraproj/gemara-mcp) build from source (FR-021), (5) a Getting Started section with exactly 4 steps: clone and build, verify with `./journey --doctor`, launch `opencode`, tell OpenCode your role (FR-024), (6) an Upstream Projects table linking Gemara and gemara-mcp repos, (7) a Learn More section linking to `docs/layer-reference.md`, `docs/project-structure.md`, `docs/mcp-update-guide.md`, and `CONTRIBUTING.md` (FR-024), (8) a one-line License section. Do NOT include inline platform-specific install commands, `<details>` HTML, SDK references, or content that belongs in `docs/` files.
 - [ ] T057 [US6] Verify all links in the rewritten `README.md` resolve correctly: `docs/images/web-ui-preview.png` displays, `docs/layer-reference.md` exists, `docs/project-structure.md` exists, `docs/mcp-update-guide.md` exists, `CONTRIBUTING.md` exists, `LICENSE` exists, all external URLs are valid (SC-011).
 - [ ] T058 [US6] Verify `README.md` line count is between 100 and 160 lines (conciseness check per FR-024).
 
@@ -185,7 +185,7 @@
 - [x] T043 Verify SPDX license headers on all new files: `internal/cli/handoff.go`, `internal/cli/handoff_test.go`, `docs/adrs/ADR-0003-version-selection-deferral.md`
 - [x] T044 Run full `make test` and verify zero failures across the entire test suite
 - [x] T045 Run `make build` and verify the binary builds with zero errors
-- [x] T046 [P] Run `./gemara-user-journey --doctor` and verify it still functions correctly with no changes to its output or behavior (FR-017)
+- [x] T046 [P] Run `./journey --doctor` and verify it still functions correctly with no changes to its output or behavior (FR-017)
 - [x] T047 [P] Verify quickstart.md scenario: launch Gemara User Journey, confirm no version prompt, confirm artifact recommendations display, complete a tutorial, confirm handoff summary directs to OpenCode with gemara-mcp tools/resources listed
 - [x] T048 [P] Verify edge case: run setup with no network and no cache, confirm graceful degradation with warning message
 - [x] T049 Review all terminal output across every flow (activity identification, tutorial navigation, handoff summary) for consistent visual styling, clear spacing, scannable format, and accessibility for non-technical users (FR-018). Fix any rough edges in rendering functions in `internal/cli/styles.go` and `internal/cli/handoff.go`

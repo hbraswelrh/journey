@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
-	"github.com/hbraswelrh/gemara-user-journey/internal/mcp"
+	"github.com/hbraswelrh/journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/mcp"
 )
 
 func mockFetcher(

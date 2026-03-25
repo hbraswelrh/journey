@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/consts"
 )
 
 // T511: NewAuthoringEngine creates an engine with correct

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/tutorials"
+	"github.com/hbraswelrh/journey/internal/tutorials"
 )
 
 // categoryKeywords maps heading keywords to block categories.

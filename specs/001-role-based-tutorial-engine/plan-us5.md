@@ -37,7 +37,7 @@ PredefinedRoles, ActivityProfile, custom profiles),
 `internal/cli/` (TUI styles, prompter interfaces),
 `internal/session/` (session state)
 **Storage**: Local filesystem — team configurations stored as
-YAML in `~/.config/gemara-user-journey/teams/`
+YAML in `~/.config/journey/teams/`
 **Testing**: `go test ./...` via `make test`; TDD per
 constitution
 **Constraints**: Team view is a read-only visualization; it
@@ -155,7 +155,7 @@ internal/
 ### Phase 3: Team Configuration Persistence
 
 - Implement team configuration save/load as YAML files in
-  `~/.config/gemara-user-journey/teams/`.
+  `~/.config/journey/teams/`.
 - `SaveTeam(dir string, team *TeamConfig) error` — write
   YAML file named after team name.
 - `LoadTeam(path string) (*TeamConfig, error)` — read and

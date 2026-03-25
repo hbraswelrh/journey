@@ -5,7 +5,7 @@ package roles
 import (
 	"testing"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/consts"
 )
 
 // T201: PredefinedRoles returns the required minimum list.

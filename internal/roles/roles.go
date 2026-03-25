@@ -8,7 +8,7 @@ package roles
 import (
 	"strings"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/consts"
 )
 
 // RoleSource indicates whether a role is predefined or custom.

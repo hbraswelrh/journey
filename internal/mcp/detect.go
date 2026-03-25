@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/consts"
 )
 
 // InstallMethod indicates how the MCP server was installed.

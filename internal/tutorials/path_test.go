@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
-	"github.com/hbraswelrh/gemara-user-journey/internal/roles"
+	"github.com/hbraswelrh/journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/roles"
 )
 
 // Helper: build a Security Engineer role.

@@ -65,8 +65,8 @@ a preparation checklist — so you arrive ready to author.
 ### Step 1: Clone and Install
 
 ```bash
-git clone https://github.com/hbraswelrh/gemara-user-journey.git
-cd gemara-user-journey
+git clone https://github.com/hbraswelrh/journey.git
+cd journey
 cd web && npm install && cd ..
 ```
 

@@ -11,7 +11,7 @@ Refocus Gemara User Journey from a full authoring engine to a role-based tutoria
 
 **Language/Version**: Go 1.26.1
 **Primary Dependencies**: `charm.land/huh/v2` (TUI forms), `charm.land/lipgloss/v2` (terminal styling), `github.com/charmbracelet/glamour` (markdown rendering), `gopkg.in/yaml.v3` (YAML), React 19 + Vite 8 (web frontend)
-**Storage**: File-based caching (`~/.config/gemara-user-journey/`), YAML profiles (`~/.config/gemara-user-journey/roles/`), upstream tutorial clone (`~/.local/share/gemara-user-journey/gemara/`)
+**Storage**: File-based caching (`~/.config/journey/`), YAML profiles (`~/.config/journey/roles/`), upstream tutorial clone (`~/.local/share/journey/gemara/`)
 **Testing**: Go standard `testing` package with `-race` flag; `go test -race -count=1 ./...`
 **Target Platform**: Linux and macOS (Windows explicitly out of scope per constitution)
 **Project Type**: CLI tool (Go binary) + Web SPA (React/Vite) + OpenCode integration (AGENTS.md)
@@ -59,7 +59,7 @@ specs/002-tutorial-guide-focus/
 
 ```text
 # Existing structure — no new source directories needed
-cmd/gemara-user-journey/
+cmd/journey/
   main.go                  # Entry point (US1-US5 already wired)
 internal/
   cli/                     # Setup flows, role prompts, tutorial player, handoff rendering

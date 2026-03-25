@@ -121,7 +121,7 @@ export function MCPWalkthrough({ onBack }: MCPWalkthroughProps) {
 
         <p style={{ marginTop: '12px', fontSize: '14px' }}>
           Alternatively, run{' '}
-          <code>./gemara-user-journey</code> and select "Build from
+          <code>./journey</code> and select "Build from
           source" for automated installation with SHA-pinned
           commits.
         </p>
@@ -220,7 +220,7 @@ export function MCPWalkthrough({ onBack }: MCPWalkthroughProps) {
           Run the doctor command to verify everything is properly
           configured:
         </p>
-        <pre style={{ marginTop: '12px' }}>./gemara-user-journey --doctor</pre>
+        <pre style={{ marginTop: '12px' }}>./journey --doctor</pre>
         <p style={{ marginTop: '12px', fontSize: '14px' }}>
           This checks for all required tools, validates the
           opencode.json configuration, and confirms the server

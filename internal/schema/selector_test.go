@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/mcp"
-	"github.com/hbraswelrh/gemara-user-journey/internal/schema"
-	"github.com/hbraswelrh/gemara-user-journey/internal/session"
+	"github.com/hbraswelrh/journey/internal/mcp"
+	"github.com/hbraswelrh/journey/internal/schema"
+	"github.com/hbraswelrh/journey/internal/session"
 )
 
 // mockTransport implements mcp.Transport for selector tests.

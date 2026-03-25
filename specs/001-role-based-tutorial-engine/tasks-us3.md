@@ -309,7 +309,7 @@ supported.
 
 - [x] T251 [US3] Add profile directory and file constants to
   `internal/consts/consts.go`: profile directory path
-  (`~/.config/gemara-user-journey/roles/`), profile file extension
+  (`~/.config/journey/roles/`), profile file extension
   (`.yaml`)
 - [x] T252 [US3] Implement `internal/roles/profiles.go`:
   `RoleProfile` struct (role name, activity keywords, layer

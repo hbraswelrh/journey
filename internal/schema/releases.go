@@ -13,7 +13,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/consts"
 )
 
 // SchemaStatus represents whether a schema is Stable or

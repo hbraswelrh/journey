@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/consts"
 )
 
 // OpenCodeConfig represents the OpenCode configuration file

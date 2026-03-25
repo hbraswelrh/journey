@@ -70,7 +70,7 @@ After completing the tutorial walkthrough in Gemara User Journey's terminal, the
 
 1. **Given** a user has completed a tutorial walkthrough for a specific artifact type, **When** they indicate readiness to begin authoring, **Then** Gemara User Journey presents a handoff summary directing them to open an OpenCode session, listing the specific gemara-mcp prompt to use (e.g., `threat_assessment` for Threat Catalogs), the schema definition for validation (e.g., `#ThreatCatalog`), available MCP resources (lexicon, schema docs), and key decisions the user should have answers for based on the tutorial.
 2. **Given** a user is at the handoff point, **When** the gemara-mcp server is configured in `opencode.json`, **Then** Gemara User Journey confirms the configuration is present and instructs the user to launch `opencode` to begin authoring with full MCP tool and resource access.
-3. **Given** a user is at the handoff point, **When** the gemara-mcp server is not configured, **Then** Gemara User Journey instructs the user to run `./gemara-user-journey --doctor` to verify their environment, explains how to configure the MCP server in `opencode.json`, and provides the manual `cue vet` validation command as an alternative until the server is set up.
+3. **Given** a user is at the handoff point, **When** the gemara-mcp server is not configured, **Then** Gemara User Journey instructs the user to run `./journey --doctor` to verify their environment, explains how to configure the MCP server in `opencode.json`, and provides the manual `cue vet` validation command as an alternative until the server is set up.
 
 ---
 
@@ -185,6 +185,6 @@ The project's GitHub README.md is rewritten to serve as a concise, visually poli
 - **SC-006**: The version selection code remains functional in the codebase and can be re-enabled by a developer within 1 hour of effort, verified by the presence of bypass documentation and intact code.
 - **SC-007**: All terminal output uses consistent visual styling (card layouts, color-coded labels, clear spacing) and is readable by users who are not software developers, verified by review of output screenshots across all flows (activity identification, tutorial navigation, handoff summary).
 - **SC-008**: The post-tutorial handoff summary explicitly names OpenCode as the authoring environment and lists at least the relevant gemara-mcp prompt, available resources, and validation tool, verified by inspecting the rendered handoff output for each artifact type.
-- **SC-009**: The `--doctor` command continues to function correctly after all changes, verified by running `./gemara-user-journey --doctor` and confirming all environment checks pass.
+- **SC-009**: The `--doctor` command continues to function correctly after all changes, verified by running `./journey --doctor` and confirming all environment checks pass.
 - **SC-010**: A new user reading only the GitHub README can identify the project's purpose, install all dependencies using the provided links, and reach a first tutorial interaction within 10 minutes, verified by walkthrough testing.
 - **SC-011**: The README includes a visible web UI screenshot and renders correctly on GitHub with no broken images or links, verified by visual inspection of the rendered GitHub page.

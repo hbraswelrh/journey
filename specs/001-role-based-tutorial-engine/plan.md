@@ -117,7 +117,7 @@ internal/
     └── root.go              # Root command (existing or new)
 
 cmd/
-└── gemara-user-journey/
+└── journey/
     └── main.go              # Entry point (replaces or wraps
                              #   current main.go)
 
@@ -131,7 +131,7 @@ testdata/
 **Structure Decision**: Go standard project layout with
 `internal/` for private packages and `cmd/` for the binary
 entry point. The existing `main.go` at root will be migrated
-to `cmd/gemara-user-journey/main.go` per Go conventions. The `gemara-user-journey/`
+to `cmd/journey/main.go` per Go conventions. The `journey/`
 directory (existing) will be evaluated for reuse or migration
 into `internal/`.
 
@@ -140,7 +140,7 @@ into `internal/`.
 ### Phase 1: Setup (Shared Infrastructure)
 
 - Makefile with `build`, `test`, `lint`, `schema-check` targets
-- Project restructure: `cmd/gemara-user-journey/main.go`, `internal/`
+- Project restructure: `cmd/journey/main.go`, `internal/`
   packages
 - `internal/consts/consts.go` with centralized MCP constants
 - Pre-commit hook configuration (`.pre-commit-config.yaml`)

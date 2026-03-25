@@ -5,8 +5,8 @@ package session_test
 import (
 	"testing"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
-	"github.com/hbraswelrh/gemara-user-journey/internal/session"
+	"github.com/hbraswelrh/journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/session"
 )
 
 func TestNewSessionWithMCP_ArtifactMode(t *testing.T) {

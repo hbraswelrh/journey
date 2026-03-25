@@ -176,7 +176,7 @@ After authoring, validate the artifact:
 ### Run the doctor check
 
 ```bash
-./gemara-user-journey --doctor
+./journey --doctor
 ```
 
 Confirms environment setup including MCP server
@@ -204,7 +204,7 @@ version without user intervention.
 ### Verify doctor command unchanged
 
 ```bash
-./gemara-user-journey --doctor
+./journey --doctor
 ```
 
 Confirm all environment checks still pass and output is

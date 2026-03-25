@@ -34,7 +34,7 @@ handoff point, and artifact flow types
 
 - [x] T406 [US5] Add team configuration constants to
   `internal/consts/consts.go`: `TeamConfigDir`
-  (`gemara-user-journey/teams`), `TeamConfigExt` (`.yaml`), and
+  (`journey/teams`), `TeamConfigExt` (`.yaml`), and
   `LayerArtifacts` map (layer number to artifact type
   names)
 - [x] T407 [US5] Create `internal/team/team.go` with SPDX

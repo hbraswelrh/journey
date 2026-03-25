@@ -5,8 +5,8 @@ package team
 import (
 	"sort"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
-	"github.com/hbraswelrh/gemara-user-journey/internal/tutorials"
+	"github.com/hbraswelrh/journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/tutorials"
 )
 
 // HandoffPoint represents a boundary where one team member

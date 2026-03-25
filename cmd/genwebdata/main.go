@@ -14,8 +14,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
-	"github.com/hbraswelrh/gemara-user-journey/internal/roles"
+	"github.com/hbraswelrh/journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/roles"
 )
 
 // webRole is the JSON-serializable representation of a role.

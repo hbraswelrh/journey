@@ -84,7 +84,7 @@ from a prior build-from-source installation, Gemara User Journey checks for
 a newer release:
 
 1. Read the installed release metadata (tag and SHA) from a
-   local file (`~/.local/share/gemara-user-journey/installed-release.json`).
+   local file (`~/.local/share/journey/installed-release.json`).
 2. Fetch the latest release from the GitHub API (stable or
    prerelease, using the same fallback logic).
 3. Compare the installed SHA against the latest release SHA.

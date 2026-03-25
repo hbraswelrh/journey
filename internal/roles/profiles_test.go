@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/consts"
 )
 
 // T246: SaveProfile writes a valid YAML file.

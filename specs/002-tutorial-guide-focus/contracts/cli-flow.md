@@ -174,7 +174,7 @@ BuildHandoffSummary(
   summary notes "No artifact types are defined for this
   layer"
 - MCP not configured: `MCPConfigured` is false, summary
-  instructs user to run `./gemara-user-journey --doctor` and set up
+  instructs user to run `./journey --doctor` and set up
   the gemara-mcp server in `opencode.json`
 
 ### cli.RenderHandoffSummary

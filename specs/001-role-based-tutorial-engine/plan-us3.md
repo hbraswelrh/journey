@@ -30,7 +30,7 @@ MCP status), `internal/consts/` (centralized constants),
 `internal/cli/` (TUI styles, prompter interface),
 `internal/fallback/` (lexicon for term consistency)
 **Storage**: Local filesystem — role profiles stored as YAML in
-`~/.config/gemara-user-journey/roles/`; tutorial content read from
+`~/.config/journey/roles/`; tutorial content read from
 configurable directory (default: `~/github/openssf/gemara/
 gemara/docs/tutorials`)
 **Testing**: `go test ./...` via `make test`; TDD per

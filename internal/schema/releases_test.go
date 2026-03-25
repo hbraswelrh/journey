@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/schema"
+	"github.com/hbraswelrh/journey/internal/schema"
 )
 
 // mockHTTPClient implements schema.HTTPClient for testing.

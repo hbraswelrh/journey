@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/fallback"
+	"github.com/hbraswelrh/journey/internal/fallback"
 )
 
 func TestLoadBundledLexicon_ValidYAML(t *testing.T) {

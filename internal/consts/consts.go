@@ -10,7 +10,7 @@ package consts
 const GemaraRepoURL = "https://github.com/gemaraproj/gemara"
 
 // JourneyRepoURL is the Gemara User Journey tutorial engine repository.
-const JourneyRepoURL = "https://github.com/hbraswelrh/gemara-user-journey"
+const JourneyRepoURL = "https://github.com/hbraswelrh/journey"
 
 // PacmanDiscussionsURL is the GitHub Discussions URL for the
 // Gemara User Journey repository, where users share their Gemara journey.
@@ -46,7 +46,7 @@ const MCPPodmanImage = "ghcr.io/gemaraproj/gemara-mcp:latest"
 
 // MCPInstallDir is the subdirectory under ~/.local/share
 // where the MCP server is installed from source.
-const MCPInstallDir = "gemara-user-journey"
+const MCPInstallDir = "journey"
 
 // InstalledReleaseFile is the filename for the installed
 // release metadata, stored alongside the built binary.
@@ -110,7 +110,7 @@ const GemaraTutorialsSubdir = "docs/tutorials"
 
 // DefaultGemaraDir is the default local directory where
 // the Gemara repository is cloned for tutorial access.
-const DefaultGemaraDir = ".local/share/gemara-user-journey/gemara"
+const DefaultGemaraDir = ".local/share/journey/gemara"
 
 // DefaultTutorialsDir is the default path to the Gemara
 // tutorials directory, resolved at runtime from the home
@@ -194,7 +194,7 @@ var CoreStableSchemas = []string{
 // CacheDir is the subdirectory name under the user's config
 // directory where Gemara User Journey stores cached data (lexicon, schema
 // docs, version info).
-const CacheDir = "gemara-user-journey"
+const CacheDir = "journey"
 
 // ReleaseCacheFile is the filename for cached release data.
 const ReleaseCacheFile = "releases.json"
@@ -242,14 +242,14 @@ const (
 
 // RoleProfileDir is the subdirectory under the user's config
 // directory where custom role profiles are stored.
-const RoleProfileDir = "gemara-user-journey/roles"
+const RoleProfileDir = "journey/roles"
 
 // RoleProfileExt is the file extension for saved role profiles.
 const RoleProfileExt = ".yaml"
 
 // BlockCacheDir is the subdirectory under the user's config
 // directory where extracted content blocks are stored.
-const BlockCacheDir = "gemara-user-journey/blocks"
+const BlockCacheDir = "journey/blocks"
 
 // BlockManifestFile is the filename for the extraction
 // manifest used by drift detection.
@@ -266,7 +266,7 @@ const (
 
 // TeamConfigDir is the subdirectory under the user's config
 // directory where team configurations are stored.
-const TeamConfigDir = "gemara-user-journey/teams"
+const TeamConfigDir = "journey/teams"
 
 // TeamConfigExt is the file extension for saved team configs.
 const TeamConfigExt = ".yaml"

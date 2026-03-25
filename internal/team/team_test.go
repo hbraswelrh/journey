@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/team"
+	"github.com/hbraswelrh/journey/internal/team"
 )
 
 func TestNewTeamConfig(t *testing.T) {

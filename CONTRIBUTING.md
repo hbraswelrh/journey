@@ -140,7 +140,7 @@ context via the `AGENTS.md` file at the repository root.
 ## Project Structure
 
 ```
-cmd/gemara-user-journey/         Binary entry point
+cmd/journey/         Binary entry point
 internal/
   consts/           Centralized constants
   mcp/              MCP server detection, installation, client

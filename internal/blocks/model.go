@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/consts"
 )
 
 // BlockCategory classifies a content block by its function.

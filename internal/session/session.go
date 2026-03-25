@@ -8,7 +8,7 @@ package session
 import (
 	"sync"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/consts"
 )
 
 // MCPStatus represents the MCP server connection state for

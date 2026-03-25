@@ -5,7 +5,7 @@ package blocks
 import (
 	"testing"
 
-	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/journey/internal/consts"
 )
 
 // T322: RetrieveBlocks returns Layer 1 blocks for guidance

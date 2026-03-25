@@ -401,7 +401,7 @@ Or use the `validate_gemara_artifact` MCP tool.
 - Go 1.26.1, formatted with `goimports`
 - `gopkg.in/yaml.v3` (YAML parsing)
 - React 19 + Vite 8 (web frontend)
-- File-based caching (`~/.config/gemara-user-journey/`)
+- File-based caching (`~/.config/journey/`)
 
 ## Recent Changes
 - 002-tutorial-guide-focus: Removed TUI, web-only interface with React 19 + Vite 8
