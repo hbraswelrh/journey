@@ -226,6 +226,9 @@ func TestInstaller_InstallPodman(t *testing.T) {
 
 func TestDefaultReleaseFetcher_NotFound(t *testing.T) {
 	t.Parallel()
+	if testing.Short() {
+		t.Skip("skipping live API test in short mode")
+	}
 	ctx := context.Background()
 
 	// Call against a repo that truly does not exist.
@@ -255,6 +258,9 @@ func TestDefaultReleaseFetcher_NotFound(t *testing.T) {
 // the fetcher returns the prerelease.
 func TestDefaultReleaseFetcher_Prerelease(t *testing.T) {
 	t.Parallel()
+	if testing.Short() {
+		t.Skip("skipping live API test in short mode")
+	}
 	ctx := context.Background()
 
 	// The real gemara-mcp repo has v0.0.0 prerelease
