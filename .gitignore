@@ -1,0 +1,33 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+# (no CLI binary — web-only interface)
+
+# Test binary
+*.test
+
+# Output of go coverage
+*.out
+
+# Go workspace file
+go.work
+go.work.sum
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Web interface
+web/node_modules/
+web/dist/
+web/src/generated/
+
+# OS files
+.DS_Store
+Thumbs.db

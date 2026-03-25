@@ -1,0 +1,158 @@
+title: "CI/CD Pipeline Threats"
+metadata:
+  id: CPLYTM.CICD.THREATS
+  type: ThreatCatalog
+  gemara-version: v0.21.0
+  description: >-
+    Threat catalog for CPLYTM CI/CD pipeline covering source control,
+    dependency management, and artifact storage attack surfaces.
+    Imports capability mappings from FINOS CCC Core.
+  author:
+    id: cplytm-seceng
+    name: "Security Engineering Team"
+    type: Human
+  mapping-references:
+    - id: CCC
+      title: "FINOS Common Cloud Controls"
+      version: "2024.07"
+      description: "FINOS CCC Core capabilities and threats for cloud services"
+      url: "https://github.com/finos/common-cloud-controls"
+capabilities:
+  - id: CPLYTM.CICD.THREATS.CAP01
+    title: "Prevent Unauthorized Access"
+    description: >-
+      The ability to restrict access to source control, build systems,
+      and artifact registries to authorized entities only.
+  - id: CPLYTM.CICD.THREATS.CAP02
+    title: "Encrypt Data at Rest"
+    description: >-
+      The ability to encrypt secrets, credentials, and sensitive
+      configuration data stored in repositories or artifact registries.
+  - id: CPLYTM.CICD.THREATS.CAP03
+    title: "Encrypt Data in Transit"
+    description: >-
+      The ability to protect data in transit between pipeline
+      components using encryption.
+  - id: CPLYTM.CICD.THREATS.CAP04
+    title: "Log and Monitor Access"
+    description: >-
+      The ability to log and monitor access to source control,
+      build systems, and artifact registries.
+  - id: CPLYTM.CICD.THREATS.CAP05
+    title: "Validate Integrity of Data"
+    description: >-
+      The ability to verify the integrity of code commits, build
+      artifacts, and dependencies using cryptographic signatures
+      or checksums.
+  - id: CPLYTM.CICD.THREATS.CAP06
+    title: "Detect and Prevent Data Exfiltration"
+    description: >-
+      The ability to detect and prevent unauthorized exposure
+      of secrets and credentials in source control.
+  - id: CPLYTM.CICD.THREATS.CAP07
+    title: "Ensure Software Supply Chain Security"
+    description: >-
+      The ability to validate the provenance and integrity of
+      dependencies and build artifacts throughout the pipeline.
+  - id: CPLYTM.CICD.THREATS.CAP08
+    title: "Perform Vulnerability Management"
+    description: >-
+      The ability to identify, track, and remediate known
+      vulnerabilities in dependencies and base images.
+  - id: CPLYTM.CICD.THREATS.CAP09
+    title: "Enforce Access Control Policies"
+    description: >-
+      The ability to enforce branch protection rules, code review
+      requirements, and registry access policies.
+threats:
+  - id: CPLYTM.CICD.THREATS.T01
+    title: "Unauthorized Code Changes"
+    description: >-
+      An attacker bypasses branch protection rules or code review
+      requirements to inject malicious or unauthorized code into
+      protected branches.
+    capabilities:
+      - reference-id: CCC
+        entries:
+          - reference-id: CCC.C01
+          - reference-id: CCC.C09
+  - id: CPLYTM.CICD.THREATS.T02
+    title: "Credential Exposure in Repos"
+    description: >-
+      Secrets, API keys, tokens, or other credentials are committed
+      to source control repositories, exposing them to anyone with
+      read access to the repository.
+    capabilities:
+      - reference-id: CCC
+        entries:
+          - reference-id: CCC.C02
+          - reference-id: CCC.C06
+  - id: CPLYTM.CICD.THREATS.T03
+    title: "Compromised Developer Account"
+    description: >-
+      An attacker gains access to a developer's source control
+      account through credential theft, phishing, or session
+      hijacking, enabling them to push malicious code or modify
+      repository settings.
+    capabilities:
+      - reference-id: CCC
+        entries:
+          - reference-id: CCC.C01
+          - reference-id: CCC.C04
+  - id: CPLYTM.CICD.THREATS.T04
+    title: "Unsigned/Unverified Commits"
+    description: >-
+      Code changes enter the codebase without cryptographic signature
+      verification, allowing an attacker to impersonate a trusted
+      developer or inject code without attribution.
+    capabilities:
+      - reference-id: CCC
+        entries:
+          - reference-id: CCC.C05
+          - reference-id: CCC.C09
+  - id: CPLYTM.CICD.THREATS.T05
+    title: "Malicious Package Injection"
+    description: >-
+      An attacker publishes a typosquatted or compromised package
+      to a public registry, which is then pulled into the build
+      pipeline through dependency resolution.
+    capabilities:
+      - reference-id: CCC
+        entries:
+          - reference-id: CCC.C05
+          - reference-id: CCC.C07
+  - id: CPLYTM.CICD.THREATS.T06
+    title: "Transitive Dependency Risk"
+    description: >-
+      Vulnerabilities in indirect (transitive) dependencies go
+      undetected because scanning tools only assess direct
+      dependencies, or because the full dependency tree is not
+      analyzed.
+    capabilities:
+      - reference-id: CCC
+        entries:
+          - reference-id: CCC.C07
+          - reference-id: CCC.C08
+  - id: CPLYTM.CICD.THREATS.T07
+    title: "Artifact Tampering"
+    description: >-
+      Build artifacts are modified after creation but before
+      deployment, either in transit or in storage, resulting in
+      deployment of compromised software.
+    capabilities:
+      - reference-id: CCC
+        entries:
+          - reference-id: CCC.C05
+          - reference-id: CCC.C03
+  - id: CPLYTM.CICD.THREATS.T08
+    title: "Missing Artifact Provenance"
+    description: >-
+      No verifiable chain of custody exists from source code to
+      deployed artifact, making it impossible to confirm that a
+      deployed artifact was built from the expected source at the
+      expected time.
+    capabilities:
+      - reference-id: CCC
+        entries:
+          - reference-id: CCC.C05
+          - reference-id: CCC.C07

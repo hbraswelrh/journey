@@ -1,0 +1,441 @@
+# Tasks: Role-Based Tutorial Engine — US1 (P1)
+
+**Input**: Design documents from
+`/specs/001-role-based-tutorial-engine/`
+**Prerequisites**: plan.md (required), spec.md (required)
+
+## Format: `[ID] [P?] [Story] Description`
+
+- **[P]**: Can run in parallel (different files, no
+  dependencies)
+- **[Story]**: US1 for all tasks in this file
+- Exact file paths included in descriptions
+
+---
+
+## Phase 1: Setup (Shared Infrastructure)
+
+**Purpose**: Project structure, build tooling, and OpenCode
+configuration
+
+- [x] T001 [US1] Restructure project: move entry point to
+  `cmd/journey/main.go`, create `internal/` package directories
+  (`consts/`, `mcp/`, `fallback/`, `session/`, `cli/`)
+- [x] T002 [US1] Create `Makefile` with targets: `build`, `test`,
+  `lint`, `fmt`, `schema-check`, `clean`
+- [x] T003 [P] [US1] Create `internal/consts/consts.go` with
+  centralized constants: MCP server URLs, tool names
+  (`get_lexicon`, `validate_gemara_artifact`, `get_schema_docs`),
+  default schema version, default tutorials directory path,
+  Gemara repository URL
+- [x] T004 [P] [US1] Create `.golangci.yml` with lint rules per
+  constitution coding standards
+- [x] T005 [P] [US1] Create `.pre-commit-config.yaml` with hooks
+  for `gofmt`, `goimports`, Gitleaks, DCO sign-off verification
+- [x] T006 [P] [US1] Add SPDX license headers
+  (`// SPDX-License-Identifier: Apache-2.0`) to all existing
+  and new source files
+- [x] T007 [P] [US1] Create OpenCode project configuration:
+  `AGENTS.md` at repo root encoding project context, and
+  `.opencode/rules/` with constitution-derived rules
+
+**Checkpoint**: `make build` and `make lint` pass with zero
+errors. Project structure matches plan.
+
+---
+
+## Phase 2: MCP Detection and Client (FR-028, FR-030)
+
+**Purpose**: Detect and connect to an existing Gemara MCP server
+
+### Tests for Phase 2
+
+> **Write these tests FIRST, ensure they FAIL before
+> implementation**
+
+- [x] T008 [P] [US1] Write test
+  `internal/mcp/detect_test.go`: MCP binary found in PATH
+  returns `(detected, method=binary)`
+- [x] T009 [P] [US1] Write test
+  `internal/mcp/detect_test.go`: Podman container
+  `gemara-mcp` running returns `(detected, method=podman)`
+- [x] T010 [P] [US1] Write test
+  `internal/mcp/detect_test.go`: Neither binary nor Podman
+  found returns `(not detected)`
+- [x] T011 [P] [US1] Write test
+  `internal/mcp/client_test.go`: Health check succeeds when
+  server is responsive
+- [x] T012 [P] [US1] Write test
+  `internal/mcp/client_test.go`: Health check fails with
+  timeout when server is unresponsive
+- [x] T013 [P] [US1] Write test
+  `internal/mcp/client_test.go`: Mid-session disconnection
+  is detected and reported without panic
+
+### Implementation for Phase 2
+
+- [x] T014 [US1] Implement `internal/mcp/detect.go`:
+  `Detect() (DetectionResult, error)` — check PATH for
+  `gemara-mcp` binary, check Podman for running container,
+  return detection result with installation method
+- [x] T015 [US1] Implement `internal/mcp/client.go`:
+  `NewClient(config) (*Client, error)` — MCP client with
+  `Connect()`, `HealthCheck()`, `GetLexicon()`,
+  `ValidateArtifact()`, `GetSchemaDocs()`, `Close()` methods.
+  Must handle connection lifecycle and detect mid-session
+  disconnection
+
+**Checkpoint**: `make test` passes for `internal/mcp/`. MCP
+detection correctly identifies binary, Podman, and not-found
+states.
+
+---
+
+## Phase 3: MCP Automated Installation (FR-026, FR-027)
+
+**Purpose**: Automate gemara-mcp installation (clone, build,
+configure) when not detected
+
+### Tests for Phase 3
+
+- [x] T016 [P] [US1] Write test
+  `internal/mcp/install_test.go`: Resolve latest release
+  and retrieve SHA256 commit digest from upstream
+  gemara-mcp repository
+- [x] T017 [P] [US1] Write test
+  `internal/mcp/install_test.go`: Clone via SSH succeeds
+  and checks out correct commit by SHA256 digest
+- [x] T018 [P] [US1] Write test
+  `internal/mcp/install_test.go`: Clone via HTTPS succeeds
+  and checks out correct commit by SHA256 digest
+- [x] T019 [P] [US1] Write test
+  `internal/mcp/install_test.go`: `make build` produces
+  expected binary in cloned directory
+- [x] T020 [P] [US1] Write test
+  `internal/mcp/install_test.go`: Podman installation
+  generates correct Podman run configuration
+- [x] T021 [P] [US1] Write test
+  `internal/mcp/install_test.go`: Post-installation
+  verification confirms server responds to health check
+- [x] T022 [P] [US1] Write test
+  `internal/mcp/config_test.go`: Writing new `opencode.json`
+  creates valid config with gemara-mcp local server entry
+  and correct binary path in command array
+- [x] T023 [P] [US1] Write test
+  `internal/mcp/config_test.go`: Updating existing
+  `opencode.json` preserves other MCP entries and adds
+  gemara-mcp entry
+- [x] T024 [P] [US1] Write test
+  `internal/cli/setup_test.go`: First-launch prompt
+  explains three MCP tools and offers installation
+- [x] T025 [P] [US1] Write test
+  `internal/cli/setup_test.go`: User declines installation;
+  system informs of degraded capabilities and continues
+- [x] T026 [P] [US1] Write test
+  `internal/cli/setup_test.go`: Previously declined user
+  is re-offered installation when requesting enhanced
+  capability
+
+### Implementation for Phase 3
+
+- [x] T027 [US1] Implement `internal/mcp/install.go`:
+  `ResolveLatestRelease() (ReleaseInfo, error)` — query
+  upstream gemara-mcp repository for latest release and
+  retrieve the SHA256 commit digest.
+  `CloneAndBuild(cloneMethod, digest, destDir) (string,
+  error)` — clone repo via SSH or HTTPS, check out the
+  pinned commit by SHA256 digest (not mutable tag), run
+  `make build`, return path to built binary.
+  `InstallPodman() error` — Podman alternative.
+- [x] T028 [US1] Implement `internal/mcp/config.go`:
+  `ReadOpenCodeConfig(path) (*OpenCodeConfig, error)` and
+  `WriteOpenCodeConfig(path, config) error` — read/write
+  `opencode.json`. `EnsureMCPEntry(config, binaryPath)
+  *OpenCodeConfig` — add or update the gemara-mcp local
+  MCP server entry with the built binary path in the
+  command array (e.g., `["path/to/gemara-mcp"]`)
+- [x] T029 [US1] Implement `internal/cli/setup.go`:
+  `RunSetup(session) error` — first-launch setup flow:
+  verify required tools (CUE, Gitleaks) are installed
+  with Homebrew as the preferred installation method
+  (FR-035), explain MCP tools, offer automated source
+  build (SSH/HTTPS) or Podman or decline for gemara-mcp,
+  execute chosen installation method, configure
+  `opencode.json`, record user choices in session state
+
+**Checkpoint**: Full automated installation flow testable
+end-to-end. User can accept source build (SSH or HTTPS) or
+Podman or decline, with `opencode.json` correctly configured.
+
+---
+
+## Phase 4: Local Fallback (FR-029)
+
+**Purpose**: Ensure Gemara User Journey functions when MCP server is
+unavailable
+
+### Tests for Phase 4
+
+- [x] T030 [P] [US1] Write test
+  `internal/fallback/lexicon_test.go`: Bundled lexicon loads
+  successfully and contains expected terms
+- [x] T031 [P] [US1] Write test
+  `internal/fallback/lexicon_test.go`: Bundled lexicon data
+  is valid YAML conforming to expected structure
+- [x] T032 [P] [US1] Write test
+  `internal/fallback/validator_test.go`: Local `cue vet`
+  validates a known-good artifact successfully
+- [x] T033 [P] [US1] Write test
+  `internal/fallback/validator_test.go`: Local `cue vet`
+  rejects a known-bad artifact with actionable error
+- [x] T034 [P] [US1] Write test
+  `internal/fallback/schemadocs_test.go`: Cached schema docs
+  load successfully when present
+- [x] T035 [P] [US1] Write test
+  `internal/fallback/schemadocs_test.go`: Missing cache
+  returns informative error, not panic
+
+### Implementation for Phase 4
+
+- [x] T036 [P] [US1] Implement `internal/fallback/lexicon.go`:
+  `LoadBundledLexicon() (*Lexicon, error)` — load embedded
+  lexicon YAML, return structured lexicon data
+- [x] T037 [P] [US1] Implement
+  `internal/fallback/validator.go`:
+  `ValidateLocal(artifact, schemaType, schemaVersion) error`
+  — wrap `cue vet -c -d '#<SchemaType>'` invocation
+- [x] T038 [P] [US1] Implement
+  `internal/fallback/schemadocs.go`:
+  `LoadCachedDocs(version) (*SchemaDocs, error)` — load
+  cached schema documentation from local filesystem
+- [x] T039 [US1] Create test fixtures in `testdata/`:
+  `lexicon_valid.yaml`, `lexicon_invalid.yaml`,
+  `artifact_valid.yaml`, `artifact_invalid.yaml`
+
+**Checkpoint**: All fallback paths functional. System operates
+without MCP server using local data and tooling.
+
+---
+
+## Phase 5: Version Compatibility (FR-031, FR-032)
+
+**Purpose**: Detect and warn about gemara-mcp / schema version
+mismatches
+
+### Tests for Phase 5
+
+- [x] T040 [P] [US1] Write test
+  `internal/mcp/version_test.go`: gemara-mcp version matches
+  selected schema version — no warning
+- [x] T041 [P] [US1] Write test
+  `internal/mcp/version_test.go`: gemara-mcp built against
+  older schema than user selected — warning with
+  recommendations
+- [x] T042 [P] [US1] Write test
+  `internal/mcp/version_test.go`: gemara-mcp does not expose
+  version metadata — warning that compatibility cannot be
+  verified
+
+### Implementation for Phase 5
+
+- [x] T043 [US1] Implement `internal/mcp/version.go`:
+  `CheckCompatibility(client, selectedVersion)
+  (*CompatResult, error)` — query MCP server for version
+  info, compare against selected schema version, return
+  compatibility status with actionable recommendations
+
+**Checkpoint**: Version compatibility checks produce correct
+warnings for all three scenarios (match, mismatch, unknown).
+
+---
+
+## Phase 6: Session Management
+
+**Purpose**: Unified session state tracking MCP status and
+fallback transitions
+
+### Tests for Phase 6
+
+- [x] T044 [P] [US1] Write test
+  `internal/session/session_test.go`: Session initializes
+  with MCP connected — all three tools marked available
+- [x] T045 [P] [US1] Write test
+  `internal/session/session_test.go`: Session initializes
+  without MCP — fallback mode active, degraded capabilities
+  listed
+- [x] T046 [P] [US1] Write test
+  `internal/session/session_test.go`: Mid-session MCP
+  disconnection transitions to fallback without data loss
+- [x] T047 [P] [US1] Write test
+  `internal/session/session_test.go`: MCP reconnection
+  after fallback restores full capabilities
+
+### Implementation for Phase 6
+
+- [x] T048 [US1] Implement `internal/session/session.go`:
+  `Session` struct with `MCPStatus`, `SchemaVersion`,
+  `FallbackMode`, `AvailableTools` fields.
+  `NewSession(mcpClient, fallbacks) *Session` constructor.
+  `HandleDisconnection()` and `HandleReconnection()` methods
+  for mid-session transitions
+
+**Checkpoint**: Session correctly tracks MCP state across
+all lifecycle transitions (connected, disconnected,
+reconnected, never connected).
+
+---
+
+## Phase 7: Integration and Polish
+
+**Purpose**: End-to-end validation and user-facing quality
+
+- [x] T049 [US1] Integration test: launch Gemara User Journey with MCP
+  server available — verify detection, connection, all three
+  tools respond, session shows connected status
+- [x] T050 [US1] Integration test: launch Gemara User Journey without MCP
+  server — verify detection returns not-found, setup prompt
+  appears, automated install completes, `opencode.json`
+  configured, declining proceeds with fallback mode
+- [x] T051 [US1] Integration test: MCP server disconnects
+  mid-session — verify fallback activates, user notified,
+  in-progress work preserved
+- [x] T052 [US1] Verify all CLI help text and error messages
+  use Gemara lexicon terms consistently (FR-011)
+- [x] T053 [US1] Verify `make build`, `make test`, `make lint`
+  pass with zero errors and zero warnings
+- [x] T054 [US1] Update `README.md` to reference OpenCode as
+  preferred harness and document MCP server setup
+
+**Checkpoint**: US1 is fully functional and independently
+testable. A user can launch Gemara User Journey, be guided through MCP
+setup (or decline), and proceed with appropriate capabilities.
+
+---
+
+## Phase 8 — MCP Protocol Alignment (spec delta)
+
+These tasks were added after the spec was updated to align
+with the actual gemara-mcp server architecture (advisory and
+artifact modes, MCP tools vs resources vs prompts).
+
+### Mode Selection Prompt (AS7, FR-036)
+
+- [x] T055 [US1] Write failing test
+  `internal/cli/setup_test.go`: after source build completes,
+  user is prompted to select server mode (advisory or
+  artifact); default is artifact
+- [x] T056 [US1] Write failing test
+  `internal/cli/setup_test.go`: user selects advisory mode;
+  session records advisory mode; user is informed prompts are
+  unavailable
+- [x] T057 [P] [US1] Implement mode selection prompt in
+  `internal/cli/setup.go`: after successful installation
+  (source or Podman), prompt user to select advisory or
+  artifact mode before writing `opencode.json`
+- [x] T058 [US1] Write failing test
+  `internal/cli/setup_test.go`: Podman install also prompts
+  for mode selection
+
+### MCP Panel Terminology (FR-037)
+
+- [x] T059 [US1] Verify `RenderMCPToolsPanel()` in
+  `internal/cli/styles.go` uses correct MCP protocol
+  terminology — tool, resource, prompt categories with
+  proper names
+- [x] T060 [US1] Write test
+  `internal/cli/setup_test.go`: setup explanation panel
+  contains `validate_gemara_artifact` (tool),
+  `gemara://lexicon` (resource),
+  `gemara://schema/definitions` (resource),
+  `threat_assessment` (prompt), `control_catalog` (prompt)
+
+### Partial MCP Availability (edge case)
+
+- [x] T061 [US1] Write failing test
+  `internal/session/session_test.go`: resource read fails but
+  tool call succeeds; session shows partial capabilities
+  (validate available, lexicon degraded)
+- [x] T062 [US1] Implement `HandlePartialFailure` method in
+  `internal/session/session.go`: update individual capability
+  flags without full disconnection
+
+### Advisory Mode Wizard Redirect (edge case)
+
+- [x] T063 [US1] Write failing test
+  `internal/cli/wizard_prompt_test.go`: user in advisory mode
+  attempts wizard; system offers to reconfigure to artifact
+  mode (update `opencode.json` and restart)
+- [x] T064 [US1] Implement mode reconfiguration offer in
+  `RunWizardLauncher` — offer to update `--mode` flag in
+  `opencode.json` when user is in advisory mode
+
+### Deprecated Constant Cleanup
+
+- [x] T065 [US1] Remove deprecated `ToolGetLexicon` and
+  `ToolGetSchemaDocs` from `internal/consts/consts.go`; update
+  all remaining references in `internal/cli/styles.go` and
+  `internal/cli/setup_test.go` to use `ResourceLexicon` and
+  `ResourceSchemaDefinitions`
+
+**Checkpoint**: US1 fully aligned with updated spec including
+mode selection, MCP protocol categories, partial failure
+handling, and advisory mode wizard redirect.
+
+---
+
+## Dependencies & Execution Order
+
+### Phase Dependencies
+
+- **Phase 1 (Setup)**: No dependencies — start immediately
+- **Phase 2 (Detection & Client)**: Depends on Phase 1
+  (project structure and constants)
+- **Phase 3 (Installation)**: Depends on Phase 2 (needs MCP
+  client for post-install verification)
+- **Phase 4 (Fallback)**: Depends on Phase 1; can run in
+  **parallel** with Phase 3
+- **Phase 5 (Version Compat)**: Depends on Phase 2 (MCP
+  client)
+- **Phase 6 (Session)**: Depends on Phases 2, 4, and 5 (needs
+  MCP client, fallback services, and version checks)
+- **Phase 7 (Integration)**: Depends on all preceding phases
+
+### Parallel Opportunities
+
+```text
+Phase 1 (Setup)
+    │
+    ▼
+Phase 2 (Detection & Client)
+    │
+    ├────────────────────┐
+    ▼                    ▼
+Phase 3 (Install)    Phase 4 (Fallback)  ← parallel
+    │                    │
+    ├────────┬───────────┘
+    ▼        │
+Phase 5      │
+    │        │
+    └────────┘
+         │
+         ▼
+    Phase 6 (Session)
+         │
+         ▼
+    Phase 7 (Integration)
+```
+
+Within each phase, all tasks marked `[P]` can run in parallel.
+All test tasks within a phase can run in parallel.
+
+---
+
+## Notes
+
+- All test tasks follow TDD: write test, confirm it fails,
+  then implement.
+- Each task produces files with SPDX headers and passes
+  `make lint`.
+- Commit after each task or logical group per Conventional
+  Commits format.
+- US1 is independently deliverable — no dependency on US2-US6.
