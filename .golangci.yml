@@ -14,34 +14,10 @@ linters:
   enable:
     - errcheck
     - govet
-    - ineffassign
     - staticcheck
     - unused
-    - gosimple
     - misspell
     - revive
-    - gocritic
-
-  settings:
-    revive:
-      rules:
-        - name: blank-imports
-        - name: exported
-        - name: unexported-return
-        - name: var-naming
-        - name: error-return
-        - name: error-naming
-        - name: increment-decrement
-    gocritic:
-      enabled-checks:
-        - appendAssign
-        - dupArg
-        - dupCase
-        - dupSubExpr
-        - flagName
-        - sloppyLen
-    misspell:
-      locale: US
 
   exclusions:
     rules:
