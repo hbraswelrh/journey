@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  build-and-test:
+  test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -25,8 +25,8 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      - name: Build
-        run: make build
+      - name: Build Go packages
+        run: go build ./...
 
       - name: Test
         run: make test
