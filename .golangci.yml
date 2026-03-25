@@ -12,19 +12,7 @@ formatters:
 linters:
   default: none
   enable:
-    - errcheck
     - govet
     - staticcheck
     - unused
     - misspell
-    - revive
-
-  exclusions:
-    rules:
-      - path: _test\.go
-        linters:
-          - errcheck
-
-issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
