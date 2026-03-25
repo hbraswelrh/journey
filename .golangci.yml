@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
+version: "2"
+
 run:
   timeout: 5m
-  modules-download-mode: readonly
 
 linters:
   enable:
@@ -17,9 +18,10 @@ linters:
     - revive
     - gocritic
 
-linters-settings:
+settings:
   goimports:
-    local-prefixes: github.com/hbraswelrh/pacman
+    local-prefixes:
+      - github.com/hbraswelrh/gemara-user-journey
   revive:
     rules:
       - name: blank-imports
