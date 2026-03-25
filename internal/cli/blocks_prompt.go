@@ -8,9 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/hbraswelrh/pacman/internal/blocks"
-	"github.com/hbraswelrh/pacman/internal/consts"
-	"github.com/hbraswelrh/pacman/internal/tutorials"
+	"github.com/hbraswelrh/gemara-user-journey/internal/blocks"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/tutorials"
 )
 
 // BlocksConfig holds dependencies for block operations.
@@ -22,7 +22,7 @@ type BlocksConfig struct {
 	// version.
 	SchemaVersion string
 	// CacheDir is the directory for block cache storage.
-	// Defaults to ~/.config/pacman/blocks/.
+	// Defaults to ~/.config/gemara-user-journey/blocks/.
 	CacheDir string
 }
 

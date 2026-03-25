@@ -54,8 +54,8 @@
   onboarding interface, OpenCode-specific project configuration
   for role-based flows.
 - US1 narrative updated to reference OpenCode as the interface
-  through which users launch Pac-Man.
-- New assumption added: users interact with Pac-Man through
+  through which users launch Gemara User Journey.
+- New assumption added: users interact with Gemara User Journey through
   OpenCode, with CLI fallback for users who choose not to use
   it.
 - Constitution updated to v1.3.0 with OpenCode in Technology &

@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
-	"github.com/hbraswelrh/pacman/internal/mcp"
-	"github.com/hbraswelrh/pacman/internal/schema"
-	"github.com/hbraswelrh/pacman/internal/session"
-	"github.com/hbraswelrh/pacman/internal/tutorials"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/mcp"
+	"github.com/hbraswelrh/gemara-user-journey/internal/schema"
+	"github.com/hbraswelrh/gemara-user-journey/internal/session"
+	"github.com/hbraswelrh/gemara-user-journey/internal/tutorials"
 )
 
 // UserPrompter abstracts user input for testing.
@@ -409,7 +409,7 @@ func handleSourceBuild(
 	if err != nil {
 		return nil, fmt.Errorf("get home dir: %w", err)
 	}
-	destDir := homeDir + "/.local/share/pacman"
+	destDir := homeDir + "/.local/share/gemara-user-journey"
 
 	binaryPath, err := cfg.Installer.CloneAndBuild(
 		ctx, method, release, destDir,
@@ -614,7 +614,7 @@ func renderUpdateGuidance(out io.Writer, binaryPath string) {
 	fmt.Fprintln(out, codeBlockStyle.Render(updateCmds))
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, faintStyle.Render(
-		"Run ./pacman --doctor to verify your "+
+		"Run ./gemara-user-journey --doctor to verify your "+
 			"environment after rebuilding.",
 	))
 }

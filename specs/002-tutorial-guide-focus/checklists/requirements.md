@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Refocus Pac-Man as Tutorial Guide
+# Specification Quality Checklist: Refocus Gemara User Journey as Tutorial Guide
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-03-17
@@ -33,7 +33,7 @@
 
 - All items passed on first validation pass.
 - Ambiguities in the original feature description (e.g., what "latest release" means, whether MCP server version or schema version is affected) were resolved with informed assumptions documented in the Assumptions section of the spec.
-- The spec explicitly scopes Pac-Man away from MCP server authoring capabilities (FR-010) and preserves version switching code for future re-enablement (FR-014).
+- The spec explicitly scopes Gemara User Journey away from MCP server authoring capabilities (FR-010) and preserves version switching code for future re-enablement (FR-014).
 - Updated 2026-03-17 with three clarifications from user feedback:
   - FR-017: `--doctor` command remains fully functional and unchanged.
   - FR-018: Terminal output must be user-friendly and sleek for all audiences.

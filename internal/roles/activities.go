@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
 )
 
 // LayerKeywords maps domain keywords to Gemara layers per

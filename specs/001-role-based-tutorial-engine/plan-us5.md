@@ -12,7 +12,7 @@ US5 implements the cross-functional collaboration view that
 maps team members' roles to Gemara layers, identifies handoff
 points between roles, shows which artifacts flow across layer
 boundaries, and detects coverage gaps where no team member
-owns a layer. This transforms Pac-Man from an individual
+owns a layer. This transforms Gemara User Journey from an individual
 learning tool into a team coordination tool.
 
 The collaboration view is built from existing `Role` and
@@ -37,7 +37,7 @@ PredefinedRoles, ActivityProfile, custom profiles),
 `internal/cli/` (TUI styles, prompter interfaces),
 `internal/session/` (session state)
 **Storage**: Local filesystem — team configurations stored as
-YAML in `~/.config/pacman/teams/`
+YAML in `~/.config/gemara-user-journey/teams/`
 **Testing**: `go test ./...` via `make test`; TDD per
 constitution
 **Constraints**: Team view is a read-only visualization; it
@@ -155,7 +155,7 @@ internal/
 ### Phase 3: Team Configuration Persistence
 
 - Implement team configuration save/load as YAML files in
-  `~/.config/pacman/teams/`.
+  `~/.config/gemara-user-journey/teams/`.
 - `SaveTeam(dir string, team *TeamConfig) error` — write
   YAML file named after team name.
 - `LoadTeam(path string) (*TeamConfig, error)` — read and

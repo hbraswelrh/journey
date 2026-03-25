@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
-	"github.com/hbraswelrh/pacman/internal/mcp"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/mcp"
 )
 
 // CheckStatus represents the result of a single doctor check.
@@ -78,7 +78,7 @@ func RunDoctor(
 ) bool {
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, headingStyle.Render(
-		"🩺 Pac-Man Doctor",
+		"🩺 Gemara User Journey Doctor",
 	))
 	fmt.Fprintln(out, subtleStyle.Render(
 		"Checking your environment...",
@@ -149,7 +149,7 @@ func RunDoctor(
 		fmt.Fprintln(out)
 		fmt.Fprintln(out, subtleStyle.Render(
 			"Fix the issues above and run "+
-				"./pacman --doctor again.",
+				"./gemara-user-journey --doctor again.",
 		))
 	}
 	fmt.Fprintln(out)
@@ -254,7 +254,7 @@ func checkGemaraMCP(
 				"  cd gemara-mcp\n" +
 				"  git checkout main\n" +
 				"  make build\n" +
-				"  (or install via Pac-Man's " +
+				"  (or install via Gemara User Journey's " +
 				"setup flow)",
 		}
 	}
@@ -471,7 +471,7 @@ func checkTutorials(tutorialsDir string) CheckResult {
 			Name:    "📚 Tutorials",
 			Status:  CheckWarn,
 			Message: "not found at " + tutorialsDir,
-			Fix: "Pac-Man will clone the Gemara " +
+			Fix: "Gemara User Journey will clone the Gemara " +
 				"repository automatically on " +
 				"first tutorial launch, or clone " +
 				"manually:\n" +

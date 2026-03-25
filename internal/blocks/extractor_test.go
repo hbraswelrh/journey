@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hbraswelrh/pacman/internal/tutorials"
+	"github.com/hbraswelrh/gemara-user-journey/internal/tutorials"
 )
 
 func loadTestTuts(t *testing.T) []tutorials.Tutorial {

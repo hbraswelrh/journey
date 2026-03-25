@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hbraswelrh/pacman/internal/mcp"
+	"github.com/hbraswelrh/gemara-user-journey/internal/mcp"
 )
 
 // mockTransport implements mcp.Transport for testing.

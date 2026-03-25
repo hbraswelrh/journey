@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hbraswelrh/pacman/internal/cli"
-	"github.com/hbraswelrh/pacman/internal/consts"
-	"github.com/hbraswelrh/pacman/internal/team"
-	"github.com/hbraswelrh/pacman/internal/tutorials"
+	"github.com/hbraswelrh/gemara-user-journey/internal/cli"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/team"
+	"github.com/hbraswelrh/gemara-user-journey/internal/tutorials"
 )
 
 // teamMockPrompter implements FreeTextPrompter for team

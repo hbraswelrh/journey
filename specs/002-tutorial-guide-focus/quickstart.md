@@ -1,29 +1,32 @@
-# Quickstart: Refocus Pac-Man as Tutorial Guide
+# Quickstart: Refocus Gemara User Journey as Tutorial Guide
 
 **Branch**: `002-tutorial-guide-focus`
-**Date**: 2026-03-17
+**Date**: 2026-03-25
 
 ## Overview
 
-This guide walks through the new Pac-Man user experience
+This guide walks through the new Gemara User Journey user experience
 after implementing the tutorial guide refocus. The primary
-change is that Pac-Man no longer asks users to select a
+change is that Gemara User Journey no longer asks users to select a
 schema version or author artifacts directly. Instead, it
 guides users from role identification through tutorial
-walkthrough to a clear handoff to the MCP server.
+walkthrough to a clear handoff to the MCP server. The
+README is rewritten as a concise landing page with
+dependency links, a web UI screenshot, and user journey
+narrative.
 
 ## Prerequisites
 
 - Go 1.26.1 installed
 - OpenCode installed (`brew install anomalyco/tap/opencode`)
 - CUE installed (`brew install cue-lang/tap/cue`)
-- Pac-Man built (`make build`)
+- Gemara User Journey built (`make build`)
 - Gemara MCP server built and configured (optional but
   recommended)
 
 ## The New Flow
 
-### Step 1: Launch Pac-Man
+### Step 1: Launch Gemara User Journey
 
 ```bash
 opencode
@@ -36,7 +39,7 @@ Tell OpenCode your role:
 
 ### Step 2: Automatic Version Selection
 
-Pac-Man automatically resolves the latest Gemara release.
+Gemara User Journey automatically resolves the latest Gemara release.
 No prompt is displayed. You will see:
 
 ```text
@@ -52,7 +55,7 @@ i Note: The following schemas are experimental:
 
 ### Step 3: Activity Identification
 
-Pac-Man identifies your relevant Gemara layers:
+Gemara User Journey identifies your relevant Gemara layers:
 
 ```text
 Your Gemara Layers:
@@ -91,7 +94,7 @@ Sections matching your activity keywords ("CI/CD",
 
 ### Step 5: Handoff to OpenCode
 
-After completing a tutorial, Pac-Man presents the handoff
+After completing a tutorial, Gemara User Journey presents the handoff
 summary directing you to OpenCode:
 
 ```text
@@ -159,17 +162,21 @@ After authoring, validate the artifact:
 | Before | After |
 |--------|-------|
 | User prompted to choose Stable or Latest version | Latest version auto-selected |
-| User could author artifacts directly in Pac-Man | Pac-Man directs to OpenCode + gemara-mcp |
+| User could author artifacts directly in Gemara User Journey | Gemara User Journey directs to OpenCode + gemara-mcp |
 | No post-tutorial summary | Handoff summary with MCP tools/resources list |
 | Version switching available mid-session | Version switching deferred (planned future) |
-| Authoring engine and wizards replicated in Pac-Man | Clear boundary: Pac-Man = learn, OpenCode = author |
+| Authoring engine and wizards replicated in Gemara User Journey | Clear boundary: Gemara User Journey = learn, OpenCode = author |
+| README was 501 lines with inline details | README is a concise landing page (~120-150 lines) |
+| All documentation in README | Detailed docs moved to `docs/` with links |
+| No web UI screenshot in README | Screenshot of Results view in README |
+| Dependencies listed with inline install commands | Dependencies hyperlinked to official pages |
 
 ## Verifying the Changes
 
 ### Run the doctor check
 
 ```bash
-./pacman --doctor
+./gemara-user-journey --doctor
 ```
 
 Confirms environment setup including MCP server
@@ -181,7 +188,7 @@ availability.
 make test
 ```
 
-All tests pass including new tests for:
+All tests pass including tests for:
 - `AutoSelectLatest` in `internal/schema/`
 - `ArtifactRecommendations` in `internal/roles/`
 - `BuildHandoffSummary` and `RenderHandoffSummary` in
@@ -197,7 +204,7 @@ version without user intervention.
 ### Verify doctor command unchanged
 
 ```bash
-./pacman --doctor
+./gemara-user-journey --doctor
 ```
 
 Confirm all environment checks still pass and output is
@@ -210,3 +217,24 @@ appears with the correct artifact type, MCP prompt,
 available MCP tools/resources, and preparation checklist.
 Verify it directs the user to OpenCode with the
 gemara-mcp server.
+
+### Verify README (US6)
+
+1. Check `README.md` renders correctly on GitHub
+2. Verify web UI screenshot displays (`docs/images/web-ui-preview.png`)
+3. Verify all dependency names are hyperlinked to official
+   installation pages
+4. Verify "Learn More" links resolve to existing `docs/` files
+5. Verify no broken images or links
+6. Confirm README is ~120-150 lines (landing page length)
+
+### Verify docs/ files (US6)
+
+1. Confirm `docs/layer-reference.md` contains the 7-layer
+   table
+2. Confirm `docs/project-structure.md` contains the
+   directory tree
+3. Confirm `docs/mcp-update-guide.md` contains sync
+   instructions for both clone and fork workflows
+4. Confirm each file is self-contained and readable
+   without the README

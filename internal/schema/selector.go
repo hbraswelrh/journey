@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/hbraswelrh/pacman/internal/mcp"
-	"github.com/hbraswelrh/pacman/internal/session"
+	"github.com/hbraswelrh/gemara-user-journey/internal/mcp"
+	"github.com/hbraswelrh/gemara-user-journey/internal/session"
 )
 
 // SelectionType represents the user's version selection.

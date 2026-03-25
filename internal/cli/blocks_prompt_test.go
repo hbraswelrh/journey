@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
 )
 
 // T330a: RunBlockExtraction with testdata produces blocks.

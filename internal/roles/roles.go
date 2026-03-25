@@ -2,13 +2,13 @@
 
 // Package roles implements role identification, activity
 // probing, keyword extraction, and layer mapping for the
-// Pac-Man role-based tutorial engine.
+// Gemara User Journey role-based tutorial engine.
 package roles
 
 import (
 	"strings"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
 )
 
 // RoleSource indicates whether a role is predefined or custom.

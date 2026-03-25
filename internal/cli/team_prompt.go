@@ -8,10 +8,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
-	"github.com/hbraswelrh/pacman/internal/roles"
-	"github.com/hbraswelrh/pacman/internal/team"
-	"github.com/hbraswelrh/pacman/internal/tutorials"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/roles"
+	"github.com/hbraswelrh/gemara-user-journey/internal/team"
+	"github.com/hbraswelrh/gemara-user-journey/internal/tutorials"
 )
 
 // TeamPromptConfig holds dependencies for the team setup
@@ -24,7 +24,7 @@ type TeamPromptConfig struct {
 	// SchemaVersion is the selected Gemara schema version.
 	SchemaVersion string
 	// TeamConfigDir is the directory for saved team
-	// configs. Defaults to ~/.config/pacman/teams/.
+	// configs. Defaults to ~/.config/gemara-user-journey/teams/.
 	TeamConfigDir string
 }
 

@@ -5,7 +5,7 @@ package blocks
 import (
 	"testing"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
 )
 
 // T301: ContentBlock contains required fields.

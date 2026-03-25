@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hbraswelrh/pacman/internal/tutorials"
+	"github.com/hbraswelrh/gemara-user-journey/internal/tutorials"
 	"gopkg.in/yaml.v3"
 )
 

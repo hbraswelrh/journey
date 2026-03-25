@@ -55,7 +55,7 @@ The current spec incorrectly classifies all three as "tools."
 
 **Current** (lines 20-33):
 > The MCP server provides direct access to three tools that
-> augment Pac-Man's capabilities throughout all subsequent
+> augment Gemara User Journey's capabilities throughout all subsequent
 > operations:
 >
 > - **get_lexicon**: Retrieve the upstream Gemara lexicon...
@@ -64,7 +64,7 @@ The current spec incorrectly classifies all three as "tools."
 
 **Proposed**:
 > The MCP server provides direct access to MCP tools, resources,
-> and prompts that augment Pac-Man's capabilities throughout all
+> and prompts that augment Gemara User Journey's capabilities throughout all
 > subsequent operations:
 >
 > - **Tool — `validate_gemara_artifact`**: Validate YAML
@@ -73,7 +73,7 @@ The current spec incorrectly classifies all three as "tools."
 >   manually.
 > - **Resource — `gemara://lexicon`**: Retrieve the upstream
 >   Gemara lexicon entries, ensuring all terminology used by
->   Pac-Man and the user's authored content aligns with the
+>   Gemara User Journey and the user's authored content aligns with the
 >   canonical Gemara vocabulary.
 > - **Resource — `gemara://schema/definitions`**: Retrieve
 >   schema documentation for the Gemara CUE module, providing
@@ -212,7 +212,7 @@ is installed" for compatibility checks.
 
 ### 3a. Reference MCP prompts for wizard-assisted authoring
 
-**Current**: US6 describes guided authoring as a Pac-Man built-in
+**Current**: US6 describes guided authoring as a Gemara User Journey built-in
 feature. It does not reference the MCP prompts.
 
 **Proposed**: Add a new paragraph after the first paragraph
@@ -266,7 +266,7 @@ feature. It does not reference the MCP prompts.
 **Current** (lines 729-735):
 > The system MUST explain the three tools the MCP server
 > provides (`get_lexicon`, `validate_gemara_artifact`,
-> `get_schema_docs`) and how each enhances the Pac-Man
+> `get_schema_docs`) and how each enhances the Gemara User Journey
 > experience.
 
 **Proposed**:
@@ -277,7 +277,7 @@ feature. It does not reference the MCP prompts.
 > documentation, and — when running in artifact mode — the
 > `threat_assessment` and `control_catalog` prompts for
 > guided artifact creation wizards. The system MUST explain
-> how each enhances the Pac-Man experience.
+> how each enhances the Gemara User Journey experience.
 
 ### 4b. FR-027 — Add mode flag to installation config
 
@@ -507,7 +507,7 @@ an additional decision point.)
 > - The Gemara MCP server follows the Model Context Protocol
 >   specification, exposing tools (callable functions),
 >   resources (data endpoints accessed by URI), and prompts
->   (guided conversation templates). Pac-Man's MCP client
+>   (guided conversation templates). Gemara User Journey's MCP client
 >   MUST use the appropriate MCP protocol methods for each
 >   category: tool calls for `validate_gemara_artifact`,
 >   resource reads for `gemara://lexicon` and

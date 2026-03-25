@@ -7,7 +7,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/hbraswelrh/pacman/internal/mcp"
+	"github.com/hbraswelrh/gemara-user-journey/internal/mcp"
 )
 
 func versionFetcher(

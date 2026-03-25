@@ -35,8 +35,8 @@ mappings), `internal/consts/` (centralized constants),
 `internal/session/` (schema version), `internal/cli/`
 (TUI styles, prompter interface)
 **Storage**: Local filesystem — content blocks stored as YAML
-in `~/.config/pacman/blocks/`; extraction manifest at
-`~/.config/pacman/blocks/manifest.yaml`
+in `~/.config/gemara-user-journey/blocks/`; extraction manifest at
+`~/.config/gemara-user-journey/blocks/manifest.yaml`
 **Testing**: `go test ./...` via `make test`; TDD per
 constitution
 **Constraints**: Content extraction uses section-boundary

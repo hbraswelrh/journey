@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Package consts defines centralized constants for the Pac-Man
+// Package consts defines centralized constants for the Gemara User Journey
 // project. All magic strings, URLs, tool names, and
 // configuration defaults are defined here and referenced by
 // name throughout the codebase.
@@ -8,6 +8,18 @@ package consts
 
 // GemaraRepoURL is the upstream Gemara schema repository.
 const GemaraRepoURL = "https://github.com/gemaraproj/gemara"
+
+// JourneyRepoURL is the Gemara User Journey tutorial engine repository.
+const JourneyRepoURL = "https://github.com/hbraswelrh/gemara-user-journey"
+
+// PacmanDiscussionsURL is the GitHub Discussions URL for the
+// Gemara User Journey repository, where users share their Gemara journey.
+const PacmanDiscussionsURL = JourneyRepoURL + "/discussions"
+
+// PacmanNewDiscussionURL is the URL to create a new discussion
+// using the Gemara Journey template.
+const PacmanNewDiscussionURL = PacmanDiscussionsURL +
+	"/new?category=general"
 
 // GemaraMCPRepoURL is the Gemara MCP server repository (HTTPS).
 const GemaraMCPRepoURL = "https://github.com/gemaraproj/gemara-mcp"
@@ -34,7 +46,7 @@ const MCPPodmanImage = "ghcr.io/gemaraproj/gemara-mcp:latest"
 
 // MCPInstallDir is the subdirectory under ~/.local/share
 // where the MCP server is installed from source.
-const MCPInstallDir = "pacman"
+const MCPInstallDir = "gemara-user-journey"
 
 // InstalledReleaseFile is the filename for the installed
 // release metadata, stored alongside the built binary.
@@ -98,7 +110,7 @@ const GemaraTutorialsSubdir = "docs/tutorials"
 
 // DefaultGemaraDir is the default local directory where
 // the Gemara repository is cloned for tutorial access.
-const DefaultGemaraDir = ".local/share/pacman/gemara"
+const DefaultGemaraDir = ".local/share/gemara-user-journey/gemara"
 
 // DefaultTutorialsDir is the default path to the Gemara
 // tutorials directory, resolved at runtime from the home
@@ -180,9 +192,9 @@ var CoreStableSchemas = []string{
 }
 
 // CacheDir is the subdirectory name under the user's config
-// directory where Pac-Man stores cached data (lexicon, schema
+// directory where Gemara User Journey stores cached data (lexicon, schema
 // docs, version info).
-const CacheDir = "pacman"
+const CacheDir = "gemara-user-journey"
 
 // ReleaseCacheFile is the filename for cached release data.
 const ReleaseCacheFile = "releases.json"
@@ -230,14 +242,14 @@ const (
 
 // RoleProfileDir is the subdirectory under the user's config
 // directory where custom role profiles are stored.
-const RoleProfileDir = "pacman/roles"
+const RoleProfileDir = "gemara-user-journey/roles"
 
 // RoleProfileExt is the file extension for saved role profiles.
 const RoleProfileExt = ".yaml"
 
 // BlockCacheDir is the subdirectory under the user's config
 // directory where extracted content blocks are stored.
-const BlockCacheDir = "pacman/blocks"
+const BlockCacheDir = "gemara-user-journey/blocks"
 
 // BlockManifestFile is the filename for the extraction
 // manifest used by drift detection.
@@ -254,7 +266,7 @@ const (
 
 // TeamConfigDir is the subdirectory under the user's config
 // directory where team configurations are stored.
-const TeamConfigDir = "pacman/teams"
+const TeamConfigDir = "gemara-user-journey/teams"
 
 // TeamConfigExt is the file extension for saved team configs.
 const TeamConfigExt = ".yaml"
@@ -555,5 +567,173 @@ var DefaultPreparationChecklists = map[string][]string{
 		"Gather evidence from evaluation and " +
 			"enforcement logs",
 		"Assign RACI ownership for the audit",
+	},
+}
+
+// GemaraTutorialsBaseURL is the base URL for upstream Gemara
+// tutorials on the official documentation site.
+const GemaraTutorialsBaseURL = "https://gemara.openssf.org/tutorials"
+
+// UpstreamTutorialID constants identify each upstream
+// Gemara tutorial for programmatic reference.
+const (
+	TutorialThreatAssessment = "threat-assessment-guide"
+	TutorialControlCatalog   = "control-catalog-guide"
+	TutorialGuidanceCatalog  = "guidance-guide"
+	TutorialPolicy           = "policy-guide"
+)
+
+// UpstreamTutorial describes a tutorial published on the
+// upstream Gemara documentation site.
+type UpstreamTutorial struct {
+	// ID is the unique tutorial identifier.
+	ID string
+	// Title is the human-readable tutorial title.
+	Title string
+	// Description explains what the user will learn.
+	Description string
+	// URL is the full URL to the tutorial page.
+	URL string
+	// Layer is the primary Gemara layer this tutorial
+	// covers.
+	Layer int
+	// ArtifactTypes lists the artifact types produced
+	// by completing this tutorial.
+	ArtifactTypes []string
+	// Prerequisites lists tutorial IDs that should be
+	// completed before this one.
+	Prerequisites []string
+	// Goals describes user goals that map to this
+	// tutorial, sourced from the upstream "Find Your
+	// Tutorial" section.
+	Goals []string
+	// Roles lists the role names that benefit most from
+	// this tutorial.
+	Roles []string
+}
+
+// UpstreamTutorials is the authoritative list of tutorials
+// published at gemara.openssf.org/tutorials/, ordered by
+// recommended learning sequence.
+var UpstreamTutorials = []UpstreamTutorial{
+	{
+		ID:    TutorialGuidanceCatalog,
+		Title: "Guidance Catalog Guide",
+		Description: "Create a structured set of " +
+			"guidelines — recommendations, " +
+			"requirements, or best practices — " +
+			"grouped by theme with mapping " +
+			"references to external standards.",
+		URL:   GemaraTutorialsBaseURL + "/guidance/guidance-guide",
+		Layer: LayerVectorsGuidance,
+		ArtifactTypes: []string{
+			ArtifactGuidanceCatalog,
+		},
+		Prerequisites: []string{},
+		Goals: []string{
+			"Creating a guidance catalog from " +
+				"best practices",
+			"Codifying standards, regulations, " +
+				"or best practices into a " +
+				"machine-readable format",
+			"Understanding what guidance catalogs " +
+				"are and how to structure them",
+		},
+		Roles: []string{
+			RoleComplianceOfficer,
+			RolePolicyAuthor,
+			RoleCISO,
+			RoleSecurityEngineer,
+		},
+	},
+	{
+		ID:    TutorialThreatAssessment,
+		Title: "Threat Assessment Guide",
+		Description: "Walk through a threat assessment " +
+			"for a system or component — identify " +
+			"capabilities, map threats to attack " +
+			"surfaces, and import from external " +
+			"catalogs like FINOS CCC Core.",
+		URL:   GemaraTutorialsBaseURL + "/controls/threat-assessment-guide",
+		Layer: LayerThreatsControls,
+		ArtifactTypes: []string{
+			ArtifactThreatCatalog,
+		},
+		Prerequisites: []string{},
+		Goals: []string{
+			"Performing a threat assessment for a " +
+				"system or component",
+			"Understanding what threats and " +
+				"controls exist before writing " +
+				"policy",
+			"Understanding the security posture " +
+				"of consumed software",
+		},
+		Roles: []string{
+			RoleSecurityEngineer,
+			RoleDeveloper,
+			RolePlatformEngineer,
+			RoleComplianceOfficer,
+		},
+	},
+	{
+		ID:    TutorialControlCatalog,
+		Title: "Control Catalog Guide",
+		Description: "Create a control catalog that " +
+			"maps security controls to identified " +
+			"threats — define objectives, " +
+			"assessment requirements, and link " +
+			"controls to threat catalogs.",
+		URL:   GemaraTutorialsBaseURL + "/controls/control-catalog-guide",
+		Layer: LayerThreatsControls,
+		ArtifactTypes: []string{
+			ArtifactControlCatalog,
+		},
+		Prerequisites: []string{
+			TutorialThreatAssessment,
+		},
+		Goals: []string{
+			"Defining security controls that " +
+				"mitigate identified threats",
+			"Reviewing the controls to reference " +
+				"in a policy",
+		},
+		Roles: []string{
+			RoleSecurityEngineer,
+			RoleDeveloper,
+			RolePlatformEngineer,
+			RolePolicyAuthor,
+		},
+	},
+	{
+		ID:    TutorialPolicy,
+		Title: "Organizational Risk & Policy Guide",
+		Description: "Create a policy document that " +
+			"translates risk appetite into mandatory " +
+			"rules — define scope, imports, " +
+			"adherence requirements, RACI contacts, " +
+			"and implementation timelines.",
+		URL:   GemaraTutorialsBaseURL + "/policy/policy-guide",
+		Layer: LayerRiskPolicy,
+		ArtifactTypes: []string{
+			ArtifactPolicy,
+		},
+		Prerequisites: []string{
+			TutorialThreatAssessment,
+			TutorialControlCatalog,
+		},
+		Goals: []string{
+			"Creating organizational policy",
+			"Translating risk appetite into " +
+				"mandatory rules",
+			"Defining adherence timelines and " +
+				"enforcement methods",
+		},
+		Roles: []string{
+			RolePolicyAuthor,
+			RoleCISO,
+			RoleComplianceOfficer,
+			RoleAuditor,
+		},
 	},
 }

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hbraswelrh/pacman/internal/schema"
+	"github.com/hbraswelrh/gemara-user-journey/internal/schema"
 )
 
 func TestWriteCache_CreatesValidJSON(t *testing.T) {

@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/hbraswelrh/pacman/internal/mcp"
-	"github.com/hbraswelrh/pacman/internal/schema"
-	"github.com/hbraswelrh/pacman/internal/session"
+	"github.com/hbraswelrh/gemara-user-journey/internal/mcp"
+	"github.com/hbraswelrh/gemara-user-journey/internal/schema"
+	"github.com/hbraswelrh/gemara-user-journey/internal/session"
 )
 
 // ReleaseFetcherFn fetches releases from upstream.

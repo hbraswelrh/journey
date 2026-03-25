@@ -29,13 +29,13 @@
   Follow-up TODOs: none
 -->
 
-# Pac-Man Constitution
+# Gemara User Journey Constitution
 
 ## Core Principles
 
 ### I. Schema Conformance
 
-All documents produced or consumed by Pac-Man MUST conform to
+All documents produced or consumed by Gemara User Journey MUST conform to
 the Gemara CUE schemas published at
 `github.com/gemaraproj/gemara`. Specifically:
 
@@ -55,13 +55,13 @@ the Gemara CUE schemas published at
   messages, and tutorial content. Domain terms MUST NOT be
   redefined or used with alternate meanings.
 
-**Rationale**: Pac-Man's value depends entirely on producing
+**Rationale**: Gemara User Journey's value depends entirely on producing
 artifacts that interoperate with the broader Gemara ecosystem.
 Schema violations break downstream consumers silently.
 
 ### II. Gemara Layer Fidelity
 
-Pac-Man MUST respect the boundaries and semantics of Gemara's
+Gemara User Journey MUST respect the boundaries and semantics of Gemara's
 seven-layer model when generating, evaluating, or mapping
 compliance artifacts:
 
@@ -77,7 +77,7 @@ compliance artifacts:
   before introducing cross-layer interactions, mirroring the
   Definition → Pivot → Measurement structure of the model.
 - When Gemara marks a schema as `@status(Experimental)`,
-  Pac-Man MUST document this status to users and MUST NOT
+  Gemara User Journey MUST document this status to users and MUST NOT
   present experimental schemas as stable API surfaces.
 
 **Rationale**: The seven-layer model is Gemara's core
@@ -220,7 +220,7 @@ exactly one location.
 ### VIII. Composability
 
 Programs and functions MUST do one thing and do it well.
-Pac-Man's capabilities MUST be designed to work together and
+Gemara User Journey's capabilities MUST be designed to work together and
 with external tools:
 
 - Each capability (evaluation, mapping, conversion) MUST be
@@ -243,7 +243,7 @@ coupling limit adoption and reuse.
 
 ### IX. Convention Over Configuration
 
-Pac-Man MUST minimize the number of decisions a user needs to
+Gemara User Journey MUST minimize the number of decisions a user needs to
 make to accomplish a task:
 
 - Every capability MUST be usable with zero configuration for
@@ -291,7 +291,7 @@ conflicts with this constitution MUST be corrected to match.
   on both supported operating systems.
 - **Language**: Go (version 1.21 or later as documented;
   current module targets 1.26.1).
-- **Schema Language**: CUE. Pac-Man MUST use the CUE Go SDK
+- **Schema Language**: CUE. Gemara User Journey MUST use the CUE Go SDK
   (`cuelang.org/go`) for schema loading and validation.
   Hand-rolled schema validation logic is prohibited when CUE
   can perform the check natively.
@@ -300,7 +300,7 @@ conflicts with this constitution MUST be corrected to match.
   pinned version. The Go SDK
   (`github.com/gemaraproj/go-gemara`) SHOULD be used for
   type-safe document construction when available.
-- **MCP Integration**: Pac-Man MUST integrate with the Gemara
+- **MCP Integration**: Gemara User Journey MUST integrate with the Gemara
   MCP server. MCP tool definitions MUST follow the MCP
   protocol specification. All MCP-exposed capabilities MUST
   also be available via CLI for offline and CI use. MCP server
@@ -351,11 +351,11 @@ conflicts with this constitution MUST be corrected to match.
   upstream project.
 - **AI Development Harness**:
   [OpenCode](https://opencode.ai) is the preferred AI coding
-  agent for all Pac-Man development and user-facing guided
+  agent for all Gemara User Journey development and user-facing guided
   workflows. OpenCode serves as the single entry point through
   which contributors and users — regardless of role — discover
   what tools they need, how to install them, and how to get
-  started with the Pac-Man project. Specifically:
+  started with the Gemara User Journey project. Specifically:
   - OpenCode MUST be the recommended harness in all onboarding
     documentation (`README.md`, `CONTRIBUTING.md`, tutorials).
     Contributors SHOULD use OpenCode for code generation, code
@@ -370,7 +370,7 @@ conflicts with this constitution MUST be corrected to match.
     enabling AI-assisted sessions to access `get_lexicon`,
     `validate_gemara_artifact`, and `get_schema_docs` tools
     directly within the development workflow.
-  - For end users interacting with Pac-Man's role-based
+  - For end users interacting with Gemara User Journey's role-based
     tutorial engine, OpenCode MUST guide them through the
     complete onboarding flow: role identification, activity
     probing, schema version selection, tool installation
@@ -534,7 +534,7 @@ subordinate document MUST be amended to conform.
   Gemara (`github.com/gemaraproj/gemara`) and its Go SDK
   (`github.com/gemaraproj/go-gemara`) are the authoritative
   sources for schema definitions and SDK behavior. When
-  discrepancies exist between Pac-Man's assumptions and
+  discrepancies exist between Gemara User Journey's assumptions and
   upstream behavior, upstream is correct. Contributors MUST
   sync their fork's `main` branch with the upstream `main`
   before creating any pull request targeting the upstream

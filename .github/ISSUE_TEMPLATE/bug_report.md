@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug in Pac-Man
+about: Report a bug in Gemara User Journey
 title: "[Bug] "
 labels: bug
 assignees: ''
@@ -12,7 +12,7 @@ A clear and concise description of the bug.
 
 ## Steps to Reproduce
 
-1. Run `./pacman --demo --tutorials ...`
+1. Run `./gemara-user-journey --demo --tutorials ...`
 2. Select '...'
 3. See error
 
@@ -28,7 +28,7 @@ What actually happened.
 
 - **OS**: [e.g., macOS 14.2, Ubuntu 22.04]
 - **Go version**: [e.g., 1.26.1]
-- **Pac-Man version/commit**: [e.g., e13c4c6]
+- **Gemara User Journey version/commit**: [e.g., e13c4c6]
 - **MCP server installed**: [yes/no]
 
 ## Additional Context

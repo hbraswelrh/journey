@@ -5,7 +5,7 @@ package authoring
 import (
 	"testing"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
 )
 
 // T501: NewAuthoredArtifact creates an artifact with the

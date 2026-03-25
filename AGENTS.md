@@ -1,19 +1,19 @@
-# Pac-Man — Gemara Tutorial Engine
+# Gemara User Journey — Gemara Tutorial Engine
 
-Pac-Man is a role-based tutorial engine for the
+Gemara User Journey is a role-based tutorial engine for the
 [Gemara](https://github.com/gemaraproj/gemara) GRC schema
 project. It tailors Gemara tutorials to the user's job role
 and daily activities.
 
-## How to Use Pac-Man
+## How to Use Gemara User Journey
 
-Pac-Man is used through **OpenCode** with the **gemara-mcp
+Gemara User Journey is used through **OpenCode** with the **gemara-mcp
 server**. There is no interactive TUI — OpenCode is the
 interface.
 
 ### Setup
 
-1. Run `./pacman --doctor` to verify your environment
+1. Run `./gemara-user-journey --doctor` to verify your environment
 2. Start OpenCode: `opencode`
 3. Tell OpenCode your role and what you want to do
 
@@ -256,7 +256,7 @@ launches the gemara-mcp server automatically as a
 background process. All MCP capabilities are then
 available in your OpenCode session.
 
-Use `./pacman --doctor` to verify the configuration is
+Use `./gemara-user-journey --doctor` to verify the configuration is
 correct before starting OpenCode.
 
 ### MCP Capabilities
@@ -328,9 +328,36 @@ After authoring any artifact, validate it:
 | Enforcement Log | `#EnforcementLog` | L6 |
 | Audit Log | `#AuditLog` | L7 |
 
+## Upstream Tutorials
+
+The Gemara project publishes tutorials at
+[gemara.openssf.org/tutorials/](https://gemara.openssf.org/tutorials/).
+Users should complete the relevant upstream tutorials
+before using the MCP server to author artifacts.
+
+| Tutorial | Layer | Artifacts | Best For |
+|----------|-------|-----------|----------|
+| [Guidance Catalog Guide](https://gemara.openssf.org/tutorials/guidance/guidance-guide) | L1 | GuidanceCatalog | Compliance Officers, Policy Authors, CISOs |
+| [Threat Assessment Guide](https://gemara.openssf.org/tutorials/controls/threat-assessment-guide) | L2 | ThreatCatalog | Security Engineers, Developers, Platform Engineers |
+| [Control Catalog Guide](https://gemara.openssf.org/tutorials/controls/control-catalog-guide) | L2 | ControlCatalog | Security Engineers, Developers, Platform Engineers |
+| [Policy Guide](https://gemara.openssf.org/tutorials/policy/policy-guide) | L3 | Policy | Policy Authors, CISOs, Compliance Officers |
+
+The web interface (`web/`) suggests the best-fit
+tutorials based on the user's role, activities, and
+resolved layers. The suggested learning path is:
+1. Complete recommended upstream tutorials
+2. Set up the MCP server
+3. Author artifacts using wizards and collaborative
+   authoring in OpenCode
+
+Tutorial data is defined in `internal/consts/consts.go`
+(`UpstreamTutorials`) and exported to the web frontend
+via `cmd/genwebdata/`.
+
 ## Project Structure
 
-- `cmd/pacman/` — CLI entry point (`--doctor`, `--help`)
+- `cmd/gemara-user-journey/` — CLI entry point (`--doctor`, `--help`)
+- `cmd/genwebdata/` — TypeScript data generator for web UI
 - `internal/consts/` — Centralized constants
 - `internal/roles/` — Role definitions, activity-to-layer
   mapping, keyword extraction
@@ -341,6 +368,8 @@ After authoring any artifact, validate it:
 - `internal/mcp/` — MCP client, config management
 - `internal/session/` — Session state
 - `internal/cli/` — Doctor command, styles
+- `web/` — React web interface (role discovery, tutorial
+  suggestions, MCP setup walkthrough)
 - `specs/` — Feature specifications
 - `docs/tutorials/` — Tailored tutorial content
 - `docs/adrs/` — Architecture Decision Records
@@ -370,7 +399,9 @@ Or use the `validate_gemara_artifact` MCP tool.
 
 ## Active Technologies
 - Go 1.26.1, formatted with `goimports` + `charm.land/huh/v2` (TUI prompts), (002-tutorial-guide-focus)
-- File-based caching (`~/.config/pacman/` for (002-tutorial-guide-focus)
+- File-based caching (`~/.config/gemara-user-journey/` for (002-tutorial-guide-focus)
+- Go 1.26.1 + `charm.land/huh/v2` (TUI forms), `charm.land/lipgloss/v2` (terminal styling), `github.com/charmbracelet/glamour` (markdown rendering), `gopkg.in/yaml.v3` (YAML), React 19 + Vite 8 (web frontend) (002-tutorial-guide-focus)
+- File-based caching (`~/.config/gemara-user-journey/`), YAML profiles (`~/.config/gemara-user-journey/roles/`), upstream tutorial clone (`~/.local/share/gemara-user-journey/gemara/`) (002-tutorial-guide-focus)
 
 ## Recent Changes
 - 002-tutorial-guide-focus: Added Go 1.26.1, formatted with `goimports` + `charm.land/huh/v2` (TUI prompts),

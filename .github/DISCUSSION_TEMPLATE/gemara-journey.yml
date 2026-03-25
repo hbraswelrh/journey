@@ -1,0 +1,104 @@
+title: "[Journey] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share your Gemara journey -- what you learned, what you built, or questions about
+        getting started. This helps others in similar roles find the right path.
+
+  - type: dropdown
+    id: role
+    attributes:
+      label: Your Role
+      description: Which role best describes your work?
+      options:
+        - Security Engineer
+        - Compliance Officer
+        - CISO / Security Leader
+        - Developer
+        - Platform Engineer
+        - Policy Author
+        - Auditor
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: tutorials-completed
+    attributes:
+      label: Tutorials Completed
+      description: Which upstream Gemara tutorials have you completed?
+      options:
+        - label: "[Guidance Catalog Guide](https://gemara.openssf.org/tutorials/guidance/guidance-guide) (Layer 1)"
+        - label: "[Threat Assessment Guide](https://gemara.openssf.org/tutorials/controls/threat-assessment-guide) (Layer 2)"
+        - label: "[Control Catalog Guide](https://gemara.openssf.org/tutorials/controls/control-catalog-guide) (Layer 2)"
+        - label: "[Policy Guide](https://gemara.openssf.org/tutorials/policy/policy-guide) (Layer 3)"
+
+  - type: checkboxes
+    id: gemara-layers
+    attributes:
+      label: Gemara Layers You Work With
+      description: Which layers are relevant to your activities?
+      options:
+        - label: "Layer 1 -- Vectors & Guidance"
+        - label: "Layer 2 -- Threats & Controls"
+        - label: "Layer 3 -- Risk & Policy"
+        - label: "Layer 4 -- Sensitive Activities"
+        - label: "Layer 5 -- Intent & Behavior Evaluation"
+        - label: "Layer 6 -- Preventive & Remediative Enforcement"
+        - label: "Layer 7 -- Audit & Continuous Monitoring"
+
+  - type: textarea
+    id: activities
+    attributes:
+      label: Your Activities
+      description: |
+        What activities are you working on? This helps others in similar
+        roles find your discussion. For example: "CI/CD pipeline security",
+        "threat modeling for cloud services", "creating organizational policy".
+      placeholder: Describe the activities that led you to Gemara...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: topic
+    attributes:
+      label: Discussion Topic
+      description: What kind of discussion is this?
+      options:
+        - Getting started with Gemara
+        - Tutorial feedback or questions
+        - Artifact authoring experience
+        - MCP server setup help
+        - Role-to-tutorial mapping suggestions
+        - Sharing what I built
+        - General question
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: |
+        Share your experience, question, or what you built. If you authored
+        a Gemara artifact, feel free to include a snippet (no secrets).
+      placeholder: |
+        What did you learn? What worked well? What was confusing?
+        If sharing an artifact, include the artifact type and a brief description.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mcp-setup
+    attributes:
+      label: MCP Server Status
+      description: Have you set up the gemara-mcp server?
+      options:
+        - Not yet
+        - "Yes, using Artifact mode"
+        - "Yes, using Advisory mode"
+        - Had trouble setting it up
+    validations:
+      required: false

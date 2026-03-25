@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Package cli provides the command-line interface for Pac-Man,
+// Package cli provides the command-line interface for Gemara User Journey,
 // including the first-launch setup flow, role discovery, and
 // guided authoring commands.
 package cli

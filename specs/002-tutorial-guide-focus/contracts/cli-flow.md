@@ -1,11 +1,11 @@
 # Contract: CLI Flow Changes
 
 **Branch**: `002-tutorial-guide-focus`
-**Date**: 2026-03-17
+**Date**: 2026-03-25
 
 ## Overview
 
-Pac-Man is a CLI tool used within OpenCode sessions. Its
+Gemara User Journey is a CLI tool used within OpenCode sessions. Its
 primary external interface is the interactive setup flow
 that chains MCP setup, version resolution, role discovery,
 and tutorial navigation. This contract documents the
@@ -174,7 +174,7 @@ BuildHandoffSummary(
   summary notes "No artifact types are defined for this
   layer"
 - MCP not configured: `MCPConfigured` is false, summary
-  instructs user to run `./pacman --doctor` and set up
+  instructs user to run `./gemara-user-journey --doctor` and set up
   the gemara-mcp server in `opencode.json`
 
 ### cli.RenderHandoffSummary
@@ -247,3 +247,68 @@ RenderHandoffSummary(
 ┃   └──────────────────────────────────┘
 ────────────────────────────────────────────
 ```
+
+## Documentation Contract (US6)
+
+### README.md Structure
+
+The README MUST follow this section order:
+
+```text
+# Gemara User Journey
+  │
+  ├─ One-paragraph summary (distinguish from MCP server)
+  │
+  ├─ Screenshot (docs/images/web-ui-preview.png)
+  │
+  ├─ ## User Journey
+  │    ├─ 1. Discover (role + activity identification)
+  │    ├─ 2. Learn (tutorial walkthrough)
+  │    └─ 3. Author (handoff to OpenCode + gemara-mcp)
+  │
+  ├─ ## Prerequisites
+  │    └─ Hyperlinked dependency list (Go, CUE,
+  │       OpenCode, Git, gemara-mcp)
+  │
+  ├─ ## Getting Started
+  │    ├─ Step 1: Clone and build
+  │    ├─ Step 2: Verify environment
+  │    ├─ Step 3: Launch OpenCode
+  │    └─ Step 4: Tell OpenCode your role
+  │
+  ├─ ## Upstream Projects
+  │    └─ Compact table (Gemara, gemara-mcp)
+  │
+  ├─ ## Learn More
+  │    ├─ Link: docs/layer-reference.md
+  │    ├─ Link: docs/project-structure.md
+  │    ├─ Link: docs/mcp-update-guide.md
+  │    └─ Link: CONTRIBUTING.md
+  │
+  └─ ## License
+       └─ One-liner: Apache 2.0
+```
+
+**Constraints**:
+- Total length: ~120-150 lines
+- No inline platform-specific install commands (link to
+  official pages instead)
+- No `<details>` collapsible HTML sections
+- Screenshot referenced via relative path
+- All dependency names MUST be hyperlinked to official
+  installation pages
+
+### docs/ File Contracts
+
+Each displaced file MUST:
+- Include a title and brief context paragraph
+- Contain the full content from the original README section
+- Be self-contained (readable without the README)
+- Include a link back to the README for navigation
+
+| File | Source | Minimum Content |
+|------|--------|-----------------|
+| `docs/layer-reference.md` | README lines 142-161 | 7-layer table with layer names and purposes |
+| `docs/project-structure.md` | README lines 407-452 | Directory tree with descriptions |
+| `docs/mcp-update-guide.md` | README lines 329-388 | Sync instructions for both clone and fork workflows |
+| `docs/images/web-ui-preview.png` | Manual capture | Screenshot of Results view from web UI |

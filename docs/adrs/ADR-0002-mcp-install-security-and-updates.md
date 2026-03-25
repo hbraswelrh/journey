@@ -7,7 +7,7 @@
 
 ## Context
 
-Pac-Man's first-launch setup offers to install the Gemara MCP
+Gemara User Journey's first-launch setup offers to install the Gemara MCP
 server (`gemara-mcp`) from source. The original implementation
 had three issues:
 
@@ -24,7 +24,7 @@ had three issues:
    this returned a 404 error with raw GitHub API JSON, leaving
    users unable to install.
 
-3. **No update checking**: Once installed, Pac-Man never checks
+3. **No update checking**: Once installed, Gemara User Journey never checks
    for newer versions of `gemara-mcp`. Users must manually
    discover and install updates.
 
@@ -80,11 +80,11 @@ release.
 ### Programmatic Update Checking
 
 On session start, when an MCP server binary is already installed
-from a prior build-from-source installation, Pac-Man checks for
+from a prior build-from-source installation, Gemara User Journey checks for
 a newer release:
 
 1. Read the installed release metadata (tag and SHA) from a
-   local file (`~/.local/share/pacman/installed-release.json`).
+   local file (`~/.local/share/gemara-user-journey/installed-release.json`).
 2. Fetch the latest release from the GitHub API (stable or
    prerelease, using the same fallback logic).
 3. Compare the installed SHA against the latest release SHA.

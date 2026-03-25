@@ -309,7 +309,7 @@ supported.
 
 - [x] T251 [US3] Add profile directory and file constants to
   `internal/consts/consts.go`: profile directory path
-  (`~/.config/pacman/roles/`), profile file extension
+  (`~/.config/gemara-user-journey/roles/`), profile file extension
   (`.yaml`)
 - [x] T252 [US3] Implement `internal/roles/profiles.go`:
   `RoleProfile` struct (role name, activity keywords, layer
@@ -364,7 +364,7 @@ profiles appear in the role selection list.
   pass with zero errors and zero warnings
 
 **Checkpoint**: US3 is fully functional. A user can launch
-Pac-Man, complete MCP setup, select a schema version, identify
+Gemara User Journey, complete MCP setup, select a schema version, identify
 their role and activities, and receive a tailored learning
 path. Two users with the same title but different activities
 receive different paths.

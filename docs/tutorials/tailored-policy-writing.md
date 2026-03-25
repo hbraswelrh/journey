@@ -492,7 +492,7 @@ Parameters:
 
 **Iterative validation**: Validate after completing each
 major section rather than waiting until the end. This
-catches structural issues early. The Pac-Man guided
+catches structural issues early. The Gemara User Journey guided
 authoring flow validates at each step automatically.
 
 ## Cross-References to Other Layers

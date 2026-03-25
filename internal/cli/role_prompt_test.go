@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hbraswelrh/pacman/internal/cli"
-	"github.com/hbraswelrh/pacman/internal/consts"
-	"github.com/hbraswelrh/pacman/internal/roles"
+	"github.com/hbraswelrh/gemara-user-journey/internal/cli"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/roles"
 )
 
 // mockFreeTextPrompter implements FreeTextPrompter for tests.

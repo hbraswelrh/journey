@@ -1,12 +1,12 @@
-# Contributing to Pac-Man
+# Contributing to Gemara User Journey
 
-Thank you for your interest in contributing to Pac-Man. This
+Thank you for your interest in contributing to Gemara User Journey. This
 document provides guidelines and workflow requirements for
 contributors.
 
 ## Authoritative Source
 
-The [Pac-Man Constitution](.specify/memory/constitution.md)
+The [Gemara User Journey Constitution](.specify/memory/constitution.md)
 is the authoritative source for all project-level rules. Any
 workflow rule in this document that conflicts with the
 constitution MUST be corrected to match. When in doubt, the
@@ -140,7 +140,7 @@ context via the `AGENTS.md` file at the repository root.
 ## Project Structure
 
 ```
-cmd/pacman/         Binary entry point
+cmd/gemara-user-journey/         Binary entry point
 internal/
   consts/           Centralized constants
   mcp/              MCP server detection, installation, client

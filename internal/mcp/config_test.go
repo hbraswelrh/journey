@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
-	"github.com/hbraswelrh/pacman/internal/mcp"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/mcp"
 )
 
 func TestReadOpenCodeConfig_NewFile(t *testing.T) {
@@ -41,7 +41,7 @@ func TestWriteAndReadOpenCodeConfig(t *testing.T) {
 
 	mcp.EnsureMCPEntry(
 		config,
-		"/home/user/.local/share/pacman/gemara-mcp/"+
+		"/home/user/.local/share/gemara-user-journey/gemara-mcp/"+
 			"bin/gemara-mcp",
 		consts.MCPModeArtifact,
 	)
@@ -66,7 +66,7 @@ func TestWriteAndReadOpenCodeConfig(t *testing.T) {
 	}
 
 	// Verify command[0] is the binary path.
-	expectedCmd := "/home/user/.local/share/pacman/" +
+	expectedCmd := "/home/user/.local/share/gemara-user-journey/" +
 		"gemara-mcp/bin/gemara-mcp"
 	gotPath := mcp.MCPBinaryPath(entry)
 	if gotPath != expectedCmd {

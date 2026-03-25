@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package blocks implements reusable content block extraction,
-// drift detection, persistence, and querying for the Pac-Man
+// drift detection, persistence, and querying for the Gemara User Journey
 // tutorial engine (US4).
 package blocks
 
@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
 )
 
 // BlockCategory classifies a content block by its function.

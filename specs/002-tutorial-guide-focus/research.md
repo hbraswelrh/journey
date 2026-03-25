@@ -1,7 +1,7 @@
-# Research: Refocus Pac-Man as Tutorial Guide
+# Research: Refocus Gemara User Journey as Tutorial Guide
 
 **Branch**: `002-tutorial-guide-focus`
-**Date**: 2026-03-17
+**Date**: 2026-03-25
 **Status**: Complete
 
 ## R1: Bypassing Version Selection Without Breaking Setup
@@ -234,7 +234,7 @@ schema versioning.
 - **Context**: Version selection adds a decision point that
   creates friction during onboarding. The current Gemara
   schema repository may not yet have distinct Stable vs
-  Latest versions that warrant user choice. Pac-Man's focus
+  Latest versions that warrant user choice. Gemara User Journey's focus
   is tutorial guidance, not configuration management.
 - **Decision**: Auto-select the latest release. Preserve
   version selection code for future re-enablement.
@@ -283,3 +283,149 @@ The handoff summary should be generated from:
 2. **Require explicit "Ready to author?" confirmation**:
    Adds friction. The handoff is informational, not a
    gate. Rejected.
+
+## R7: README Restructuring Strategy
+
+### Decision
+
+Rewrite `README.md` as a concise landing page. Move
+detailed content to dedicated files under `docs/` and
+link from the README.
+
+### Rationale
+
+The current README is 501 lines covering internal
+implementation details (project structure, contributing
+rules, MCP update procedures, layer reference, content
+blocks, collaboration views, guided authoring). This
+obscures the user journey and makes the README ineffective
+as a GitHub landing page.
+
+The "inverted pyramid" pattern (summary, visual, quick
+start, links to details) is the established best practice
+for open source project READMEs. Users need to understand
+what the project does, what it looks like, and how to start
+within a single scroll.
+
+### Content Displacement Plan
+
+| Current README Section (lines) | Destination | Action |
+|-------------------------------|-------------|--------|
+| Title + intro (1-17) | README | Rewrite: position as tutorial guide, distinguish from MCP server |
+| Problem Statement (19-31) | README | Keep but shorten to 2-3 sentences |
+| Capabilities (33-140) | README | Replace with User Journey section (3-step narrative) |
+| Gemara Layer Reference (142-161) | `docs/layer-reference.md` | Move with link |
+| Prerequisites (163-214) | README | Keep but convert to hyperlinked list (remove inline install commands) |
+| Getting Started (216-302) | README | Keep but reduce to 4 steps max |
+| Using MCP Wizard Prompts (304-327) | Remove | Already in AGENTS.md |
+| Keeping gemara-mcp Up to Date (329-388) | `docs/mcp-update-guide.md` | Move with link |
+| First Launch (390-405) | Remove | Outdated (references version prompt) |
+| Project Structure (407-452) | `docs/project-structure.md` | Move with link |
+| Contributing (454-473) | README | Reduce to one line linking `CONTRIBUTING.md` |
+| Upstream Projects (475-488) | README | Keep as compact table |
+| ADRs (490-496) | Remove | Move to `docs/project-structure.md` |
+| License (498-501) | README | Keep as one-liner |
+
+### Proposed README Structure
+
+1. **Title** — `# Gemara User Journey`
+2. **One-paragraph summary** — Role-based tutorial guide for
+   Gemara GRC schemas. Distinguish from MCP server.
+3. **Web UI screenshot** — `![Gemara User Journey Web UI](docs/images/web-ui-preview.png)`
+4. **User Journey** — 3-step narrative:
+   - Discover: Role and activity identification
+   - Learn: Tailored tutorial walkthrough
+   - Author: Handoff to OpenCode with gemara-mcp
+5. **Prerequisites** — Hyperlinked dependency list
+6. **Getting Started** — 4 steps: clone, build, verify, launch
+7. **Upstream Projects** — Compact table
+8. **Learn More** — Links to `docs/` files
+9. **License** — One line
+
+### Target: ~120-150 lines (down from 501)
+
+### Alternatives Considered
+
+1. **Keep all sections, shorten each**: Still too long;
+   the problem is section count, not per-section verbosity.
+   Rejected.
+2. **Landing page only, delete detailed content**: Loses
+   valuable contributor documentation. Rejected.
+3. **Use `<details>` collapsible sections**: Adds HTML
+   noise, renders inconsistently on GitHub mobile.
+   Rejected.
+
+## R8: Web UI Screenshot Selection
+
+### Decision
+
+Capture the Results view showing resolved layers and
+artifact recommendations.
+
+### Rationale
+
+The Results view is the most visually distinctive screen
+in the web UI — it shows the active layer map with
+confidence highlighting, artifact recommendations with
+checklists, and layer flows. This communicates the
+project's value proposition more effectively than other
+views:
+
+- Role Selection: too generic (card grid)
+- Activity Probe: shows input, not output
+- Tutorial Suggestions: useful but less visually distinctive
+
+### Storage
+
+- File: `docs/images/web-ui-preview.png`
+- Reference in README: `![Gemara User Journey Web UI](docs/images/web-ui-preview.png)`
+- Committed to repository per clarification decision
+
+## R9: Dependency Installation Links
+
+### Decision
+
+Use official installation page URLs for all dependencies.
+
+### Rationale
+
+Direct links to official installation pages ensure users
+get current instructions and reduce Gemara User Journey's maintenance
+burden when upstream installers change. The constitution
+requires Homebrew as the preferred installation method but
+also requires alternative methods to be documented.
+
+### Links
+
+| Dependency | URL | Version |
+|------------|-----|---------|
+| Go | https://go.dev/dl/ | 1.21+ |
+| CUE | https://cuelang.org/docs/introduction/installation/ | v0.15.1+ |
+| OpenCode | https://opencode.ai | latest |
+| Git | https://git-scm.com/downloads | latest |
+| gemara-mcp | https://github.com/gemaraproj/gemara-mcp | build from source |
+
+The README will hyperlink each dependency name to its
+installation page rather than inlining `brew install`
+and `wget` commands. Platform-specific install commands
+move to `docs/` or are omitted in favor of the official
+pages.
+
+## R10: AGENTS.md Minimal Updates
+
+### Decision
+
+Make minimal text updates to AGENTS.md to ensure
+consistency with the spec's positioning.
+
+### Rationale
+
+AGENTS.md already reflects the "tutorial guide" positioning
+with "Two Paths: Learn or Author." Updates needed:
+- Ensure "Recent Changes" accurately reflects 002 changes
+- Verify "Active Technologies" is current
+- No structural changes required
+
+### Impact
+
+Text-only edits; no architectural changes.

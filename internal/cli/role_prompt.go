@@ -7,9 +7,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
-	"github.com/hbraswelrh/pacman/internal/roles"
-	"github.com/hbraswelrh/pacman/internal/tutorials"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/roles"
+	"github.com/hbraswelrh/gemara-user-journey/internal/tutorials"
 )
 
 // FreeTextPrompter extends UserPrompter with free-text input.

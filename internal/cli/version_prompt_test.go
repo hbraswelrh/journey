@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hbraswelrh/pacman/internal/cli"
-	"github.com/hbraswelrh/pacman/internal/consts"
-	"github.com/hbraswelrh/pacman/internal/mcp"
-	"github.com/hbraswelrh/pacman/internal/schema"
-	"github.com/hbraswelrh/pacman/internal/session"
+	"github.com/hbraswelrh/gemara-user-journey/internal/cli"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/mcp"
+	"github.com/hbraswelrh/gemara-user-journey/internal/schema"
+	"github.com/hbraswelrh/gemara-user-journey/internal/session"
 )
 
 // versionMockTransport implements mcp.Transport for version

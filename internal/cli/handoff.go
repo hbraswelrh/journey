@@ -7,15 +7,15 @@ import (
 	"io"
 	"strings"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
-	"github.com/hbraswelrh/pacman/internal/schema"
-	"github.com/hbraswelrh/pacman/internal/session"
-	"github.com/hbraswelrh/pacman/internal/tutorials"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/schema"
+	"github.com/hbraswelrh/gemara-user-journey/internal/session"
+	"github.com/hbraswelrh/gemara-user-journey/internal/tutorials"
 )
 
 // HandoffSummary is a structured transition context
 // presented to the user after completing a tutorial in
-// the Pac-Man terminal. It bridges the learn-to-author
+// the Gemara User Journey terminal. It bridges the learn-to-author
 // transition by directing the user to OpenCode with the
 // gemara-mcp server.
 type HandoffSummary struct {
@@ -138,7 +138,7 @@ func BuildHandoffSummary(
 }
 
 // RenderHandoffSummary renders a handoff summary to the
-// given writer using the established Pac-Man visual style.
+// given writer using the established Gemara User Journey visual style.
 // Output is designed to be user-friendly and accessible
 // for all audiences.
 func RenderHandoffSummary(
@@ -331,7 +331,7 @@ func RenderHandoffSummary(
 		)
 		content.WriteString(
 			subtleStyle.Render(
-				"Run ./pacman --doctor to verify your "+
+				"Run ./gemara-user-journey --doctor to verify your "+
 					"environment,",
 			) + "\n",
 		)

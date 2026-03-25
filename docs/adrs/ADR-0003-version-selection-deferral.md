@@ -7,7 +7,7 @@
 
 ## Context
 
-Pac-Man's setup flow previously presented users with an
+Gemara User Journey's setup flow previously presented users with an
 interactive prompt to choose between "Stable" and "Latest"
 schema versions. This decision point served users who
 needed to pin to a specific schema stability level.
@@ -30,7 +30,7 @@ However, this feature introduced friction during onboarding:
    warrant user choice, making the prompt confusing when
    both options resolve to the same release.
 
-4. **Role clarity**: Pac-Man is being refocused as a
+4. **Role clarity**: Gemara User Journey is being refocused as a
    tutorial guide. Version management is a configuration
    concern better handled by the MCP server or OpenCode
    environment, not by a learning tool.

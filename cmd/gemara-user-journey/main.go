@@ -18,13 +18,13 @@ import (
 	lipgloss "charm.land/lipgloss/v2"
 	"golang.org/x/term"
 
-	"github.com/hbraswelrh/pacman/internal/cli"
-	"github.com/hbraswelrh/pacman/internal/consts"
-	"github.com/hbraswelrh/pacman/internal/mcp"
-	"github.com/hbraswelrh/pacman/internal/roles"
-	"github.com/hbraswelrh/pacman/internal/schema"
-	"github.com/hbraswelrh/pacman/internal/session"
-	"github.com/hbraswelrh/pacman/internal/tutorials"
+	"github.com/hbraswelrh/gemara-user-journey/internal/cli"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/mcp"
+	"github.com/hbraswelrh/gemara-user-journey/internal/roles"
+	"github.com/hbraswelrh/gemara-user-journey/internal/schema"
+	"github.com/hbraswelrh/gemara-user-journey/internal/session"
+	"github.com/hbraswelrh/gemara-user-journey/internal/tutorials"
 )
 
 // isInteractiveTTY returns true if both stdin and stdout
@@ -171,9 +171,9 @@ func (p *plainPrompter) AskTextWithDefault(
 // theme for a polished appearance. Requires a TTY.
 type huhPrompter struct{}
 
-// pacmanTheme wraps the Charm theme for consistent styling
+// journeyTheme wraps the Charm theme for consistent styling
 // across all interactive widgets.
-var pacmanTheme huh.Theme = huh.ThemeFunc(huh.ThemeCharm)
+var journeyTheme huh.Theme = huh.ThemeFunc(huh.ThemeCharm)
 
 func (p *huhPrompter) Ask(
 	question string,
@@ -190,7 +190,7 @@ func (p *huhPrompter) Ask(
 		Title(question).
 		Options(opts...).
 		Value(&selected).
-		WithTheme(pacmanTheme).
+		WithTheme(journeyTheme).
 		Run()
 	if err != nil {
 		return 0, fmt.Errorf("prompt: %w", err)
@@ -207,7 +207,7 @@ func (p *huhPrompter) AskText(
 	err := huh.NewInput().
 		Title(question).
 		Value(&answer).
-		WithTheme(pacmanTheme).
+		WithTheme(journeyTheme).
 		Run()
 	if err != nil {
 		return "", fmt.Errorf("prompt: %w", err)
@@ -237,7 +237,7 @@ func (p *huhPrompter) AskMultiSelect(
 		ms.Value(&defaults)
 	}
 
-	if err := ms.WithTheme(pacmanTheme).Run(); err != nil {
+	if err := ms.WithTheme(journeyTheme).Run(); err != nil {
 		return nil, fmt.Errorf("prompt: %w", err)
 	}
 
@@ -255,7 +255,7 @@ func (p *huhPrompter) AskConfirm(
 	err := huh.NewConfirm().
 		Title(question).
 		Value(&confirmed).
-		WithTheme(pacmanTheme).
+		WithTheme(journeyTheme).
 		Run()
 	if err != nil {
 		return false, fmt.Errorf("prompt: %w", err)
@@ -273,7 +273,7 @@ func (p *huhPrompter) AskTextWithDefault(
 	err := huh.NewInput().
 		Title(question).
 		Value(&answer).
-		WithTheme(pacmanTheme).
+		WithTheme(journeyTheme).
 		Run()
 	if err != nil {
 		return "", fmt.Errorf("prompt: %w", err)
@@ -407,13 +407,13 @@ func main() {
 	runInteractive(configPath)
 }
 
-// runInteractive runs the full interactive Pac-Man flow:
+// runInteractive runs the full interactive Gemara User Journey flow:
 //  1. MCP server detection and setup
 //  2. Auto-select latest Gemara schema version
 //  3. Role discovery with activity probing
 //  4. Artifact recommendations and learning path
 //  5. Tutorial walkthrough (interactive, section by section)
-//  6. Handoff to ./pacman --doctor and then OpenCode
+//  6. Handoff to ./gemara-user-journey --doctor and then OpenCode
 func runInteractive(configPath string) {
 	ctx := context.Background()
 
@@ -466,7 +466,7 @@ func runInteractive(configPath string) {
 			"No interactive terminal detected. " +
 				"Using simple text prompts. " +
 				"For the full interactive " +
-				"experience, run ./pacman " +
+				"experience, run ./gemara-user-journey " +
 				"directly in a terminal.",
 		))
 		prompter = newPlainPrompter()
@@ -558,7 +558,7 @@ func renderAuthoringHandoff(sess *session.Session) {
 	))
 	fmt.Println()
 	lipgloss.Println(codeBlockStyle.Render(
-		"./pacman --doctor",
+		"./gemara-user-journey --doctor",
 	))
 	fmt.Println()
 
@@ -631,31 +631,31 @@ var (
 func printUsage() {
 	lipgloss.Println(cli.RenderBanner())
 	fmt.Println(
-		"Pac-Man is a role-based tutorial engine " +
+		"Gemara User Journey is a role-based tutorial engine " +
 			"for the Gemara GRC schema project.",
 	)
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println(
-		"  ./pacman             " +
+		"  ./gemara-user-journey             " +
 			"Learn: role discovery, tutorials",
 	)
 	fmt.Println(
-		"  ./pacman --doctor    " +
+		"  ./gemara-user-journey --doctor    " +
 			"Check environment readiness",
 	)
 	fmt.Println(
-		"  ./pacman --help      " +
+		"  ./gemara-user-journey --help      " +
 			"Show this help message",
 	)
 	fmt.Println()
 	fmt.Println("Getting started:")
 	fmt.Println(
-		"  1. Run ./pacman to identify your " +
+		"  1. Run ./gemara-user-journey to identify your " +
 			"role and walk through tutorials",
 	)
 	fmt.Println(
-		"  2. Run ./pacman --doctor to verify " +
+		"  2. Run ./gemara-user-journey --doctor to verify " +
 			"gemara-mcp is ready",
 	)
 	fmt.Println(
@@ -792,7 +792,7 @@ func legacyMain() { //nolint:unused
 				"No interactive terminal detected. " +
 					"Using simple text prompts. " +
 					"For the full interactive " +
-					"experience, run ./pacman " +
+					"experience, run ./gemara-user-journey " +
 					"directly in a terminal.",
 			))
 			prompter = newPlainPrompter()
@@ -1352,7 +1352,7 @@ func runDemoTeamAndAuthoring(
 		TutorialsDir:  tutorialsDir,
 		SchemaVersion: sess.SchemaVersion,
 		TeamConfigDir: filepath.Join(
-			os.TempDir(), "pacman-demo-teams",
+			os.TempDir(), "journey-demo-teams",
 		),
 	}
 
@@ -1421,7 +1421,7 @@ func runDemoTeamAndAuthoring(
 	}
 
 	outputDir := filepath.Join(
-		os.TempDir(), "pacman-demo-artifacts",
+		os.TempDir(), "journey-demo-artifacts",
 	)
 
 	authorCfg := &cli.AuthorPromptConfig{

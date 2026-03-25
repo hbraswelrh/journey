@@ -189,7 +189,7 @@ func (v *LocalValidator) validate(
 	}
 
 	// Write to a temp file for cue vet.
-	tmpFile, err := os.CreateTemp("", "pacman-*.yaml")
+	tmpFile, err := os.CreateTemp("", "journey-*.yaml")
 	if err != nil {
 		return nil, fmt.Errorf(
 			"create temp file: %w", err,

@@ -1,4 +1,4 @@
-module github.com/hbraswelrh/pacman
+module github.com/hbraswelrh/gemara-user-journey
 
 go 1.26.1
 

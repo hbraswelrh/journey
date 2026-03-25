@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
 )
 
 // T246: SaveProfile writes a valid YAML file.
@@ -187,7 +187,7 @@ func TestListProfilesNonexistent(t *testing.T) {
 	t.Parallel()
 
 	profiles, err := ListProfiles(
-		"/tmp/nonexistent-pacman-test-dir",
+		"/tmp/nonexistent-journey-test-dir",
 	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

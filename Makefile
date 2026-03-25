@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Pac-Man Makefile
+# Gemara User Journey Makefile
 # Single entry point for all build, test, lint, format, and
 # validation commands per the project constitution.
 
-BINARY    := pacman
-CMD_DIR   := ./cmd/pacman
+BINARY    := gemara-user-journey
+CMD_DIR   := ./cmd/gemara-user-journey
 BUILD_DIR := .
 
 GO        := go
@@ -21,7 +21,7 @@ CUE       := cue
 ## all: Build and lint (default target)
 all: build lint
 
-## build: Compile the Pac-Man binary
+## build: Compile the Gemara User Journey binary
 build:
 	$(GO) build $(GOFLAGS) -ldflags "$(LDFLAGS)" \
 		-o $(BUILD_DIR)/$(BINARY) $(CMD_DIR)

@@ -19,7 +19,7 @@
 configuration
 
 - [x] T001 [US1] Restructure project: move entry point to
-  `cmd/pacman/main.go`, create `internal/` package directories
+  `cmd/gemara-user-journey/main.go`, create `internal/` package directories
   (`consts/`, `mcp/`, `fallback/`, `session/`, `cli/`)
 - [x] T002 [US1] Create `Makefile` with targets: `build`, `test`,
   `lint`, `fmt`, `schema-check`, `clean`
@@ -171,7 +171,7 @@ Podman or decline, with `opencode.json` correctly configured.
 
 ## Phase 4: Local Fallback (FR-029)
 
-**Purpose**: Ensure Pac-Man functions when MCP server is
+**Purpose**: Ensure Gemara User Journey functions when MCP server is
 unavailable
 
 ### Tests for Phase 4
@@ -289,10 +289,10 @@ reconnected, never connected).
 
 **Purpose**: End-to-end validation and user-facing quality
 
-- [x] T049 [US1] Integration test: launch Pac-Man with MCP
+- [x] T049 [US1] Integration test: launch Gemara User Journey with MCP
   server available — verify detection, connection, all three
   tools respond, session shows connected status
-- [x] T050 [US1] Integration test: launch Pac-Man without MCP
+- [x] T050 [US1] Integration test: launch Gemara User Journey without MCP
   server — verify detection returns not-found, setup prompt
   appears, automated install completes, `opencode.json`
   configured, declining proceeds with fallback mode
@@ -307,7 +307,7 @@ reconnected, never connected).
   preferred harness and document MCP server setup
 
 **Checkpoint**: US1 is fully functional and independently
-testable. A user can launch Pac-Man, be guided through MCP
+testable. A user can launch Gemara User Journey, be guided through MCP
 setup (or decline), and proceed with appropriate capabilities.
 
 ---

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hbraswelrh/pacman/internal/cli"
-	"github.com/hbraswelrh/pacman/internal/consts"
-	"github.com/hbraswelrh/pacman/internal/session"
+	"github.com/hbraswelrh/gemara-user-journey/internal/cli"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/session"
 )
 
 // authorMockPrompter implements FreeTextPrompter for

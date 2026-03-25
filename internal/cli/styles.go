@@ -14,12 +14,12 @@ import (
 	"github.com/charmbracelet/glamour"
 	"golang.org/x/term"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
-	"github.com/hbraswelrh/pacman/internal/team"
-	"github.com/hbraswelrh/pacman/internal/tutorials"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/team"
+	"github.com/hbraswelrh/gemara-user-journey/internal/tutorials"
 )
 
-// Color palette for the Pac-Man TUI. Uses AdaptiveColor to
+// Color palette for the Gemara User Journey TUI. Uses AdaptiveColor to
 // support both light and dark terminal backgrounds,
 // including OpenCode IDE environments.
 var (
@@ -248,7 +248,7 @@ var LayerNames = map[int]string{
 // RenderBanner returns the styled application banner.
 func RenderBanner() string {
 	banner := titleStyle.Render(
-		"  Pac-Man — Gemara Tutorial Engine  ",
+		"  Gemara User Journey — Gemara Tutorial Engine  ",
 	)
 	return "\n" + banner + "\n"
 }

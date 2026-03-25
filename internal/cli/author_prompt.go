@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/hbraswelrh/pacman/internal/authoring"
-	"github.com/hbraswelrh/pacman/internal/consts"
-	"github.com/hbraswelrh/pacman/internal/session"
+	"github.com/hbraswelrh/gemara-user-journey/internal/authoring"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/session"
 )
 
 // AuthorPromptConfig holds dependencies for the guided
@@ -17,7 +17,7 @@ type AuthorPromptConfig struct {
 	// Prompter handles user interaction including free-text
 	// input.
 	Prompter FreeTextPrompter
-	// Session is the current Pac-Man session.
+	// Session is the current Gemara User Journey session.
 	Session *session.Session
 	// SchemaVersion is the selected Gemara schema version.
 	SchemaVersion string

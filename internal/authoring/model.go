@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package authoring implements guided Gemara content
-// authoring for the Pac-Man tutorial engine (US6). It
+// authoring for the Gemara User Journey tutorial engine (US6). It
 // provides step-by-step artifact creation with role-aware
 // guidance, schema validation at each step, and YAML/JSON
 // output generation.
@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
 )
 
 // ValidationStatus tracks the validation state of an

@@ -5,7 +5,7 @@ package roles
 import (
 	"testing"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
 )
 
 // T203: ExtractKeywords extracts known domain terms from

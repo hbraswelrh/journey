@@ -8,7 +8,7 @@
 ## Summary
 
 User Story 1 (Gemara MCP Server Setup) is the highest-priority
-deliverable. When a user launches Pac-Man through OpenCode, the
+deliverable. When a user launches Gemara User Journey through OpenCode, the
 system detects whether the Gemara MCP server is installed,
 offers installation from source or via Podman if it is not, and
 configures the MCP client connection. If the user declines, the
@@ -117,7 +117,7 @@ internal/
     └── root.go              # Root command (existing or new)
 
 cmd/
-└── pacman/
+└── gemara-user-journey/
     └── main.go              # Entry point (replaces or wraps
                              #   current main.go)
 
@@ -131,7 +131,7 @@ testdata/
 **Structure Decision**: Go standard project layout with
 `internal/` for private packages and `cmd/` for the binary
 entry point. The existing `main.go` at root will be migrated
-to `cmd/pacman/main.go` per Go conventions. The `pacman/`
+to `cmd/gemara-user-journey/main.go` per Go conventions. The `gemara-user-journey/`
 directory (existing) will be evaluated for reuse or migration
 into `internal/`.
 
@@ -140,7 +140,7 @@ into `internal/`.
 ### Phase 1: Setup (Shared Infrastructure)
 
 - Makefile with `build`, `test`, `lint`, `schema-check` targets
-- Project restructure: `cmd/pacman/main.go`, `internal/`
+- Project restructure: `cmd/gemara-user-journey/main.go`, `internal/`
   packages
 - `internal/consts/consts.go` with centralized MCP constants
 - Pre-commit hook configuration (`.pre-commit-config.yaml`)
@@ -229,7 +229,7 @@ into `internal/`.
 
 ### Phase 7: Integration and Polish
 
-- End-to-end integration test: launch Pac-Man, detect MCP
+- End-to-end integration test: launch Gemara User Journey, detect MCP
   status, offer installation, configure session, confirm
   tools are available.
 - CLI help text and error messages using Gemara lexicon terms.

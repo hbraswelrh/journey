@@ -9,7 +9,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in Pac-Man, please
+If you discover a security vulnerability in Gemara User Journey, please
 report it responsibly. **Do not open a public issue.**
 
 ### How to Report
@@ -31,7 +31,7 @@ report it responsibly. **Do not open a public issue.**
 
 ### Scope
 
-This security policy covers the Pac-Man codebase and its
+This security policy covers the Gemara User Journey codebase and its
 direct dependencies. Vulnerabilities in the Gemara schema
 project or the Gemara MCP server should be reported to their
 respective maintainers.

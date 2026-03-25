@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Package session manages Pac-Man session state, tracking MCP
+// Package session manages Gemara User Journey session state, tracking MCP
 // connection status, schema version selection, fallback mode,
 // and available capabilities (tools, resources, prompts).
 package session
@@ -8,7 +8,7 @@ package session
 import (
 	"sync"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
 )
 
 // MCPStatus represents the MCP server connection state for
@@ -57,7 +57,7 @@ type AvailablePromptSet struct {
 	ControlCatalog   bool
 }
 
-// Session holds the state for a Pac-Man session.
+// Session holds the state for a Gemara User Journey session.
 type Session struct {
 	mu sync.RWMutex
 

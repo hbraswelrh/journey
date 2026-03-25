@@ -5,9 +5,9 @@ package team_test
 import (
 	"testing"
 
-	"github.com/hbraswelrh/pacman/internal/consts"
-	"github.com/hbraswelrh/pacman/internal/team"
-	"github.com/hbraswelrh/pacman/internal/tutorials"
+	"github.com/hbraswelrh/gemara-user-journey/internal/consts"
+	"github.com/hbraswelrh/gemara-user-journey/internal/team"
+	"github.com/hbraswelrh/gemara-user-journey/internal/tutorials"
 )
 
 // testTutorials returns a minimal tutorial set for handoff

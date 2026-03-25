@@ -9,7 +9,7 @@
 
 ### User Story 1 - Gemara MCP Server Setup (Priority: P1)
 
-When the user first launches Pac-Man through
+When the user first launches Gemara User Journey through
 [OpenCode](https://opencode.ai) — the preferred AI development
 harness for this project — the system offers the option to
 install and configure the Gemara MCP server
@@ -18,7 +18,7 @@ as an enhanced authoring and learning companion. OpenCode guides
 the user through the entire setup process regardless of their
 role, ensuring they have the tools they need before proceeding.
 The MCP server provides direct access to MCP tools, resources,
-and prompts that augment Pac-Man's capabilities throughout all
+and prompts that augment Gemara User Journey's capabilities throughout all
 subsequent operations:
 
 - **Tool — `validate_gemara_artifact`**: Validate YAML
@@ -27,7 +27,7 @@ subsequent operations:
   manually.
 - **Resource — `gemara://lexicon`**: Retrieve the upstream
   Gemara lexicon entries, ensuring all terminology used by
-  Pac-Man and the user's authored content aligns with the
+  Gemara User Journey and the user's authored content aligns with the
   canonical Gemara vocabulary.
 - **Resource — `gemara://schema/definitions`**: Retrieve
   schema documentation for the Gemara CUE module, providing
@@ -49,7 +49,7 @@ configuration (`opencode.json`). Pinning to a SHA256 digest
 rather than a mutable tag prevents tag substitution attacks
 and guarantees reproducible builds. The user may also install
 via Podman as an alternative. If the user declines
-installation, Pac-Man MUST continue to function using local CUE
+installation, Gemara User Journey MUST continue to function using local CUE
 tooling for validation and bundled lexicon data, but the system
 MUST inform the user which enhanced capabilities are unavailable
 without the MCP server and offer installation again at any point
@@ -92,7 +92,7 @@ supports guided authoring (US6), and the schema docs provide
 contextual help throughout. Users who skip installation still
 have a functional tool but with degraded capabilities.
 
-**Independent Test**: Can be fully tested by launching Pac-Man
+**Independent Test**: Can be fully tested by launching Gemara User Journey
 with the MCP server not installed, verifying the installation
 prompt appears, completing automated installation (clone, build,
 configure), and confirming that the three MCP tools respond
@@ -102,11 +102,11 @@ with local fallbacks.
 
 **Acceptance Scenarios**:
 
-1. **Given** a user launches Pac-Man for the first time and the
+1. **Given** a user launches Gemara User Journey for the first time and the
    Gemara MCP server is not detected, **When** the initial setup
    screen is presented, **Then** the system offers to install the
    Gemara MCP server with a brief explanation of the three tools
-   it provides and how they enhance the Pac-Man experience.
+   it provides and how they enhance the Gemara User Journey experience.
 
 2. **Given** a user chooses to install the MCP server from
    source, **When** the system begins automated installation,
@@ -133,7 +133,7 @@ with local fallbacks.
    appropriate Podman-based MCP server entry.
 
 4. **Given** a user declines MCP server installation, **When**
-   they proceed to use Pac-Man, **Then** the system informs them
+   they proceed to use Gemara User Journey, **Then** the system informs them
    that lexicon lookups will use bundled data (which may not
    reflect the latest upstream terms), validation will require
    local CUE tooling, and schema documentation will be limited
@@ -169,7 +169,7 @@ with local fallbacks.
 
 ### User Story 2 - Upstream Schema Fetch and Version Selection (Priority: P2)
 
-When the user launches Pac-Man or initiates any operation that
+When the user launches Gemara User Journey or initiates any operation that
 depends on the Gemara schemas, the system fetches the latest
 schema information from the upstream Gemara repository
 (`github.com/gemaraproj/gemara`). It retrieves the list of
@@ -265,7 +265,7 @@ validation commands.
 
 ### User Story 3 - Role and Activity Discovery with Tailored Learning Path (Priority: P3)
 
-A user launches Pac-Man and selects their schema version (per
+A user launches Gemara User Journey and selects their schema version (per
 US2). The system then walks them through a two-phase role
 discovery process:
 
@@ -474,7 +474,7 @@ the CISO references when drafting organizational policy (Layer 3),
 which the Developer consumes to understand what controls apply to
 their deployment pipeline (Layer 4 sensitive activities).
 
-**Why this priority**: This feature transforms Pac-Man from an
+**Why this priority**: This feature transforms Gemara User Journey from an
 individual learning tool into a team coordination tool. It is
 lower priority because it depends on the role definitions
 established in User Story 3, and because individual learning
@@ -842,7 +842,7 @@ schema.
   documentation, and — when running in artifact mode — the
   `threat_assessment` and `control_catalog` prompts for
   guided artifact creation wizards. The system MUST explain
-  how each enhances the Pac-Man experience.
+  how each enhances the Gemara User Journey experience.
 - **FR-027**: System MUST support two MCP server installation
   methods: automated build from source and Podman.
   - **Build from source** (preferred): The system MUST ask the
@@ -925,7 +925,7 @@ schema.
   information.
 - **FR-033**: The system MUST use
   [OpenCode](https://opencode.ai) as the preferred AI
-  development harness for guiding users through all Pac-Man
+  development harness for guiding users through all Gemara User Journey
   workflows. OpenCode MUST serve as the single entry point
   through which users — regardless of their role — discover
   what tools they need (CUE, Gemara MCP server, Go toolchain),
@@ -942,7 +942,7 @@ schema.
   `AGENTS.md` file) that encodes role-based onboarding flows,
   schema validation procedures, and Gemara authoring patterns.
   These configurations MUST ensure that any user launching
-  OpenCode in the Pac-Man repository is immediately guided
+  OpenCode in the Gemara User Journey repository is immediately guided
   through role identification (US3), schema version selection
   (US2), and MCP server setup (US1) without requiring prior
   knowledge of the project structure or tooling.
@@ -1072,13 +1072,13 @@ schema.
 
 ### Assumptions
 
-- Users interact with Pac-Man through OpenCode
+- Users interact with Gemara User Journey through OpenCode
   (`https://opencode.ai`), which serves as the AI development
   harness and guided onboarding interface. OpenCode is open
   source, runs on Linux and macOS, and supports MCP server
   connections for integrating the Gemara MCP server directly
   into the guided workflow. Users who choose not to use
-  OpenCode can still interact with Pac-Man's CLI directly,
+  OpenCode can still interact with Gemara User Journey's CLI directly,
   but the guided onboarding experience (role discovery, tool
   installation guidance, learning path navigation) is designed
   for and optimized around OpenCode sessions.
@@ -1119,7 +1119,7 @@ schema.
 - The Gemara MCP server follows the Model Context Protocol
   specification, exposing tools (callable functions),
   resources (data endpoints accessed by URI), and prompts
-  (guided conversation templates). Pac-Man's MCP client
+  (guided conversation templates). Gemara User Journey's MCP client
   MUST use the appropriate MCP protocol methods for each
   category: tool calls for `validate_gemara_artifact`,
   resource reads for `gemara://lexicon` and

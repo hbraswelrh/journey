@@ -7,10 +7,10 @@ import (
 	"io"
 	"strings"
 
-	"github.com/hbraswelrh/pacman/internal/blocks"
-	"github.com/hbraswelrh/pacman/internal/schema"
-	"github.com/hbraswelrh/pacman/internal/session"
-	"github.com/hbraswelrh/pacman/internal/tutorials"
+	"github.com/hbraswelrh/gemara-user-journey/internal/blocks"
+	"github.com/hbraswelrh/gemara-user-journey/internal/schema"
+	"github.com/hbraswelrh/gemara-user-journey/internal/session"
+	"github.com/hbraswelrh/gemara-user-journey/internal/tutorials"
 )
 
 // TutorialPromptConfig holds dependencies for the

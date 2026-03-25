@@ -7,13 +7,13 @@
 
 ## Context
 
-Pac-Man is a role-based tutorial engine that guides users —
+Gemara User Journey is a role-based tutorial engine that guides users —
 across diverse job roles (Security Engineers, Compliance
 Officers, Developers, CISOs, Auditors, and others) — through
 the Gemara project's seven-layer GRC model. The tool must
 onboard users who may have no prior knowledge of Gemara, CUE
 schemas, Git workflows, or the specific tools required for
-their role. At the same time, contributors developing Pac-Man
+their role. At the same time, contributors developing Gemara User Journey
 need an AI-assisted development workflow that automatically
 conforms to the project's constitution, coding standards, and
 Gemara schema constraints.
@@ -36,7 +36,7 @@ Alternatives considered:
   constitution across all tools.
 - **Custom agent/harness**: Build a project-specific AI
   integration. This would require significant development effort
-  unrelated to Pac-Man's core mission and would need ongoing
+  unrelated to Gemara User Journey's core mission and would need ongoing
   maintenance as AI tooling evolves.
 - **Other existing agents**: Several commercial and open source
   AI coding agents exist. Most are either closed source,
@@ -46,7 +46,7 @@ Alternatives considered:
 ## Decision
 
 Adopt [OpenCode](https://opencode.ai) as the preferred AI
-development harness for both Pac-Man development and user-facing
+development harness for both Gemara User Journey development and user-facing
 guided workflows.
 
 OpenCode is selected because it satisfies all project
@@ -75,7 +75,7 @@ OpenCode is integrated at two levels:
    activities (code generation, review, interactive sessions).
    Project rules encode the constitution automatically.
 2. **User-facing**: Serves as the interface through which end
-   users interact with Pac-Man's role-based tutorial engine,
+   users interact with Gemara User Journey's role-based tutorial engine,
    guided through onboarding without requiring prior knowledge
    of the project.
 

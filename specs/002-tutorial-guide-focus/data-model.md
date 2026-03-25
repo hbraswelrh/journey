@@ -1,12 +1,13 @@
-# Data Model: Refocus Pac-Man as Tutorial Guide
+# Data Model: Refocus Gemara User Journey as Tutorial Guide
 
 **Branch**: `002-tutorial-guide-focus`
-**Date**: 2026-03-17
+**Date**: 2026-03-25
 
 ## Entity Overview
 
-This feature introduces two new entities and modifies two
-existing entities. No entities are removed.
+This feature introduces two new entities, modifies two
+existing entities, and defines a documentation structure
+for US6 (README restructuring). No entities are removed.
 
 ```text
                     ┌──────────────────┐
@@ -44,6 +45,18 @@ existing entities. No entities are removed.
                     │ArtifactRecommend.│
                     │  (NEW)           │
                     └──────────────────┘
+
+
+    ┌──────────────────────────────────────────────────┐
+    │        Documentation Structure (US6)              │
+    │                                                  │
+    │  README.md (landing page)                        │
+    │    ├── links to docs/layer-reference.md           │
+    │    ├── links to docs/project-structure.md         │
+    │    ├── links to docs/mcp-update-guide.md          │
+    │    ├── links to CONTRIBUTING.md                   │
+    │    └── embeds docs/images/web-ui-preview.png      │
+    └──────────────────────────────────────────────────┘
 ```
 
 ## New Entities
@@ -86,7 +99,7 @@ on their resolved Gemara layers.
 ### HandoffSummary
 
 A structured transition context presented to the user after
-completing a tutorial in the Pac-Man terminal. Bridges the
+completing a tutorial in the Gemara User Journey terminal. Bridges the
 learn-to-author transition by directing the user to
 OpenCode with the gemara-mcp server.
 
@@ -267,3 +280,36 @@ starting authoring:
 - "Identify the controls to evaluate"
 - "Gather evidence and assessment materials"
 - "Determine evaluation criteria and scoring"
+
+## Documentation Structure (US6)
+
+### New Files
+
+| File | Content Source | Purpose |
+|------|---------------|---------|
+| `docs/images/web-ui-preview.png` | Manually captured screenshot | Visual preview of web UI in README |
+| `docs/layer-reference.md` | Moved from README lines 142-161 | Gemara seven-layer model reference |
+| `docs/project-structure.md` | Moved from README lines 407-452 | Project directory layout |
+| `docs/mcp-update-guide.md` | Moved from README lines 329-388 | Instructions for syncing gemara-mcp |
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `README.md` | Rewritten as landing page (~120-150 lines); links to `docs/` files |
+
+### README Data Model
+
+The README is a static Markdown document with no runtime
+data. Its content is derived from:
+
+| Section | Data Source |
+|---------|------------|
+| Project summary | Manually authored; positions as tutorial guide |
+| Screenshot | `docs/images/web-ui-preview.png` (relative path) |
+| User Journey | Narrative describing: role discovery -> tutorial walkthrough -> OpenCode handoff |
+| Prerequisites | Hyperlinks to official installation pages for Go, CUE, OpenCode, Git, gemara-mcp |
+| Getting Started | 4-step instructions: clone, build, verify (`--doctor`), launch (`opencode`) |
+| Upstream Projects | Table linking Gemara and gemara-mcp repositories |
+| Learn More | Links to `docs/layer-reference.md`, `docs/project-structure.md`, `docs/mcp-update-guide.md`, `CONTRIBUTING.md` |
+| License | Apache 2.0 one-liner |
