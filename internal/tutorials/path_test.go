@@ -55,17 +55,10 @@ func TestGeneratePathProducesOrderedSteps(
 		t.Fatal("expected non-empty learning path")
 	}
 
-	// Steps should be ordered by layer priority.
-	for i := 1; i < len(path.Steps); i++ {
-		prev := path.Steps[i-1]
-		curr := path.Steps[i]
-		// Same or higher layer number (lower priority
-		// layers come later).
-		if prev.Layer > curr.Layer &&
-			prev.Layer != curr.Layer {
-			// This is acceptable if the priorities
-			// differ — just verify it's a reasonable
-			// ordering.
+	// Verify steps exist and have valid layers.
+	for i := 0; i < len(path.Steps); i++ {
+		if path.Steps[i].Layer < 1 {
+			t.Errorf("step %d has invalid layer %d", i, path.Steps[i].Layer)
 		}
 	}
 }

@@ -312,14 +312,11 @@ func replaceSection(
 }
 
 func findSectionIndex(content, heading string) int {
-	idx := 0
-	for {
-		i := indexOf(content[idx:], heading)
-		if i < 0 {
-			return -1
-		}
-		return idx + i
+	i := indexOf(content, heading)
+	if i < 0 {
+		return -1
 	}
+	return i
 }
 
 func indexOf(s, sub string) int {
