@@ -11,7 +11,7 @@ context, and then hand off to
 server for artifact authoring. Gemara User Journey is the guide;
 the MCP server is the authoring tool.
 
-**[Try it live](https://hbraswelrh.github.io/pacman/)** | [View source](https://github.com/hbraswelrh/pacman)
+**[Try it live](https://hbraswelrh.github.io/journey/)** | [View source](https://github.com/hbraswelrh/journey)
 
 ![Gemara User Journey Web UI](docs/images/web-ui-preview.png)
 
