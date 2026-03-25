@@ -38,18 +38,11 @@ make build
 ```bash
 # Check the binary runs
 ./bin/gemara-mcp --version
-
-# Or use Gemara User Journey's doctor command
-cd /path/to/gemara-user-journey
-./gemara-user-journey --doctor
 ```
 
 ## When to Sync
 
 - Before starting a new tutorial or authoring session
-- When `./gemara-user-journey --doctor` reports a version mismatch
-  between the MCP server and your selected Gemara schema
-  version
 - When new Gemara schema releases are published at
   [gemaraproj/gemara](https://github.com/gemaraproj/gemara/releases)
 

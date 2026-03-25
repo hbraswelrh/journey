@@ -4,27 +4,17 @@
 # Single entry point for all build, test, lint, format, and
 # validation commands per the project constitution.
 
-BINARY    := gemara-user-journey
-CMD_DIR   := ./cmd/gemara-user-journey
-BUILD_DIR := .
-
 GO        := go
 GOFLAGS   :=
-LDFLAGS   :=
 
 GOLANGCI  := golangci-lint
 CUE       := cue
 
-.PHONY: all build test lint fmt schema-check clean help \
+.PHONY: all test lint fmt schema-check clean help \
        web-data web-build web-dev web-clean
 
-## all: Build and lint (default target)
-all: build lint
-
-## build: Compile the Gemara User Journey binary
-build:
-	$(GO) build $(GOFLAGS) -ldflags "$(LDFLAGS)" \
-		-o $(BUILD_DIR)/$(BINARY) $(CMD_DIR)
+## all: Lint and build web interface (default target)
+all: lint web-build
 
 ## test: Run all tests with race detector
 test:
@@ -59,9 +49,8 @@ web-dev: web-data
 web-clean:
 	rm -rf web/dist web/src/generated
 
-## clean: Remove built binary, test caches, and web artifacts
+## clean: Remove test caches and web artifacts
 clean: web-clean
-	rm -f $(BUILD_DIR)/$(BINARY)
 	$(GO) clean -testcache
 
 ## help: Print this help message

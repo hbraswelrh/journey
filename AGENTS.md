@@ -13,9 +13,10 @@ interface.
 
 ### Setup
 
-1. Run `./gemara-user-journey --doctor` to verify your environment
-2. Start OpenCode: `opencode`
-3. Tell OpenCode your role and what you want to do
+1. Start OpenCode: `opencode`
+2. Tell OpenCode your role and what you want to do
+3. Or use the web interface: `make web-dev` then open
+   http://localhost:5173/
 
 ### Getting Started Prompts
 
@@ -256,8 +257,9 @@ launches the gemara-mcp server automatically as a
 background process. All MCP capabilities are then
 available in your OpenCode session.
 
-Use `./gemara-user-journey --doctor` to verify the configuration is
-correct before starting OpenCode.
+Verify the configuration by starting OpenCode and
+confirming the gemara-mcp tools, resources, and prompts
+are available.
 
 ### MCP Capabilities
 
@@ -356,7 +358,6 @@ via `cmd/genwebdata/`.
 
 ## Project Structure
 
-- `cmd/gemara-user-journey/` — CLI entry point (`--doctor`, `--help`)
 - `cmd/genwebdata/` — TypeScript data generator for web UI
 - `internal/consts/` — Centralized constants
 - `internal/roles/` — Role definitions, activity-to-layer
@@ -367,7 +368,6 @@ via `cmd/genwebdata/`.
 - `internal/authoring/` — Artifact authoring engine
 - `internal/mcp/` — MCP client, config management
 - `internal/session/` — Session state
-- `internal/cli/` — Doctor command, styles
 - `web/` — React web interface (role discovery, tutorial
   suggestions, MCP setup walkthrough)
 - `specs/` — Feature specifications
@@ -398,10 +398,10 @@ cue vet -c -d '#<SchemaType>' \
 Or use the `validate_gemara_artifact` MCP tool.
 
 ## Active Technologies
-- Go 1.26.1, formatted with `goimports` + `charm.land/huh/v2` (TUI prompts), (002-tutorial-guide-focus)
-- File-based caching (`~/.config/gemara-user-journey/` for (002-tutorial-guide-focus)
-- Go 1.26.1 + `charm.land/huh/v2` (TUI forms), `charm.land/lipgloss/v2` (terminal styling), `github.com/charmbracelet/glamour` (markdown rendering), `gopkg.in/yaml.v3` (YAML), React 19 + Vite 8 (web frontend) (002-tutorial-guide-focus)
-- File-based caching (`~/.config/gemara-user-journey/`), YAML profiles (`~/.config/gemara-user-journey/roles/`), upstream tutorial clone (`~/.local/share/gemara-user-journey/gemara/`) (002-tutorial-guide-focus)
+- Go 1.26.1, formatted with `goimports`
+- `gopkg.in/yaml.v3` (YAML parsing)
+- React 19 + Vite 8 (web frontend)
+- File-based caching (`~/.config/gemara-user-journey/`)
 
 ## Recent Changes
-- 002-tutorial-guide-focus: Added Go 1.26.1, formatted with `goimports` + `charm.land/huh/v2` (TUI prompts),
+- 002-tutorial-guide-focus: Removed TUI, web-only interface with React 19 + Vite 8

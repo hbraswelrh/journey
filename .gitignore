@@ -4,7 +4,7 @@
 *.dll
 *.so
 *.dylib
-/gemara-user-journey
+# (no CLI binary — web-only interface)
 
 # Test binary
 *.test

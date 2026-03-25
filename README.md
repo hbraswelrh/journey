@@ -11,6 +11,8 @@ context, and then hand off to
 server for artifact authoring. Gemara User Journey is the guide;
 the MCP server is the authoring tool.
 
+**[Try it live](https://hbraswelrh.github.io/pacman/)** | [View source](https://github.com/hbraswelrh/pacman)
+
 ![Gemara User Journey Web UI](docs/images/web-ui-preview.png)
 
 ## User Journey
@@ -48,54 +50,55 @@ a preparation checklist — so you arrive ready to author.
 ## Prerequisites
 
 - Linux or macOS (Windows: use WSL)
-- [Go](https://go.dev/dl/) 1.21 or later
-- [CUE](https://cuelang.org/docs/introduction/installation/)
-  v0.15.1 or later
-- [Git](https://git-scm.com/downloads) (with DCO sign-off
-  and commit signing configured)
+- [Node.js](https://nodejs.org/) 18 or later (for the
+  web interface)
+- [Go](https://go.dev/dl/) 1.21 or later (for data
+  generation)
+- [Git](https://git-scm.com/downloads)
 - [OpenCode](https://opencode.ai) — the AI coding agent
-  that serves as the tutorial and authoring interface
+  used for tutorials and artifact authoring
 - [gemara-mcp](https://github.com/gemaraproj/gemara-mcp)
   server (recommended — build from source)
 
 ## Getting Started
 
-### Step 1: Clone and Build
+### Step 1: Clone and Install
 
 ```bash
 git clone https://github.com/hbraswelrh/gemara-user-journey.git
 cd gemara-user-journey
-make build
+cd web && npm install && cd ..
 ```
 
-### Step 2: Verify Your Environment
+### Step 2: Launch the Web Interface
 
 ```bash
-./gemara-user-journey --doctor
+make web-dev
 ```
 
-This checks your Go version, CUE installation, gemara-mcp
-server availability, and `opencode.json` configuration.
+Open **http://localhost:5173/** in your browser.
 
-### Step 3: Launch OpenCode
+### Step 3: Discover Your Role
+
+Select a predefined role or type your own, describe your
+daily activities, and the app maps you to the relevant
+Gemara layers, tutorials, and artifact types.
+
+### Step 4: Author with OpenCode
+
+After completing the guided journey, launch OpenCode in
+this project directory:
 
 ```bash
 opencode
 ```
 
-OpenCode reads the project's `AGENTS.md` for context and
-starts the gemara-mcp server automatically if configured
-in `opencode.json`.
-
-### Step 4: Tell OpenCode Your Role
-
-In your OpenCode session, describe your role and goals:
+OpenCode reads `AGENTS.md` for context and starts the
+gemara-mcp server automatically if configured in
+`opencode.json`. Tell it your role and goals:
 
 > "I'm a Security Engineer working on CI/CD pipeline
 > security. Help me get started with Gemara."
-
-Gemara User Journey will identify your relevant Gemara layers,
-recommend tutorials, and guide you through them.
 
 ## Upstream Projects
 
