@@ -6,6 +6,7 @@ run:
   timeout: 5m
 
 linters:
+  default: none
   enable:
     - errcheck
     - goimports
@@ -18,34 +19,36 @@ linters:
     - revive
     - gocritic
 
-settings:
-  goimports:
-    local-prefixes:
-      - github.com/hbraswelrh/journey
-  revive:
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/hbraswelrh/journey
+    revive:
+      rules:
+        - name: blank-imports
+        - name: exported
+        - name: unexported-return
+        - name: var-naming
+        - name: error-return
+        - name: error-naming
+        - name: increment-decrement
+    gocritic:
+      enabled-checks:
+        - appendAssign
+        - dupArg
+        - dupCase
+        - dupSubExpr
+        - flagName
+        - sloppyLen
+    misspell:
+      locale: US
+
+  exclusions:
     rules:
-      - name: blank-imports
-      - name: exported
-      - name: unexported-return
-      - name: var-naming
-      - name: error-return
-      - name: error-naming
-      - name: increment-decrement
-  gocritic:
-    enabled-checks:
-      - appendAssign
-      - dupArg
-      - dupCase
-      - dupSubExpr
-      - flagName
-      - sloppyLen
-  misspell:
-    locale: US
+      - path: _test\.go
+        linters:
+          - errcheck
 
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
