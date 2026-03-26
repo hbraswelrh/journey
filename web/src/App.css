@@ -844,6 +844,24 @@
   background: var(--accent-dark);
 }
 
+.btn.btn-playground {
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--info-bg);
+  color: #1a1a2e;
+  border: 1px solid #1a1a2e;
+  text-decoration: none;
+  margin-left: 8px;
+}
+
+.btn.btn-playground:hover {
+  background: var(--info);
+  color: #fff;
+  border-color: var(--info);
+}
+
 .tutorial-all-link {
   font-size: 14px;
   color: var(--text);

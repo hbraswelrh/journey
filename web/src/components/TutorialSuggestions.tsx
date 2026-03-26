@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
+import { Link } from 'react-router-dom';
 import { journeyData } from '../generated/journey-data';
 import type { UpstreamTutorial } from '../generated/journey-data';
 import type { ActivityProfile } from '../lib/roles';
@@ -360,7 +361,7 @@ function TutorialCard({
         </div>
       )}
 
-      {/* Open tutorial link */}
+      {/* Open tutorial link + playground */}
       <div className="tutorial-card-actions">
         <a
           href={tutorial.url}
@@ -370,6 +371,14 @@ function TutorialCard({
         >
           Open Tutorial
         </a>
+        <Link
+          to={`/playground?type=${
+            tutorial.primaryArtifactType || ''
+          }`}
+          className="btn btn-playground"
+        >
+          Open Playground
+        </Link>
       </div>
     </div>
   );
