@@ -119,12 +119,6 @@ export function MCPWalkthrough({ onBack }: MCPWalkthroughProps) {
           ))}
         </div>
 
-        <p style={{ marginTop: '12px', fontSize: '14px' }}>
-          Alternatively, run{' '}
-          <code>./journey</code> and select "Build from
-          source" for automated installation with SHA-pinned
-          commits.
-        </p>
       </div>
 
       {/* Configuration */}
@@ -217,15 +211,14 @@ export function MCPWalkthrough({ onBack }: MCPWalkthroughProps) {
       <div className="card">
         <h3>6. Verify Your Setup</h3>
         <p>
-          Run the doctor command to verify everything is properly
-          configured:
+          Confirm that the MCP server binary exists and your
+          configuration is correct:
         </p>
-        <pre style={{ marginTop: '12px' }}>./journey --doctor</pre>
+        <pre style={{ marginTop: '12px' }}>{'ls bin/gemara-mcp\ncat opencode.json'}</pre>
         <p style={{ marginTop: '12px', fontSize: '14px' }}>
-          This checks for all required tools, validates the
-          opencode.json configuration, and confirms the server
-          mode. All checks should pass before you start
-          authoring.
+          The binary should be present and your opencode.json
+          should contain the gemara-mcp entry with the correct
+          binary path and mode.
         </p>
 
         <h4 style={{ marginTop: '20px', marginBottom: '8px' }}>

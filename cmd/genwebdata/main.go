@@ -440,9 +440,10 @@ func buildMCPRequirements() []webMCPRequirement {
 				"lexicon, and wizard prompts.",
 			Required: true,
 			InstallCmd: "git clone " +
-				consts.GemaraMCPCloneHTTPS +
-				" && cd gemara-mcp && " +
-				"git checkout main && make build",
+				consts.GemaraMCPCloneHTTPS + "\n" +
+				"cd gemara-mcp\n" +
+				"git checkout main\n" +
+				"make build",
 			Category: "server",
 		},
 		{
