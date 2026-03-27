@@ -447,6 +447,7 @@
 
 .req-details {
   flex: 1;
+  min-width: 0;
 }
 
 .req-details h4 {
