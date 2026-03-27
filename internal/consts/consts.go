@@ -574,6 +574,174 @@ var DefaultPreparationChecklists = map[string][]string{
 // tutorials on the official documentation site.
 const GemaraTutorialsBaseURL = "https://gemara.openssf.org/tutorials"
 
+// GemaraTestDataBaseURL is the base URL for raw test data
+// files from the upstream Gemara repository.
+const GemaraTestDataBaseURL = "https://raw.githubusercontent.com/gemaraproj/gemara/main/test/test-data"
+
+// PlaygroundExampleFiles maps artifact type identifiers to
+// their upstream test data file names for the Gemara
+// Playground IDE.
+var PlaygroundExampleFiles = map[string]string{
+	ArtifactControlCatalog:  "good-ccc.yaml",
+	ArtifactGuidanceCatalog: "good-aigf.yaml",
+	ArtifactThreatCatalog:   "good-threat-catalog.yaml",
+	ArtifactRiskCatalog:     "good-risk-catalog.yaml",
+	ArtifactPolicy:          "good-policy.yaml",
+}
+
+// PlaygroundArtifactTypes is the ordered list of artifact
+// types supported by the Gemara Playground IDE.
+var PlaygroundArtifactTypes = []string{
+	ArtifactControlCatalog,
+	ArtifactGuidanceCatalog,
+	ArtifactThreatCatalog,
+	ArtifactRiskCatalog,
+	ArtifactPolicy,
+}
+
+// SchemaField describes a single field in a Gemara artifact
+// schema for the playground's schema documentation panel.
+type SchemaField struct {
+	// Name is the YAML field name.
+	Name string
+	// Type is a human-readable type description.
+	Type string
+	// Required indicates whether this field is mandatory.
+	Required bool
+	// Description explains the field's purpose.
+	Description string
+}
+
+// PlaygroundSchemaFields maps artifact type identifiers to
+// their schema field documentation for the playground IDE.
+var PlaygroundSchemaFields = map[string][]SchemaField{
+	ArtifactControlCatalog: {
+		{Name: "metadata", Type: "object", Required: true,
+			Description: "Standard Gemara metadata block with id, type, gemara-version, version, description, and author."},
+		{Name: "title", Type: "string", Required: true,
+			Description: "Human-readable title of the control catalog."},
+		{Name: "groups", Type: "list of objects", Required: true,
+			Description: "Groups that organize controls by theme (e.g., data-protection). Each has id, title, description."},
+		{Name: "controls", Type: "list of objects", Required: true,
+			Description: "Security controls with id, group, title, objective, threats, guidelines, and assessment-requirements."},
+		{Name: "controls[].assessment-requirements", Type: "list of objects", Required: true,
+			Description: "Testable requirements for each control with id, text, and applicability list."},
+		{Name: "controls[].threats", Type: "list of mapping entries", Required: false,
+			Description: "References to threat catalog entries that this control mitigates."},
+		{Name: "controls[].guidelines", Type: "list of mapping entries", Required: false,
+			Description: "References to guidance catalog entries that this control implements."},
+	},
+	ArtifactGuidanceCatalog: {
+		{Name: "metadata", Type: "object", Required: true,
+			Description: "Standard Gemara metadata block with id, type, gemara-version, version, description, and author."},
+		{Name: "title", Type: "string", Required: true,
+			Description: "Human-readable title of the guidance catalog."},
+		{Name: "groups", Type: "list of objects", Required: true,
+			Description: "Groups that organize guidelines by theme. Each has id, title, description."},
+		{Name: "guidelines", Type: "list of objects", Required: true,
+			Description: "Individual guidelines with id, group, title, and description."},
+	},
+	ArtifactThreatCatalog: {
+		{Name: "metadata", Type: "object", Required: true,
+			Description: "Standard Gemara metadata block with id, type, gemara-version, version, description, and author."},
+		{Name: "title", Type: "string", Required: true,
+			Description: "Human-readable title of the threat catalog."},
+		{Name: "capabilities", Type: "list of objects", Required: true,
+			Description: "System capabilities that threats target. Each has id, title, description."},
+		{Name: "threats", Type: "list of objects", Required: true,
+			Description: "Threats with id, capability, title, description, and optional severity/likelihood."},
+	},
+	ArtifactRiskCatalog: {
+		{Name: "metadata", Type: "object", Required: true,
+			Description: "Standard Gemara metadata block with id, type, gemara-version, version, description, and author."},
+		{Name: "title", Type: "string", Required: true,
+			Description: "Human-readable title of the risk catalog."},
+		{Name: "risk-categories", Type: "list of objects", Required: true,
+			Description: "Risk categories with id, title, appetite, and optional max-severity."},
+		{Name: "risks", Type: "list of objects", Required: true,
+			Description: "Individual risks with id, category, title, severity, optional owner, impact, and threats."},
+	},
+	ArtifactPolicy: {
+		{Name: "metadata", Type: "object", Required: true,
+			Description: "Standard Gemara metadata block with id, type, gemara-version, version, description, and author."},
+		{Name: "title", Type: "string", Required: true,
+			Description: "Human-readable title of the policy document."},
+		{Name: "scope", Type: "object", Required: true,
+			Description: "Defines the policy scope including applicable systems, teams, and regions."},
+		{Name: "imports", Type: "list of objects", Required: false,
+			Description: "References to control catalogs and guidance catalogs that this policy governs."},
+		{Name: "adherence", Type: "object", Required: true,
+			Description: "Adherence requirements including timeline, enforcement method, and RACI contacts."},
+		{Name: "risks", Type: "list of mapping entries", Required: false,
+			Description: "References to risk catalog entries relevant to this policy."},
+	},
+}
+
+// LexiconTerm defines a Gemara vocabulary term for the
+// playground's lexicon panel.
+type LexiconTerm struct {
+	// Term is the canonical Gemara term name.
+	Term string
+	// Definition is a concise definition.
+	Definition string
+	// ArtifactTypes lists which artifact types this
+	// term is most relevant to.
+	ArtifactTypes []string
+}
+
+// PlaygroundLexicon is the curated list of Gemara terms for
+// the playground IDE lexicon panel.
+var PlaygroundLexicon = []LexiconTerm{
+	{Term: "artifact", Definition: "A machine-readable document conforming to a Gemara schema, representing a catalog, policy, or log.",
+		ArtifactTypes: []string{ArtifactControlCatalog, ArtifactGuidanceCatalog, ArtifactThreatCatalog, ArtifactRiskCatalog, ArtifactPolicy}},
+	{Term: "metadata", Definition: "The standard header block in every Gemara artifact containing id, type, version, author, and mapping references.",
+		ArtifactTypes: []string{ArtifactControlCatalog, ArtifactGuidanceCatalog, ArtifactThreatCatalog, ArtifactRiskCatalog, ArtifactPolicy}},
+	{Term: "mapping-reference", Definition: "A named external framework or standard (e.g., NIST, ISO) referenced by controls or guidelines for traceability.",
+		ArtifactTypes: []string{ArtifactControlCatalog, ArtifactGuidanceCatalog}},
+	{Term: "control", Definition: "A security measure that mitigates one or more threats, with defined objectives and assessment requirements.",
+		ArtifactTypes: []string{ArtifactControlCatalog}},
+	{Term: "assessment-requirement", Definition: "A testable statement within a control that defines what MUST be true for compliance.",
+		ArtifactTypes: []string{ArtifactControlCatalog}},
+	{Term: "applicability", Definition: "A classification indicating which contexts (e.g., TLP levels) a control or requirement applies to.",
+		ArtifactTypes: []string{ArtifactControlCatalog}},
+	{Term: "threat", Definition: "A potential adverse event or action that targets a system capability, documented with severity and likelihood.",
+		ArtifactTypes: []string{ArtifactThreatCatalog, ArtifactControlCatalog}},
+	{Term: "capability", Definition: "A system feature or function that threats can target and controls can protect.",
+		ArtifactTypes: []string{ArtifactThreatCatalog}},
+	{Term: "guideline", Definition: "A recommendation or requirement from a standard or best practice, organized into groups.",
+		ArtifactTypes: []string{ArtifactGuidanceCatalog}},
+	{Term: "group", Definition: "A thematic category that organizes controls, guidelines, or risks within a catalog.",
+		ArtifactTypes: []string{ArtifactControlCatalog, ArtifactGuidanceCatalog, ArtifactRiskCatalog}},
+	{Term: "risk", Definition: "A documented organizational or system risk with severity, optional owner, impact, and mapped threats.",
+		ArtifactTypes: []string{ArtifactRiskCatalog}},
+	{Term: "risk-category", Definition: "A broad classification for organizing risks (e.g., operational, compliance) with appetite and max-severity.",
+		ArtifactTypes: []string{ArtifactRiskCatalog}},
+	{Term: "risk-appetite", Definition: "The level of risk an organization is willing to accept for a given category.",
+		ArtifactTypes: []string{ArtifactRiskCatalog, ArtifactPolicy}},
+	{Term: "policy", Definition: "An organizational document defining mandatory rules, scope, adherence timelines, and enforcement for controls.",
+		ArtifactTypes: []string{ArtifactPolicy}},
+	{Term: "scope", Definition: "The boundary defining which systems, teams, or regions a policy applies to.",
+		ArtifactTypes: []string{ArtifactPolicy}},
+	{Term: "adherence", Definition: "The requirements for compliance including timelines, enforcement methods, and responsible contacts.",
+		ArtifactTypes: []string{ArtifactPolicy}},
+	{Term: "layer", Definition: "One of seven levels in the Gemara model, from L1 (Guidance) through L7 (Audit), organizing GRC activities.",
+		ArtifactTypes: []string{ArtifactControlCatalog, ArtifactGuidanceCatalog, ArtifactThreatCatalog, ArtifactRiskCatalog, ArtifactPolicy}},
+	{Term: "evaluation", Definition: "An assessment of whether controls meet their requirements, producing evidence and findings.",
+		ArtifactTypes: []string{}},
+	{Term: "enforcement", Definition: "A corrective action taken in response to noncompliance findings from evaluations.",
+		ArtifactTypes: []string{}},
+}
+
+// TutorialPrimaryArtifactType maps each upstream tutorial
+// ID to its primary artifact type identifier for the
+// playground link.
+var TutorialPrimaryArtifactType = map[string]string{
+	TutorialGuidanceCatalog:  ArtifactGuidanceCatalog,
+	TutorialThreatAssessment: ArtifactThreatCatalog,
+	TutorialControlCatalog:   ArtifactControlCatalog,
+	TutorialPolicy:           ArtifactPolicy,
+}
+
 // UpstreamTutorialID constants identify each upstream
 // Gemara tutorial for programmatic reference.
 const (

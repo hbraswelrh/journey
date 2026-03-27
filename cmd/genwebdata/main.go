@@ -9,10 +9,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/hbraswelrh/journey/internal/consts"
 	"github.com/hbraswelrh/journey/internal/roles"
@@ -81,15 +84,33 @@ type webLayerFlow struct {
 
 // webUpstreamTutorial describes an upstream Gemara tutorial.
 type webUpstreamTutorial struct {
-	ID            string   `json:"id"`
-	Title         string   `json:"title"`
-	Description   string   `json:"description"`
-	URL           string   `json:"url"`
-	Layer         int      `json:"layer"`
+	ID                  string   `json:"id"`
+	Title               string   `json:"title"`
+	Description         string   `json:"description"`
+	URL                 string   `json:"url"`
+	Layer               int      `json:"layer"`
+	ArtifactTypes       []string `json:"artifactTypes"`
+	Prerequisites       []string `json:"prerequisites"`
+	Goals               []string `json:"goals"`
+	Roles               []string `json:"roles"`
+	PrimaryArtifactType string   `json:"primaryArtifactType"`
+}
+
+// webPlaygroundSchemaField is a schema field doc for the
+// playground.
+type webPlaygroundSchemaField struct {
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Required    bool   `json:"required"`
+	Description string `json:"description"`
+}
+
+// webPlaygroundLexiconTerm is a lexicon term for the
+// playground.
+type webPlaygroundLexiconTerm struct {
+	Term          string   `json:"term"`
+	Definition    string   `json:"definition"`
 	ArtifactTypes []string `json:"artifactTypes"`
-	Prerequisites []string `json:"prerequisites"`
-	Goals         []string `json:"goals"`
-	Roles         []string `json:"roles"`
 }
 
 // webData is the top-level export structure.
@@ -105,6 +126,11 @@ type webData struct {
 	MCPCapabilities    []webMCPCapability    `json:"mcpCapabilities"`
 	MCPModes           []webMCPMode          `json:"mcpModes"`
 	Config             webConfig             `json:"config"`
+
+	// Playground data
+	PlaygroundExamples map[string]string                     `json:"playgroundExamples"`
+	PlaygroundSchemas  map[string][]webPlaygroundSchemaField `json:"playgroundSchemas"`
+	PlaygroundLexicon  []webPlaygroundLexiconTerm            `json:"playgroundLexicon"`
 }
 
 // webMCPMode describes an MCP server operating mode.
@@ -180,6 +206,9 @@ func buildWebData() *webData {
 		MCPCapabilities:    buildMCPCapabilities(),
 		MCPModes:           buildMCPModes(),
 		Config:             buildConfig(),
+		PlaygroundExamples: fetchPlaygroundExamples(),
+		PlaygroundSchemas:  buildPlaygroundSchemas(),
+		PlaygroundLexicon:  buildPlaygroundLexicon(),
 	}
 }
 
@@ -377,16 +406,20 @@ func buildUpstreamTutorials() []webUpstreamTutorial {
 		if roles == nil {
 			roles = []string{}
 		}
+		primaryArtifactType :=
+			consts.TutorialPrimaryArtifactType[t.ID]
+
 		result[i] = webUpstreamTutorial{
-			ID:            t.ID,
-			Title:         t.Title,
-			Description:   t.Description,
-			URL:           t.URL,
-			Layer:         t.Layer,
-			ArtifactTypes: artifactTypes,
-			Prerequisites: prerequisites,
-			Goals:         goals,
-			Roles:         roles,
+			ID:                  t.ID,
+			Title:               t.Title,
+			Description:         t.Description,
+			URL:                 t.URL,
+			Layer:               t.Layer,
+			ArtifactTypes:       artifactTypes,
+			Prerequisites:       prerequisites,
+			Goals:               goals,
+			Roles:               roles,
+			PrimaryArtifactType: primaryArtifactType,
 		}
 	}
 	return result
@@ -524,6 +557,103 @@ func buildConfig() webConfig {
 	}
 }
 
+// fetchPlaygroundExamples fetches example artifact YAML
+// files from the upstream Gemara test data repository and
+// returns them as a map from artifact type identifier to
+// YAML content string.
+func fetchPlaygroundExamples() map[string]string {
+	examples := make(map[string]string)
+
+	client := &http.Client{Timeout: 30 * time.Second}
+
+	for _, artType := range consts.PlaygroundArtifactTypes {
+		fileName, ok := consts.PlaygroundExampleFiles[artType]
+		if !ok {
+			fmt.Fprintf(os.Stderr,
+				"error: no example file mapping for "+
+					"artifact type %q\n", artType)
+			os.Exit(1)
+		}
+
+		url := consts.GemaraTestDataBaseURL + "/" + fileName
+		fmt.Printf("Fetching %s ...\n", url)
+
+		resp, err := client.Get(url)
+		if err != nil {
+			fmt.Fprintf(os.Stderr,
+				"error: failed to fetch example for "+
+					"%s from %s: %v\n",
+				artType, url, err)
+			os.Exit(1)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			fmt.Fprintf(os.Stderr,
+				"error: failed to fetch example for "+
+					"%s from %s: HTTP %d\n",
+				artType, url, resp.StatusCode)
+			os.Exit(1)
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Fprintf(os.Stderr,
+				"error: failed to read response body "+
+					"for %s: %v\n", artType, err)
+			os.Exit(1)
+		}
+
+		examples[artType] = string(body)
+	}
+
+	return examples
+}
+
+// buildPlaygroundSchemas converts the Go schema field
+// documentation constants into the web-serializable format.
+func buildPlaygroundSchemas() map[string][]webPlaygroundSchemaField {
+	result := make(
+		map[string][]webPlaygroundSchemaField,
+	)
+	for artType, fields := range consts.PlaygroundSchemaFields {
+		webFields := make(
+			[]webPlaygroundSchemaField, len(fields),
+		)
+		for i, f := range fields {
+			webFields[i] = webPlaygroundSchemaField{
+				Name:        f.Name,
+				Type:        f.Type,
+				Required:    f.Required,
+				Description: f.Description,
+			}
+		}
+		result[artType] = webFields
+	}
+	return result
+}
+
+// buildPlaygroundLexicon converts the Go lexicon term
+// constants into the web-serializable format.
+func buildPlaygroundLexicon() []webPlaygroundLexiconTerm {
+	result := make(
+		[]webPlaygroundLexiconTerm,
+		len(consts.PlaygroundLexicon),
+	)
+	for i, t := range consts.PlaygroundLexicon {
+		artifactTypes := t.ArtifactTypes
+		if artifactTypes == nil {
+			artifactTypes = []string{}
+		}
+		result[i] = webPlaygroundLexiconTerm{
+			Term:          t.Term,
+			Definition:    t.Definition,
+			ArtifactTypes: artifactTypes,
+		}
+	}
+	return result
+}
+
 func generateTypeScript(jsonData []byte) string {
 	var sb strings.Builder
 
@@ -546,6 +676,8 @@ func generateTypeScript(jsonData []byte) string {
 	sb.WriteString("export type MCPCapability = JourneyData['mcpCapabilities'][number];\n")
 	sb.WriteString("export type MCPMode = JourneyData['mcpModes'][number];\n")
 	sb.WriteString("export type UpstreamTutorial = JourneyData['upstreamTutorials'][number];\n")
+	sb.WriteString("export type PlaygroundSchemaField = JourneyData['playgroundSchemas'][keyof JourneyData['playgroundSchemas']][number];\n")
+	sb.WriteString("export type PlaygroundLexiconTerm = JourneyData['playgroundLexicon'][number];\n")
 
 	return sb.String()
 }
